@@ -105,11 +105,11 @@ class Graphics:
         # Draw OSD information.
         cv2.putText(self.image, str(self.counter),
                     (20, self.image.shape[0]-30), 1, 5, 0x00, 4)
-        # If in manual mode, draw a red rim around the image frame.
-        if self.manual_mode:
-            cv2.rectangle(self.image, (0, 0), self.image.shape[1::-1],
-                          (0x00, 0x00, 0xFF), 4)
         if self.display:
+            # If in manual mode, draw a red rim around the image frame.
+            if self.manual_mode:
+                cv2.rectangle(self.image, (0, 0), self.image.shape[1::-1],
+                              (0x00, 0x00, 0xFF), 4)
             while True:
                 # Display image on screen:
                 cv2.imshow("res", self.image)

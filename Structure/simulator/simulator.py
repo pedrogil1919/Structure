@@ -35,12 +35,16 @@ class Simulator():
         self.str_up_speed = speed_data['struct_up']
         self.str_dw_speed = speed_data['struct_down']
 
+    def prueba(self, structure, instruction):
+        print("prueba")
+        
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step.
 
         (for more details, see simulate_simple_step function).
 
         """
+        print("simultor")
         try:
             if not structure.advance(instruction['distance']):
                 print("Control: Error in advance function.")
@@ -71,13 +75,14 @@ class Simulator():
         except KeyError:
             pass
 
+        """
         # Check for the end of the trajectory.
         try:
             if instruction['end']:
                 yield False
         except KeyError:
             pass
-        yield True
+        """
         
 ###############################################################################
 # End of file.
