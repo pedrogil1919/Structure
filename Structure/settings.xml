@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<StairsClimbing>
+	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
+	<size a="40" b="100" c="40" d="50" g="50"/>
+	<!--Wheel radius, in the same units than structure dimensions-->
+	<wheels r1="20" r2="15" r3="15" r4="20"/>
+	<!--Stairs definition. Can be defined as many as needed:
+		- landing: initial landing length
+		- dimensions: steps dimension:
+			- N: number of steps.
+			- w, h: Width and height
+			- d: posterior landing length, so last step width is w+d
+	-->
+	<!--Simulation velocity (in units/frame):
+		- wheel: Structure horizontal speed
+		- actuator: Actuator shift speed
+		- elevate: Structure elevate/incline speed
+	-->
+	<speed wheel="3.0" actuator="2.0" struct_up="0.5" struct_down="1.0"/>
+
+	<stairs landing="400">
+		<!--Stair definition. Simply copy one of the following blocks
+		or create one in your own.-->
+		<dimensions N="6" w="80" h="35" d="200"/>
+		<!--Up - down stairs
+		<dimensions N="3" w="80" h="+30" d="200"/>
+		<dimensions N="3" w="80" h="-30" d="200"/>
+		-->
+		<!--Down - up stairs
+		<dimensions N="3" w="80" h="-30" d="200"/>
+		<dimensions N="3" w="80" h="+30" d="200"/>
+		-->
+		<!--Positive - negative obstacle
+		<dimensions N="1" w="80" h="+30" d="0"/>
+		<dimensions N="1" w="80" h="-30" d="300"/>
+		<dimensions N="1" w="80" h="-30" d="0"/>
+		<dimensions N="1" w="80" h="+30" d="300"/>
+		-->
+		<!--Stair of different step sizes (upwards).
+		<dimensions N="1" w="80" h="+20" d="0"/>
+		<dimensions N="1" w="70" h="+25" d="0"/>
+		<dimensions N="1" w="75" h="+20" d="0"/>
+		<dimensions N="1" w="80" h="+30" d="300"/>
+		-->
+		<!--Stair of different step sizes (downwards).
+		<dimensions N="1" w="80" h="-20" d="0"/>
+		<dimensions N="1" w="70" h="-25" d="0"/>
+		<dimensions N="1" w="75" h="-20" d="0"/>
+		<dimensions N="1" w="80" h="-30" d="300"/>
+		-->
+	</stairs>
+	<graphics>
+	<!--Graphical resources configuration:
+		- resolution: image width and height
+		- shift: Vertical shift with respect to the image top.
+		- scale: Scale, in units/pixels (where units: cm, mm, inch, etc).
+			If not given, scale is computed so that the whole stairs
+			length spread over the width of the image.
+		- interval: 1/framerate for display option (see graphics/video tag)
+			greater than 0, in miliseconds. Set to the minimum time
+			recomended by OpenCV if not given.
+		- pause: if display is True (the image sequence is displayed on
+			the screen) start simulation paused or continuous. On
+			runtime, this value can be toggled with the space key.
+			If paused, advance one frame by pressing the Enter key.
+		- directory: if given, directory where the video image sequence
+			will be stored.
+		- display: if directory is given, indicates if also display image
+			sequence on the screen. If directory is not given, (no 
+			video is recorded) display always is True. If display is
+			True, the program can be finished by pressing the Esc Key.
+			If False, program can not be finished manually.
+	-->
+		<resolution height="720" width="1280"/> <!--HD-->
+		<!--
+		standard resolutions:
+		Full HD: 	height="1080" width="1920"
+		HD: 		height= "720" width="1280"		
+		-->
+		<!--
+		<image shift="400"/>
+		-->
+		<image shift="400" scale="1.0"/>
+		<framerate interval="10" pause="True"/>
+		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True"/>
+<!--
+-->	
+	</graphics>
+</StairsClimbing>
+
