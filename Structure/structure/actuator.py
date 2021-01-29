@@ -137,6 +137,19 @@ class WheelActuator:
         y1 = self.JOINT.inverse_prop_lift(y)
         return y1
 
+    def get_wheel_distances(self):
+        """Returns the distances of the ending wheel to the stair.
+        
+        See stair.set_distances function, and getDistances.svg.
+        
+        """
+        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+        return self.WHEEL.get_distances(cx, cy)
+    
+    def back_to_stable(self):
+        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+        return self.WHEEL.back_to_stable(cx, cy)
+    
     def state(self):
         """Return the state of the actuator with respect to its range of
         operation.

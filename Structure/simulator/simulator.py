@@ -44,34 +44,38 @@ class Simulator():
         (for more details, see simulate_simple_step function).
 
         """
-        print("simultor")
         try:
-            if not structure.advance(instruction['distance']):
-                print("Control: Error in advance function.")
+            # Advance structure
+            res, dis = structure.advance(instruction['distance'])
+            if not res:
+                print("Can not advance structure. Error:", dis)
         except KeyError:
             pass
 
         try:
             # Elevate structure
-            if not structure.elevate(instruction['elevate']):
-                print("Control: Can not elevate structure.")
+            res, dis = structure.elevate(instruction['elevate'])
+            if not res:
+                print("Can not elevate structure. Error:", dis)
         except KeyError:
             pass
 
         try:
             # Incline structure
-            if not structure.incline(instruction['incline'],
+            res, dis = structure.incline(instruction['incline'],
                                      instruction['elevate_rear'],
-                                     instruction['fix_front']):
-                print("Control: Can not incline structure.")
+                                     instruction['fix_front'])
+            if not res:
+                print("Can not incline structure. Error:", dis)
         except KeyError:
             pass
 
         try:
             # Shift actuator.
-            if not structure.shift_actuator(
-                    instruction['wheel'], -instruction['shift']):
-                print("Control: Can not shift actuator")
+            res, dis = structure.shift_actuator(
+                    instruction['wheel'], -instruction['shift'])
+            if not res:
+                print("Can not shift actuator. Error:", dis)
         except KeyError:
             pass
 

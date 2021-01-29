@@ -3,7 +3,7 @@
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
 	<size a="40" b="100" c="40" d="50" g="50"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
-	<wheels r1="20" r2="15" r3="15" r4="20"/>
+	<wheels r1="20" r2="20" r3="20" r4="20"/>
 	<!--Stairs definition. Can be defined as many as needed:
 		- landing: initial landing length
 		- dimensions: steps dimension:
@@ -16,12 +16,12 @@
 		- actuator: Actuator shift speed
 		- elevate: Structure elevate/incline speed
 	-->
-	<speed wheel="3.0" actuator="2.0" struct_up="0.5" struct_down="1.0"/>
+	<speed wheel="5" actuator="2.0" struct_up="0.5" struct_down="1.0"/>
 
-	<stairs landing="400">
+	<stairs landing="220">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="35" d="200"/>
+		<dimensions N="6" w="80" h="-20" d="200"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>
@@ -71,7 +71,7 @@
 			True, the program can be finished by pressing the Esc Key.
 			If False, program can not be finished manually.
 	-->
-		<resolution height="720" width="1280"/> <!--HD-->
+		<resolution height="550" width="1200"/> <!--HD-->
 		<!--
 		standard resolutions:
 		Full HD: 	height="1080" width="1920"
