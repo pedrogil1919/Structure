@@ -36,4 +36,6 @@ MAX_GAP = 0.05
 # Maximum gap allowed to consider an object touching the ground or the steps
 # See maxGap.svg figure.
 
-
+###############################################################################
+# End of file.
+###############################################################################

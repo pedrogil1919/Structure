@@ -26,13 +26,15 @@ class Stair:
     def __init__(self, stairs, landing=0):
         """
         Constructor: Generate the coordinates of the set of steps.
+        See stair_definition_up.svg y stair_definition_down.svg.
+        Run draw_stairs.py.
 
         Parameters:
         stairs -- List of stair parameter. Each element of the list must
             be a dictionary with the following keys:
                 - 'd': Posterior landing length (length after the last step).
-                - 'w': Horizontal width of the step (huella).
-                - 'h': Vertical height of the step (contrahuella).
+                - 'w': Horizontal width of the step.
+                - 'h': Vertical height of the step.
                 - 'N': number of steps for the current stair.
             If more than one stair is defined (len(stairs)>1), the next
             stair starts at the end of the previous one.
@@ -122,8 +124,8 @@ class Stair:
         - If the wheel is inside the stair (collision), returns Inside
             and the distances to be applied to the wheel center to correct
             such collision.
-        - If the wheel is in a correct position, return its actual position
-            with respect to the stair (see WheelState).
+        - If the wheel is in a correct position, return its state with respect
+            to the stair (see WheelState).
 
         Parameters:
         p -- Coordinates of the center of the wheel.
@@ -240,7 +242,7 @@ class Stair:
     def get_distances(self, p, r):
         """ Find all the useful distances between the stair and a wheel.
 
-        Returns the following values (see getDistances.svg):
+        Returns the following values (see get_distances.svg):
         - hc, hl, hr: Vertical distances from the bottom of the wheel with
             respect to the actual, left and right steps.
         - wl, wr: Horizontal distances from the left (right) edge of the
@@ -310,7 +312,8 @@ class Stair:
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             # Draw a point in the step corner.
             cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
-                       self.CORNER_COLOR, -1, cv2.LINE_AA, shift)            # Draw steps with different colors.
+                       self.CORNER_COLOR, -1, cv2.LINE_AA, shift) 
+            # Draw steps with different colors.
             # from random import randint
             # color=(randint(0, 0x100), randint(0, 0x100), randint(0, 0x100))
             # cv2.line(image, (cx1, cy1), (cx2, cy1), color, self.LINE_SIZE,
@@ -324,3 +327,6 @@ class Stair:
         cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
                    self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
         
+###############################################################################
+# End of file.
+###############################################################################
