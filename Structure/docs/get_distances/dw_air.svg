@@ -21,9 +21,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.8886936"
-     inkscape:cx="159.71083"
-     inkscape:cy="90.00452"
+     inkscape:zoom="2.4236509"
+     inkscape:cx="92.250619"
+     inkscape:cy="108.92658"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -32,12 +32,13 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="1920"
-     inkscape:window-height="1029"
+     inkscape:window-width="1366"
+     inkscape:window-height="719"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="1"
-     inkscape:document-rotation="0">
+     inkscape:document-rotation="0"
+     inkscape:snap-center="true">
     <inkscape:grid
        originy="-128"
        originx="-19.999996"
@@ -189,6 +190,12 @@
      id="layer1"
      inkscape:groupmode="layer"
      inkscape:label="Capa 1">
+    <circle
+       style="opacity:1;fill:#b3ff80;fill-opacity:0.50196078;stroke:#000000;stroke-width:0.13229169;stroke-miterlimit:4;stroke-dasharray:0.13229168, 0.13229168;stroke-dashoffset:0;stroke-opacity:1"
+       id="circle905"
+       cx="60.000004"
+       cy="139"
+       r="8" />
     <path
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
@@ -315,5 +322,16 @@
        id="path896"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23332977px;line-height:1.25;font-family:FreeSerif;-inkscape-font-specification:FreeSerif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458299"
+       x="75.083755"
+       y="140.86308"
+       id="text1686-3"><tspan
+         sodipodi:role="line"
+         id="tspan1684-6"
+         x="75.083755"
+         y="140.86308"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:FreeSerif;-inkscape-font-specification:'FreeSerif Italic';stroke-width:0.26458299">ground</tspan></text>
   </g>
 </svg>
