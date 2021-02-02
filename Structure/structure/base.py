@@ -74,6 +74,19 @@ class Base:
         # Total width of the structure.
         Base.WIDTH = a+b+c
         
+    ###########################################################################
+    # MOTION FUNCTION
+    ###########################################################################
+    # Note for all motion functions:
+    # When a given motion can not be completed for any cause (wheel collision
+    # or wheel pair unstable), the corresponding function does not perform the
+    # required motion, and returns the error distance, that is, if we call
+    # the same function again substracting the distance returned, the motion
+    # now can be completed, and the structure will be set at the limit. In
+    # fact, the distance returned is of the opposite sign, so that, the correct
+    # distance will be required distance plus the distance returned by the
+    # function.
+    
     def advance(self, distance):
         """Advance the structure horizontally.
         
@@ -86,6 +99,13 @@ class Base:
         distance -- Horizontal distance to move (positive, move right).
         
         """
+        # TODO: In some cases both collision and unstable wheel pair can happen
+        # for two different wheels. In that case, this function will not work
+        # because only check for one of then (first it checks collisions, and
+        # only if no collision happens, it check for unstability). This can
+        # only happens when we combine up and downstairs steps. If only up or
+        # down exist, this event can never happens.
+        
         # Update structure shift
         self.shift += distance
         
@@ -94,6 +114,8 @@ class Base:
         re_res, re_dis = self.REAR.check_collision(distance)
         fr_res, fr_dis = self.FRONT.check_collision(distance)
         
+        # If no collision happens, check if any pair of wheels are set in an
+        # unstable position.
         if re_res and fr_res:
             re_res, re_dis = self.REAR.check_stable(distance)
             fr_res, fr_dis = self.FRONT.check_stable(distance)

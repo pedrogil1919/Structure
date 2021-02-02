@@ -117,7 +117,7 @@ class Graphics:
                     wait_time = 0
                 else:
                     wait_time = 0 if self.toggle_pause else self.interval
-                c = cv2.waitKey(int(wait_time)) % 0xFF
+                c = cv2.waitKey(int(wait_time)) & 0x7F
                 ###############################################################
                 if c == 27:
                     # Escape key.

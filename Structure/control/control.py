@@ -7,6 +7,7 @@ Created on 28 ene. 2021
 
 def manual_control(key_pressed, simulator):
 
+    print("key:", key_pressed)
     if key_pressed == ord('4'):
         command = {'distance': -simulator.wheel_speed}
     elif key_pressed == ord('6'):
