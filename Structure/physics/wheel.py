@@ -184,15 +184,15 @@ class Wheel:
         
         Compute the distance between the bottom of the wheel and the outer
         corner of a step. If the structure is moved this distance, the wheel
-        will be stable. This function works only when the wheel is in an
-        unstable position.
+        will be stable. This function works only when the wheel is not on the
+        ground.
         
         """
         #TODO
-        if self.state != WheelState.Unstable:
+        if self.ground():
             return 0
         # Compute the distance for a radius equal 0. With this trick, the
-        # function returns the desired 
+        # function returns the desired distance.
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
