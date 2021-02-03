@@ -56,14 +56,14 @@ class Wheel:
             raise ValueError("Wheel in an initial forbidden position.\n \
                 Relocate structure.")
 
-    def move_wheel(self, position):
+    def check_wheel(self, position):
         """Function to call when moving a wheel in any direction.
         
-        Check if the wheel can be moved horizontally to a new position,
-        that is, the wheel does not collide with any step.
+        Check if the wheel can be placed in the required position, and no
+        collision happens.
         
         Return True if the function succeed, and False if not (collision). In
-        this case, return the distance the wheel is inside the stair, both
+        this case, returns the distance the wheel is inside the stair, both
         in horizontal and in vertical direction (run test_wheel_state.py).
         
         Parameters:
@@ -80,19 +80,19 @@ class Wheel:
         # distance the wheel is inside the stair.
         return False, w, h
 
-    # TODO: Check if this function is needed (is similar to the one above).
-    def lift_wheel(self, position):
-        """Move the wheel in vertical direction (see move_wheel).
- 
-        Returns True if the wheel can be moved, False if not, due to a
-        collision with the stair.
-        In this case, return the distance the wheel is inside the stair.
-        """
-        self.state, __, h = \
-            self.SIMULATOR.check_collision(position, self.RADIUS)
-        if self.state != WheelState.Inside:
-            return True, 0
-        return False, h
+#     # TODO: Check if this function is needed (is similar to the one above).
+#     def lift_wheel(self, position):
+#         """Move the wheel in vertical direction (see move_wheel).
+#  
+#         Returns True if the wheel can be moved, False if not, due to a
+#         collision with the stair.
+#         In this case, return the distance the wheel is inside the stair.
+#         """
+#         self.state, __, h = \
+#             self.SIMULATOR.check_collision(position, self.RADIUS)
+#         if self.state != WheelState.Inside:
+#             return True, 0
+#         return False, h
 
 #     def get_distances(self, cx, cy):
 #         """Computes distances from the wheel to the stair for control module.

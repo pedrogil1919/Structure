@@ -43,7 +43,7 @@ image = numpy.full((600, 1000, 3), 0xFF, numpy.uint8)
 while True:
     # Move the wheel, and get (in that case) the distance needed to correct the
     # position to place the wheel in a valid position (w, h).
-    res, w, h = wheel_test.move_wheel(position)
+    res, w, h = wheel_test.check_wheel(position)
     stairs_test.draw(origin, image, scale, shift)
     wheel_test.draw(origin, image, position, scale, shift)
     cv2.imshow("Res", image)
