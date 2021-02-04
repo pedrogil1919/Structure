@@ -4,7 +4,8 @@ Created on 28 ene. 2021
 @author: pedro.gil@uah.es
 
 Module to define the ending wheel of each structure actuator. The module
-implements the physical interactions with the stairs: collisions and contact.
+implements the physical interactions with the stairs: collisions and contacts.
+
 '''
 
 import numpy
@@ -22,6 +23,7 @@ class Wheel:
     
     It stores wheel information, and includes functions to interact with the
     physic structure corresponding to the stairs.
+    
     """
 
     def __init__(self, radius, stairs, position=None):
@@ -57,7 +59,7 @@ class Wheel:
                 Relocate structure.")
 
     def check_wheel(self, position):
-        """Function to call when moving a wheel in any direction.
+        """Function to check the position of a wheel with respect to the stair.
         
         Check if the wheel can be placed in the required position, and no
         collision happens. The function also update the whell state (see
@@ -80,6 +82,32 @@ class Wheel:
         # required to correct the wheel to a valid position, that is, the
         # distance the wheel is inside the stair.
         return False, w, h
+
+    def distance_to_stable(self, cx, cy):
+        """Return the distance needed to place the wheel in a stable position.
+        
+        Compute the distance between the bottom of the wheel and the outer
+        corner of a step. If the structure is moved this distance, the wheel
+        will be stable. This function works only when the wheel is in
+        unstable state.
+        
+        """
+        #TODO
+        if self.state != WheelState.Unstable:
+            return 0
+        # Compute the distance for a radius equal 0. With this trick, the
+        # function returns the desired distance.
+        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)
+        if hr > hc and hc >= hl:
+            # Upstairs direction. The comparison hc = hl happens at the
+            # beginning of the stair.
+            return wr
+        elif hr < hc and hc <= hl:
+            # Downstairs direction.
+            return wl
+        return 0
+           
+
 
 #     # TODO: Check if this function is needed (is similar to the one above).
 #     def lift_wheel(self, position):
@@ -180,30 +208,6 @@ class Wheel:
 # #                 return {'st': False, 
 # #                         'hc': hc, 'hr': hr, 'wr': -wl, 'ws': -wl}
 
-    def back_to_stable(self, cx, cy):
-        """Return the distance needed to place the wheel in a stable position.
-        
-        Compute the distance between the bottom of the wheel and the outer
-        corner of a step. If the structure is moved this distance, the wheel
-        will be stable. This function works only when the wheel is not on the
-        ground.
-        
-        """
-        #TODO
-        if self.ground():
-            return 0
-        # Compute the distance for a radius equal 0. With this trick, the
-        # function returns the desired distance.
-        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)
-        if hr > hc and hc >= hl:
-            # Upstairs direction. The comparison hc = hl happens at the
-            # beginning of the stair.
-            return wr
-        elif hr < hc and hc <= hl:
-            # Downstairs direction.
-            return wl
-        return 0
-           
     def ground(self):
         """Check whether the wheel is lying in a horizontal place.
         
