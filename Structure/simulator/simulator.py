@@ -35,9 +35,6 @@ class Simulator():
         self.str_up_speed = speed_data['struct_up']
         self.str_dw_speed = speed_data['struct_down']
 
-    def prueba(self, structure, instruction):
-        print("prueba")
-        
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step.
 

@@ -109,6 +109,14 @@ class Wheel:
             return wl
         return 0
 
+    def ground(self, position):
+        """Check whether the wheel is lying in a horizontal place.
+         
+        """
+        self.check_wheel(position)
+        return self.state == WheelState.Ground or \
+            self.state == WheelState.Corner
+ 
     # =========================================================================
     # Drawing functions.
     # =========================================================================
@@ -254,13 +262,6 @@ class Wheel:
 # #                 # TODO: Review. I just only copy - paste from above.
 # #                 return {'st': False, 
 # #                         'hc': hc, 'hr': hr, 'wr': -wl, 'ws': -wl}
-# 
-#     def ground(self):
-#         """Check whether the wheel is lying in a horizontal place.
-#         
-#         """
-#         return self.state == WheelState.Ground or \
-#             self.state == WheelState.Corner
 # 
 #     def contact(self):
 #         """Check whether the wheel is in contact with any part of a stair.

@@ -145,18 +145,18 @@ class WheelActuator:
         """
         # Check if the wheel is in a valid position.
         position = self.JOINT.position(self.HEIGHT+self.d)
-        check, h_err, v_err = self.WHEEL.check_wheel( position )
+        check, h_err, v_err = self.WHEEL.check_wheel(position)
         # Check if the actuator has reached one of its bounds.
         if self.state == ActuatorState.ExitLowerBound:
             # The actuator has gone out of its lower bound.
             check = False
-            v_err = self.d
+            v_err = -self.d
         elif self.state == ActuatorState.ExitUpperBound:
             # The actuator has gone out if its upper bound. In this case, we
             # have to check also if the wheel is in a valid position with
             # respect to the stair, and get the maximum of both.
             check = False
-            v_err = max([v_err, self.LENGTH - self.d])
+            v_err = min([v_err, self.LENGTH - self.d])
          
         return check, h_err, v_err
 
@@ -215,7 +215,8 @@ class WheelActuator:
         """Return True if its ending wheel is lying on an horizontal surface.
         
         """
-        return self.WHEEL.ground()
+        position = self.JOINT.position(self.HEIGHT+self.d)
+        return self.WHEEL.ground(position)
 
     # =========================================================================
     # Drawing functions.
@@ -258,7 +259,7 @@ class WheelActuator:
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
-        if self.state() != ActuatorState.Center:
+        if self.state != ActuatorState.Center:
             px = numpy.float32(scale*(origin[0]+hx0))
             cv2.circle(image, (px, cy1), int(4*scale), self.LIMIT_COLOR, -1,
                        cv2.LINE_AA, shift)

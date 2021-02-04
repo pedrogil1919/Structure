@@ -21,36 +21,31 @@ class ActuatorPair:
         self.REAR = rear
         self.FRNT = front
         
-    def shift_actuator(self, actuator, distance, check):
+    def shift_actuator(self, rear, front, distance):
         """Shift the given actuator.
             
         Parameters:
-        - actuator:
-            - 0: Rear actuator.
-            - 1: Front actuator.
+        - rear: If True, shift this actuator.
+        - front: If True, shift this actuator.
         - distance: distance to move the actuator. Positive value means the
             the wheel moves away from the structure.
         
         """
-        if actuator == 0:
+        if rear:
             # Rear actuator.
             self.REAR.shift_actuator(distance)
-        elif actuator == 1:
+        if front:
             # Front actuator.
             self.FRNT.shift_actuator(distance)
-        else:
-            raise RuntimeError("Error in shft_actuator")
         
-    def shift_actuator_proportional(self, actuator, distance, check):
+    def shift_actuator_proportional(self, rear, front, distance):
         """Similar to shift_actuator, but proportional.
         
         """
-        if actuator == 0:
+        if rear:
             self.REAR.shift_actuator_proportional(distance)
-        elif actuator == 1:
+        if front:
             self.FRNT.shift_actuator_proportional(distance)
-        else:
-            raise RuntimeError("Error in shft_actuator_proportional")
        
     def check_collision(self, distance):
         """Check if any of the wheels (or both) are in a forbidden position.
@@ -124,17 +119,22 @@ class ActuatorPair:
             
             if re_grd_dis is None:
                 if fr_grd_dis is None:
-                    raise RuntimeError("Both wheels are not in the ground")
+                    # This happens when shifting one actuator with the other
+                    # already in the air.
+                    dis = 0.0
                 else:
-                    dis = fr_grd
+                    dis = fr_grd_dis
             else:
-                # Get the minimum value of both distances. In this case, we need
-                # the minimum, since this is the distance to get the structure
-                # back to a safe position.
-                if distance > 0:
-                    dis = max([fr_grd_dis, re_grd_dis])
+                if fr_grd_dis is None:
+                    dis = re_grd_dis
                 else:
-                    dis = min([fr_grd_dis, re_grd_dis])
+                    # Get the minimum value of both distances. In this case, we
+                    # need the minimum, since this is the distance to get the
+                    # structure back to a safe position.
+                    if distance > 0:
+                        dis = max([fr_grd_dis, re_grd_dis])
+                    else:
+                        dis = min([fr_grd_dis, re_grd_dis])
             return False, dis
         else:
             # Al least one wheel is stable, so that the structure in safe.
