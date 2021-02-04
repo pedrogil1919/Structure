@@ -106,7 +106,52 @@ class Wheel:
             # Downstairs direction.
             return wl
         return 0
-           
+
+    # =========================================================================
+    # Drawing functions.
+    # =========================================================================
+    # Wheel colors:
+    AIR_COLOR = (0xFF, 0x00, 0x00)
+    GROUND_COLOR = (0x00, 0xFF, 0x00)
+    CONTACT_COLOR = (0x00, 0xFF, 0xFF)
+    CORNER_COLOR = (0xFF, 0xFF, 0x00)
+    UNSTABLE_COLOR = (0x00, 0x00, 0xFF)
+    OUTER_COLOR = (0xFF, 0x00, 0xFF)
+    OVER_COLOR = (0xFF, 0x80, 0x80)
+    INSIDE_COLOR = (0x40, 0x40, 0x40)
+    LINE_COLOR = (0x00, 0x00, 0x00)
+    LINE_WIDTH = 4
+
+    def draw(self, origin, image, position, scale, shift):
+        cx = numpy.float32(scale*(origin[0]+position[0]))
+        cy = numpy.float32(scale*(origin[1]-position[1]))
+        cr = numpy.int(scale*self.RADIUS)
+        if self.state == WheelState.Ground:
+            color = self.GROUND_COLOR
+        elif self.state == WheelState.Unstable:
+            color = self.UNSTABLE_COLOR
+        elif self.state == WheelState.Air:
+            color = self.AIR_COLOR
+        elif self.state == WheelState.Corner:
+            color = self.CORNER_COLOR
+        elif self.state == WheelState.Contact:
+            color = self.CONTACT_COLOR
+        elif self.state == WheelState.Outer:
+            color = self.OUTER_COLOR
+        elif self.state == WheelState.Over:
+            color = self.OVER_COLOR
+        elif self.state == WheelState.Inside:
+            color = self.INSIDE_COLOR
+        else:
+            raise(ValueError("Wheel state not supported."))
+        cv2.circle(image, (cx, cy), cr, color, -1, cv2.LINE_AA, shift)
+        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2,
+                   cv2.LINE_AA, shift)
+
+###############################################################################
+# End of file.
+###############################################################################
+
 
 
 #     # TODO: Check if this function is needed (is similar to the one above).
@@ -207,62 +252,16 @@ class Wheel:
 # #                 # TODO: Review. I just only copy - paste from above.
 # #                 return {'st': False, 
 # #                         'hc': hc, 'hr': hr, 'wr': -wl, 'ws': -wl}
-
-    def ground(self):
-        """Check whether the wheel is lying in a horizontal place.
-        
-        """
-        return self.state == WheelState.Ground or \
-            self.state == WheelState.Corner
-
-    def contact(self):
-        """Check whether the wheel is in contact with any part of a stair.
-        
-        """
-        return self.ground() or self.state == WheelState.Contact
-
-
-    # =========================================================================
-    # Drawing functions.
-    # =========================================================================
-    # Wheel colors:
-    AIR_COLOR = (0xFF, 0x00, 0x00)
-    GROUND_COLOR = (0x00, 0xFF, 0x00)
-    CONTACT_COLOR = (0x00, 0xFF, 0xFF)
-    CORNER_COLOR = (0xFF, 0xFF, 0x00)
-    UNSTABLE_COLOR = (0x00, 0x00, 0xFF)
-    OUTER_COLOR = (0xFF, 0x00, 0xFF)
-    OVER_COLOR = (0xFF, 0x80, 0x80)
-    INSIDE_COLOR = (0x40, 0x40, 0x40)
-    LINE_COLOR = (0x00, 0x00, 0x00)
-    LINE_WIDTH = 4
-
-    def draw(self, origin, image, position, scale, shift):
-        cx = numpy.float32(scale*(origin[0]+position[0]))
-        cy = numpy.float32(scale*(origin[1]-position[1]))
-        cr = numpy.int(scale*self.RADIUS)
-        if self.state == WheelState.Ground:
-            color = self.GROUND_COLOR
-        elif self.state == WheelState.Unstable:
-            color = self.UNSTABLE_COLOR
-        elif self.state == WheelState.Air:
-            color = self.AIR_COLOR
-        elif self.state == WheelState.Corner:
-            color = self.CORNER_COLOR
-        elif self.state == WheelState.Contact:
-            color = self.CONTACT_COLOR
-        elif self.state == WheelState.Outer:
-            color = self.OUTER_COLOR
-        elif self.state == WheelState.Over:
-            color = self.OVER_COLOR
-        elif self.state == WheelState.Inside:
-            color = self.INSIDE_COLOR
-        else:
-            raise(ValueError("Wheel state not supported."))
-        cv2.circle(image, (cx, cy), cr, color, -1, cv2.LINE_AA, shift)
-        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2,
-                   cv2.LINE_AA, shift)
-
-###############################################################################
-# End of file.
-###############################################################################
+# 
+#     def ground(self):
+#         """Check whether the wheel is lying in a horizontal place.
+#         
+#         """
+#         return self.state == WheelState.Ground or \
+#             self.state == WheelState.Corner
+# 
+#     def contact(self):
+#         """Check whether the wheel is in contact with any part of a stair.
+#         
+#         """
+#         return self.ground() or self.state == WheelState.Contact
