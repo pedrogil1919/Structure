@@ -4,6 +4,7 @@ Created on 28 ene. 2021
 @author: pedro.gil@uah.es
 
 Definition of the actuator connecting the wheel to the main base.
+
 '''
 
 from enum import Enum
@@ -19,11 +20,13 @@ from structure.joint import Joint
 #   - UpperBound.
 #   - LowerBound.
 #   - Center: A position between the upper and lower bound.
-
+ 
 class ActuatorState(Enum):
-    UpperBound = 1
-    Center = 2
-    LowerBound = 3
+    ExitUpperBound = 1
+    UpperBound = 2
+    Center = 3
+    LowerBound = 4
+    ExitLowerBound = 5
 
 
 # =============================================================================
@@ -34,6 +37,7 @@ class WheelActuator:
     """
     Class to store actuator information, including its corresponding ending
     wheel and joint to the structure.
+    
     """
 
     def __init__(self, position, length, height, radius, base, stairs):
@@ -50,8 +54,9 @@ class WheelActuator:
             step.
             
         """
-        # Current position of the linear actuator.
+        # Current position and state of the linear actuator.
         self.d = 0.0
+        self.state = ActuatorState.LowerBound
         # Valid range of the actuator.
         self.LENGTH = length
         # Total length (from upper joint to the floor).
@@ -62,17 +67,6 @@ class WheelActuator:
         # NOTE: The wheel construction checks whether the new created wheel is
         # place in a valid position. If false, it raise a ValueError exception.
         self.WHEEL = Wheel(radius, stairs, self.JOINT.position(height))
-
-#     def shift_actuator(self):
-#         """Shift the actuator.
-#         
-#         This function 
-#         
-#         """
-#         # Get wheel center coordinates.
-#         hx0, hy0 = self.JOINT.position(self.HEIGHT+self.d)
-#         # Check if the wheel can be moved.
-#         return self.WHEEL.move_wheel( (hx0, hy0) )
 
     def shift_actuator(self, distance):
         """Shift the actuator and check if its validity.
@@ -95,24 +89,24 @@ class WheelActuator:
         distance -- Distance to move the actuator.
         
         """
-        # Shift the actuator, and check if it is still within its range of
-        # operation.
+        # Shift actuator.
+        # NOTE: This function does not check whether the shift is posible. 
+        # Calling function MUST check the position, using check_actuator
+        # function.
         self.d += distance
-        # Check if the wheel is in a valid position.
-        position = self.JOINT.position(self.HEIGHT+self.d)
-        check, h_err, v_err = self.WHEEL.check_wheel( position )
-        # Check if the actuator has reached one of its bounds.
         if self.d < -MAX_GAP:
-            # The actuator reached the upper bound.
-            check = False
-            v_err = min([v_err, self.d])
+            # The actuator get out of the lower bound (not valid).
+            self.state = ActuatorState.ExitLowerBound
         elif self.d > self.LENGTH + MAX_GAP:
-            # The actuator reached the lower bound.
-            check = False
-            v_err = max([v_err, self.LENGTH - self.d])
+            # The actuator reached the upper bound (not valid).
+            self.state = ActuatorState.ExitUpperBound
+        elif self.d < MAX_GAP:
+            self.state = ActuatorState.LowerBound
+        elif self.d > self.LENGTH - MAX_GAP:
+            self.state = ActuatorState.UpperBound
+        else:
+            self.state = ActuatorState.Center
         
-        return check, h_err, v_err
-
     def shift_actuator_proportional(self, distance):
         """Shift the actuator a value proportional to the position with
         respect to the whole structure.
@@ -131,6 +125,42 @@ class WheelActuator:
         # Move the actuator and check if it succeeded.
         return self.shift_actuator(prop_distance)
 
+    def distance_to_stable(self):
+        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+        return self.WHEEL.distance_to_stable(cx, cy)
+    
+
+#         # Shift the actuator, and check if it is still within its range of
+#         # operation.
+#         self.d += distance
+#         # Check if the wheel is in a valid position.
+#         position = self.JOINT.position(self.HEIGHT+self.d)
+#         check, h_err, v_err = self.WHEEL.check_wheel( position )
+#         # Check if the actuator has reached one of its bounds.
+#         if self.d < -MAX_GAP:
+#             # The actuator reached the upper bound.
+#             check = False
+#             v_err = min([v_err, self.d])
+#         elif self.d > self.LENGTH + MAX_GAP:
+#             # The actuator reached the lower bound.
+#             check = False
+#             v_err = max([v_err, self.LENGTH - self.d])
+#         
+#         return check, h_err, v_err
+
+#     def shift_actuator(self):
+#         """Shift the actuator.
+#         
+#         This function 
+#         
+#         """
+#         # Get wheel center coordinates.
+#         hx0, hy0 = self.JOINT.position(self.HEIGHT+self.d)
+#         # Check if the wheel can be moved.
+#         return self.WHEEL.move_wheel( (hx0, hy0) )
+
+
+
 #     def shift_actuator_from_horizontal(self, distance, front):
 #         """Compute the proportional shift of an actuator to get a horizontal
 #         shift of a wheel when inclining the structure.
@@ -147,31 +177,27 @@ class WheelActuator:
 #         y1 = self.JOINT.inverse_prop_lift(y)
 #         return y1
 
-    def get_wheel_distances(self):
-        """Returns the distances of the ending wheel to the stair.
-        
-        See stair.set_distances function, and getDistances.svg.
-        
-        """
-        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
-        return self.WHEEL.get_distances(cx, cy)
-    
-    def back_to_stable(self):
-        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
-        return self.WHEEL.back_to_stable(cx, cy)
-    
-    def state(self):
-        """Return the state of the actuator with respect to its range of
-        operation.
-        
-        See ActuatorState function for more information.
-        
-        """
-        if -MAX_GAP < self.d < +MAX_GAP:
-            return ActuatorState.UpperBound
-        if -MAX_GAP < self.d - self.LENGTH < +MAX_GAP:
-            return ActuatorState.LowerBound
-        return ActuatorState.Center
+#     def get_wheel_distances(self):
+#         """Returns the distances of the ending wheel to the stair.
+#         
+#         See stair.set_distances function, and getDistances.svg.
+#         
+#         """
+#         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+#         return self.WHEEL.get_distances(cx, cy)
+#     
+#     def state(self):
+#         """Return the state of the actuator with respect to its range of
+#         operation.
+#         
+#         See ActuatorState function for more information.
+#         
+#         """
+#         if -MAX_GAP < self.d < +MAX_GAP:
+#             return ActuatorState.UpperBound
+#         if -MAX_GAP < self.d - self.LENGTH < +MAX_GAP:
+#             return ActuatorState.LowerBound
+#         return ActuatorState.Center
 
     def ground(self):
         """Return True if its ending wheel is lying on an horizontal surface.
