@@ -292,57 +292,6 @@ class Base:
         if re_res_stb and fr_res_stb and re_res_col and fr_res_col:
             return False, dis
         raise RuntimeError("Error in shift actuator.")  
-
-    def shift_actuator2(self, index, distance, check =True):
-        """Shift one actuator independently.
-         
-        Returns False if the actuator can not be moved the complete distance
-        because the actuator reach one of its limits, or the ending wheel
-        collides with the ground.
-         
-        Parameters:
-        index -- Index of actuator (0-3)
-        distance -- Distance to shift (positive, move downwards).
-         
-        """
-        dis = distance
-        if index == 0:
-            self.REAR.shift_actuator(True, False, distance)
-            res, __ = self.REAR.check_stable(distance)
-            if res:
-                res, __, dis = self.REAR.check_collision(distance)
-            if not res:
-                self.REAR.shift_actuator(True, False, -distance)
-        elif index == 1:
-            self.REAR.shift_actuator(False, True, distance)
-            res, __ = self.REAR.check_stable(distance)
-            if res:
-                res, __, dis = self.REAR.check_collision(distance)
-            if not res:
-                self.REAR.shift_actuator(False, True, -distance)
-        elif index == 2:
-            self.FRNT.shift_actuator(True, False, distance)
-            res, __ = self.FRNT.check_stable(distance)
-            if res:
-                res, __, dis = self.FRNT.check_collision(distance)
-            if not res:
-                self.FRNT.shift_actuator(True, False, -distance)
-        elif index == 3:
-            self.FRNT.shift_actuator(False, True, distance)
-            res, __ = self.FRNT.check_stable(distance)
-            if res:
-                res, __, dis = self.FRNT.check_collision(distance)
-            if not res:
-                self.FRNT.shift_actuator(False, True, -distance)
-
-        if res:
-            return True, 0.0
-        re_res, __, __ = self.REAR.check_collision(distance)
-        fr_res, __, __ = self.FRNT.check_collision(distance)
-
-        if re_res and fr_res:
-            return False, dis
-        raise RuntimeError("Error in shift actuator.")  
       
     def incline(self, distance, 
                 elevate_rear=False, fix_front=False, check=True):
