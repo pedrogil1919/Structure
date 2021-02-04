@@ -87,7 +87,7 @@ class Base:
     # distance will be required distance plus the distance returned by the
     # function.
     
-    def advance(self, distance):
+    def advance(self, distance, check=True):
         """Advance the structure horizontally.
         
         Returns False if the structure can not be moved the required distance,
@@ -97,6 +97,10 @@ class Base:
         
         Parameters:
         distance -- Horizontal distance to move (positive, move right).
+        check -- If True, after performing the motion, check that the structure
+          is still in a valid position. The False value is intended to place
+          the structure back to a valid position after a wrong motion inside
+          the own function.
         
         """
         # TODO: In some cases both collision and unstable wheel pair can happen
@@ -108,7 +112,9 @@ class Base:
         
         # Update structure position
         self.shift += distance
-
+        if not check:
+            return True, 0.0
+        
         # Check if any wheel has collided with the stairs.      
         re_res_col, re_dis_col, __ = self.REAR.check_collision(distance)
         fr_res_col, fr_dis_col, __ = self.FRNT.check_collision(distance)
@@ -173,18 +179,20 @@ class Base:
                 else:
                     # And viceversa.
                     dis =max([dis_col, dis_stb])
+        
         # Set the structure back to its original position.
-        self.shift -= distance
+        self.advance(-distance, False)
         # Check that everything is OK again.
         re_res_col, __, __ = self.REAR.check_collision(distance)
         fr_res_col, __, __ = self.FRNT.check_collision(distance)
         re_res_stb, __ = self.REAR.check_stable(distance)
         fr_res_stb, __ = self.FRNT.check_stable(distance)
+        
         if re_res_col and fr_res_col and re_res_stb and fr_res_stb:
             return False, dis
         raise RuntimeError("Error in advance structure")
     
-    def elevate(self, distance):
+    def elevate(self, distance, check=True):
         """Elevate (or take down) the whole structure.
          
         Returns False if the structure can not been elevated the complete
@@ -193,12 +201,16 @@ class Base:
         Parameters:
         distance -- Vertical distance to move (positive, structure move
             upwards.
-             
+        check -- See advance function.
+                     
         """
         self.elevation += distance
         self.REAR.shift_actuator(True, True, distance)
         self.FRNT.shift_actuator(True, True, distance)
-        # Check if any actautor has reached one of its bounds.      
+        
+        if not check:
+            return True, 0.0
+        # Check if any actuator has reached one of its bounds.      
         re_res, __, re_dis = self.REAR.check_collision(distance)
         fr_res, __, fr_dis = self.FRNT.check_collision(distance)
 
@@ -206,26 +218,82 @@ class Base:
         if re_res and fr_res:
             # No unstabilities. Everything is OK.
             return True, 0.0
-        else:
-            self.elevation -= distance
-            self.REAR.shift_actuator(True, True, -distance)
-            self.FRNT.shift_actuator(True, True, -distance)
-            # There is at least one unstability. Find it and return the
-            # distance.
-            if re_res and not fr_res:
-                return False, fr_dis
-            elif not re_res and fr_res:
-                return False, re_dis
-            else:
-                # Both pairs of wheels are unstable. Returns the maximum
-                # distance of both pairs.
-                if distance > 0:
-                    return False, min([re_dis, fr_dis])
-                else:
-                    # And viceversa.
-                    return False, max([re_dis, fr_dis])
 
-    def shift_actuator(self, index, distance):
+
+        # There is at least one unstability. Find it and return the
+        # distance.
+        if re_res and not fr_res:
+            dis = fr_dis
+        elif not re_res and fr_res:
+            dis = re_dis
+        else:
+            # Both pairs of wheels are unstable. Returns the maximum
+            # distance of both pairs.
+            if distance > 0:
+                dis = min([re_dis, fr_dis])
+            else:
+                # And viceversa.
+                dis = max([re_dis, fr_dis])
+        # Leave the structure in its original position.
+        self.elevate(-distance, False)
+        # Check that everything is OK again.
+        re_res, __, __ = self.REAR.check_collision(distance)
+        fr_res, __, __ = self.FRNT.check_collision(distance)
+        if re_res and fr_res:
+            return False, dis
+        raise RuntimeError("Error in elevate")
+        
+    def shift_actuator(self, index, distance, check=True):
+        """Shift one actuator independently.
+         
+        Returns False if the actuator can not be moved the complete distance
+        because the actuator reach one of its limits, or the ending wheel
+        collides with the ground.
+         
+        Parameters:
+        index -- Index of actuator (0-3)
+        distance -- Distance to shift (positive, move downwards).
+         
+        """
+        if index == 0:
+            self.REAR.shift_actuator(True, False, distance)
+        elif index == 1:
+            self.REAR.shift_actuator(False, True, distance)
+        elif index == 2:
+            self.FRNT.shift_actuator(True, False, distance)
+        elif index == 3:
+            self.FRNT.shift_actuator(False, True, distance)
+        
+        if not check:
+            return True, 0.0
+        
+        re_res_stb, __ = self.REAR.check_stable(distance) 
+        fr_res_stb, __ = self.FRNT.check_stable(distance)
+        if re_res_stb and fr_res_stb:
+            re_res_col, __, re_dis = self.REAR.check_collision(distance)
+            fr_res_col, __, fr_dis = self.FRNT.check_collision(distance)       
+            if re_res_col and fr_res_col:
+                return True, 0.0
+            else:
+                if distance > 0:
+                    dis = min([re_dis, fr_dis])
+                else:
+                    dis = max([re_dis, fr_dis])
+        else:
+            dis = distance  
+        
+        # Leave the actuator in its original position.
+        self.shift_actuator(index, -distance, False)
+        re_res_stb, __ = self.REAR.check_stable(distance) 
+        fr_res_stb, __ = self.FRNT.check_stable(distance)  
+        re_res_col, __, __ = self.REAR.check_collision(distance)
+        fr_res_col, __, __ = self.FRNT.check_collision(distance)
+
+        if re_res_stb and fr_res_stb and re_res_col and fr_res_col:
+            return False, dis
+        raise RuntimeError("Error in shift actuator.")  
+
+    def shift_actuator2(self, index, distance, check =True):
         """Shift one actuator independently.
          
         Returns False if the actuator can not be moved the complete distance
@@ -275,8 +343,9 @@ class Base:
         if re_res and fr_res:
             return False, dis
         raise RuntimeError("Error in shift actuator.")  
-   
-    def incline(self, distance, elevate_rear=False, fix_front=False, check=True):
+      
+    def incline(self, distance, 
+                elevate_rear=False, fix_front=False, check=True):
         """Incline the base of the structure.
          
         Returns False if the structure has not completed the whole motion due
@@ -292,6 +361,7 @@ class Base:
             change, so that at least all wheels except one must move. If this
             parameter is True, the fixed wheel is the four one (front wheel).
             If False, the fixed one is the first (rear wheel).
+        check -- See advance function.
              
         """
         # Current computations keep fixed the rear edge of the structure. To
