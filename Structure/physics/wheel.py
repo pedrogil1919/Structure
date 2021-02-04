@@ -60,7 +60,8 @@ class Wheel:
         """Function to call when moving a wheel in any direction.
         
         Check if the wheel can be placed in the required position, and no
-        collision happens.
+        collision happens. The function also update the whell state (see
+        WheelState enum).
         
         Return True if the function succeed, and False if not (collision). In
         this case, returns the distance the wheel is inside the stair, both

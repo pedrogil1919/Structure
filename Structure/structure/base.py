@@ -111,8 +111,8 @@ class Base:
         
         # Move both pairs of wheels, and check if there is any error in the
         # motion.
-        re_res, re_dis = self.REAR.check_collision(distance)
-        fr_res, fr_dis = self.FRNT.check_collision(distance)
+        re_res, re_dis, __ = self.REAR.check_collision(distance)
+        fr_res, fr_dis, __ = self.FRNT.check_collision(distance)
         
         # If no collision happens, check if any pair of wheels are set in an
         # unstable position.
@@ -120,7 +120,7 @@ class Base:
             re_res, re_dis = self.REAR.check_stable(distance)
             fr_res, fr_dis = self.FRNT.check_stable(distance)
             if re_res and fr_res:
-                return True, 0
+                return True, 0.0
 
         # Get the distance needed to place the structure back to a safe
         # position. This distance will be the largest of both distances
@@ -136,8 +136,8 @@ class Base:
         # Leave the structure in its original position
         # and check that everything is OK again.
         self.shift -= distance
-        re_res, __ = self.REAR.check_collision(distance)
-        fr_res, __ = self.FRNT.check_collision(distance)
+        re_res, __, __ = self.REAR.check_collision(distance)
+        fr_res, __, __ = self.FRNT.check_collision(distance)
         if not re_res or not fr_res:            
             raise RuntimeError("Error in base.advance.")
         re_res, __ = self.REAR.check_stable(distance)

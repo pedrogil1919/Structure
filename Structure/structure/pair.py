@@ -22,35 +22,38 @@ class ActuatorPair:
         """Check if any of the wheels (or both) are in a forbidden position.
         
         Returns:
-        - True if any of the wheels have collided, False otherwise.
+        - False if any of the wheels have collided, True otherwise.
         - If True, returns the distance the pair need to be moved to place
-            it in a safe position.
+            it in a safe position, both in horizontal and in vertical.
         
         """
         # Check for possible wheel collisions.
-        fr_res, fr_dis, __ = self.REAR.move_actuator()
-        re_res, re_dis, __ = self.FRNT.move_actuator()
+        fr_res, fr_hor, fr_ver= self.REAR.shift_actuator(0)
+        re_res, re_hor, re_ver = self.FRNT.shift_actuator(0)
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
                 # Both wheels have collided. Get the maximum distance.
                 if distance > 0:
-                    dis = min([fr_dis, re_dis])
+                    hor = min([fr_hor, re_hor])
+                    ver = min([fr_ver, re_ver])
                 else:
-                    dis = max([fr_dis, re_dis])
+                    hor = max([fr_hor, re_hor])
+                    ver = max([fr_ver, re_ver])
             else:
                 # In this case, only the front wheel have collided.
-                dis = fr_dis
+                hor = fr_hor
+                ver = fr_ver
             res = False
         elif not re_res:
             # In this case, only the rear wheel has collided.
-            dis = re_dis
+            hor = re_hor
+            ver = re_ver
             res = False
         else:
             # In this case, none of the wheels have collided.
-            res = True
-            dis = 0.0
-        return res, dis
+            return True, 0.0, 0.0
+        return res, hor, ver
             
     def check_stable(self, distance):
         """Move the pair of actuators, because the structure has move.
@@ -88,8 +91,7 @@ class ActuatorPair:
             res = False
         else:
             # Al least one wheel is stable, so that the structure in safe.
-            res = True
-            dis = 0
+            return True, 0.0
 
         return res, dis
 
@@ -113,10 +115,10 @@ class ActuatorPair:
         """
         if actuator == 0:
             # Rear actuator.
-            res, dis = self.REAR.shift_actuator(distance)
+            res, __, dis = self.REAR.shift_actuator(distance)
         elif actuator == 1:
             # Front actuator.
-            res, dis = self.FRNT.shift_actuator(distance)
+            res, __, dis = self.FRNT.shift_actuator(distance)
         else:
             raise RuntimeError("Error in shft_actuator")
         # Check if after the shift either wheel is on the ground.
