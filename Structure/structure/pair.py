@@ -3,8 +3,9 @@ Created on 29 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Module to define a pair of wheels. This pair of wheels holds some properties
-for the rear and the front pair.
+The structure can be considered as a set of two sets of a pairs of wheels.
+This module define the funcionality ot the the two pairs of wheels.
+
 '''
 
 class ActuatorPair:
@@ -12,12 +13,45 @@ class ActuatorPair:
     def __init__(self, rear, front):
         """Constructor:
         
-        Save the rear and front actuators.
+        Parameters:
+        - rear: Rear actuator.
+        - front: Front actuator.
         
         """
         self.REAR = rear
         self.FRNT = front
         
+    def shift_actuator(self, actuator, distance, check):
+        """Shift the given actuator.
+            
+        Parameters:
+        - actuator:
+            - 0: Rear actuator.
+            - 1: Front actuator.
+        - distance: distance to move the actuator. Positive value means the
+            the wheel moves away from the structure.
+        
+        """
+        if actuator == 0:
+            # Rear actuator.
+            self.REAR.shift_actuator(distance)
+        elif actuator == 1:
+            # Front actuator.
+            self.FRNT.shift_actuator(distance)
+        else:
+            raise RuntimeError("Error in shft_actuator")
+        
+    def shift_actuator_proportional(self, actuator, distance, check):
+        """Similar to shift_actuator, but proportional.
+        
+        """
+        if actuator == 0:
+            self.REAR.shift_actuator_proportional(distance)
+        elif actuator == 1:
+            self.FRNT.shift_actuator_proportional(distance)
+        else:
+            raise RuntimeError("Error in shft_actuator_proportional")
+       
     def check_collision(self, distance):
         """Check if any of the wheels (or both) are in a forbidden position.
         
@@ -28,8 +62,8 @@ class ActuatorPair:
         
         """
         # Check for possible wheel collisions.
-        fr_res, fr_hor, fr_ver= self.REAR.shift_actuator(0)
-        re_res, re_hor, re_ver = self.FRNT.shift_actuator(0)
+        fr_res, fr_hor, fr_ver= self.REAR.check_actuator()
+        re_res, re_hor, re_ver = self.FRNT.check_actuator()
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
@@ -54,9 +88,14 @@ class ActuatorPair:
             # In this case, none of the wheels have collided.
             return True, 0.0, 0.0
         return res, hor, ver
-            
+          
+
+    # =========================================================================
+    # Drawing functions.
+    # =========================================================================
+
     def check_stable(self, distance):
-        """Move the pair of actuators, because the structure has move.
+        """Check the position of the pair of wheels.
         
         This function check if the wheels get in unstable position (at any
         time, at least one wheel must remain stable).
@@ -77,78 +116,30 @@ class ActuatorPair:
         re_grd = self.FRNT.ground()
         
         if not fr_grd and not re_grd:
-            # Both wheels are unstable. Get the minimum distance the pair has
-            # to be moved to place one of the wheels back to a stable position.
-            re_grd_dis = self.REAR.back_to_stable()
-            fr_grd_dis = self.FRNT.back_to_stable()
-            # Get the minimum value of both distances. In this case, we need
-            # the minimum, since this is the distance to get the structure back
-            # to a safe position.
-            if distance > 0:
-                dis = max([fr_grd_dis, re_grd_dis])
+            # Both wheels are not on the ground:
+            # Get the minimum distance the pair has to be moved to place one of
+            # the wheels back to a stable position.
+            re_grd_dis = self.REAR.distance_to_stable()
+            fr_grd_dis = self.FRNT.distance_to_stable()
+            
+            if re_grd_dis is None:
+                if fr_grd_dis is None:
+                    raise RuntimeError("Both wheels are not in the ground")
+                else:
+                    dis = fr_grd
             else:
-                dis = min([fr_grd_dis, re_grd_dis])
-            res = False
+                # Get the minimum value of both distances. In this case, we need
+                # the minimum, since this is the distance to get the structure
+                # back to a safe position.
+                if distance > 0:
+                    dis = max([fr_grd_dis, re_grd_dis])
+                else:
+                    dis = min([fr_grd_dis, re_grd_dis])
+            return False, dis
         else:
             # Al least one wheel is stable, so that the structure in safe.
             return True, 0.0
-
-        return res, dis
-
-    def shift_actuator(self, actuator, distance, check):
-        """Shift the given actuator.
-        
-        Returns:
-        - False if an error has happened. These errors can be:
-            - The actuator has reached one of its ends.
-            - The wheel has collided with the stair.
-            
-        Parameters:
-        - actuator:
-            - 0: Rear actuator.
-            - 1: Front actuator.
-        - distance: distance to move the actuator. Positive value means the
-            the wheel moves away from the structure.
-        - check: At any time, at least one wheel must be in a stable position.
-            If this value is False, this check is not performed.
-        
-        """
-        if actuator == 0:
-            # Rear actuator.
-            res, __, dis = self.REAR.shift_actuator(distance)
-        elif actuator == 1:
-            # Front actuator.
-            res, __, dis = self.FRNT.shift_actuator(distance)
-        else:
-            raise RuntimeError("Error in shft_actuator")
-        # Check if after the shift either wheel is on the ground.
-        if check:
-            if not self.FRNT.ground() and not self.REAR.ground():
-                return False, distance
-                # At this time, both wheels are in the air, so that this
-                # position is not valid. Return the actual distance so that the
-                # calling function can call again with the opposite distance to
-                # leave the actuator in its original position.
-        return res, dis
-        
-    def shift_actuator_proportional(self, actuator, distance, check):
-        """Similar to shift_actuator, but proportional.
-        
-        """
-        if actuator == 0:
-            res, dis = self.REAR.shift_actuator_proportional(distance)
-        elif actuator == 1:
-            res, dis = self.FRNT.shift_actuator_proportional(distance)
-        else:
-            raise RuntimeError("Error in shft_actuator_proportional")
-        if check:
-            if not self.FRNT.ground() and not self.REAR.ground():
-                return False, distance
-        return res, dis        
-
-    # =========================================================================
-    # Drawing functions.
-    # =========================================================================
+  
     def position(self, height):
         xr, yr = self.REAR.JOINT.position(height)
         xf, yf = self.FRNT.JOINT.position(height)

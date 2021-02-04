@@ -94,7 +94,9 @@ class Wheel:
         """
         #TODO
         if self.state != WheelState.Unstable:
-            return 0
+            # If the wheel is not in an unstable position, this value has no
+            # sense (is not useful at all).
+            return None
         # Compute the distance for a radius equal 0. With this trick, the
         # function returns the desired distance.
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)

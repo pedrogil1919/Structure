@@ -122,31 +122,43 @@ class WheelActuator:
         """
         # Compute the actual value to move the actuator.
         prop_distance = self.JOINT.proportional_lift(distance)
-        # Move the actuator and check if it succeeded.
-        return self.shift_actuator(prop_distance)
+        # Move the actuator.
+        self.shift_actuator(prop_distance)
 
     def distance_to_stable(self):
         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.distance_to_stable(cx, cy)
     
-
-#         # Shift the actuator, and check if it is still within its range of
-#         # operation.
-#         self.d += distance
-#         # Check if the wheel is in a valid position.
-#         position = self.JOINT.position(self.HEIGHT+self.d)
-#         check, h_err, v_err = self.WHEEL.check_wheel( position )
-#         # Check if the actuator has reached one of its bounds.
-#         if self.d < -MAX_GAP:
-#             # The actuator reached the upper bound.
-#             check = False
-#             v_err = min([v_err, self.d])
-#         elif self.d > self.LENGTH + MAX_GAP:
-#             # The actuator reached the lower bound.
-#             check = False
-#             v_err = max([v_err, self.LENGTH - self.d])
-#         
-#         return check, h_err, v_err
+    def check_actuator(self):
+        """Check if the actuator is in a valid position.
+        
+        This function check both, if the actuator is inside is range of 
+        actuation, and if the wheel is in a valid position.
+        
+        Returns:
+        - True if everything is in a valid position. False otherwise.
+        - If False, returns the horizontal distance to place the wheel back to
+            a valid position.
+        - If False, returns the vertical distance to place the wheel and the
+            actuator back to a valid position.
+        
+        """
+        # Check if the wheel is in a valid position.
+        position = self.JOINT.position(self.HEIGHT+self.d)
+        check, h_err, v_err = self.WHEEL.check_wheel( position )
+        # Check if the actuator has reached one of its bounds.
+        if self.state == ActuatorState.ExitLowerBound:
+            # The actuator has gone out of its lower bound.
+            check = False
+            v_err = self.d
+        elif self.state == ActuatorState.ExitUpperBound:
+            # The actuator has gone out if its upper bound. In this case, we
+            # have to check also if the wheel is in a valid position with
+            # respect to the stair, and get the maximum of both.
+            check = False
+            v_err = max([v_err, self.LENGTH - self.d])
+         
+        return check, h_err, v_err
 
 #     def shift_actuator(self):
 #         """Shift the actuator.
