@@ -87,6 +87,63 @@ class Base:
     # distance will be required distance plus the distance returned by the
     # function.
     
+    def check_position(self, distance):
+
+        # Check if any wheel has collided with the stairs.      
+        re_res_col, re_hor_col, re_ver_col = self.REAR.check_collision(distance)
+        fr_res_col, fr_hor_col, fr_ver_col = self.FRNT.check_collision(distance)
+        # Check if any pair of wheels are not stable.
+        re_res_stb, re_dis_stb = self.REAR.check_stable(distance)
+        fr_res_stb, fr_dis_stb = self.FRNT.check_stable(distance)
+        
+        # Look for collisions;
+        if re_res_col and fr_res_col:
+            # No unstabilities. Everything is OK.
+            col = {'res': True}
+        else:
+            # There is at least one unstability. Find it and return the
+            # distance.
+            if re_res_col and not fr_res_col:
+                hor_col = fr_hor_col
+                ver_col = fr_ver_col
+            elif not re_res_col and fr_res_col:
+                hor_col = re_hor_col
+                ver_col = re_ver_col
+            else:
+                # Both pairs of wheels are unstable. Returns the maximum
+                # distance of both pairs.
+                if distance > 0:
+                    hor_col = min([re_hor_col, fr_hor_col])
+                    ver_col = min([re_ver_col, fr_ver_col])
+                else:
+                    # And viceversa.
+                    hor_col = max([re_hor_col, fr_hor_col])
+                    ver_col = max([re_ver_col, fr_ver_col])
+            col = {'res': False, 'ver': ver_col, 'hor': hor_col}
+            
+        # Look for unstabilities.
+        if re_res_stb and fr_res_stb:
+            # No unstabilities. Everything is OK.
+            stb = {'res': True}
+        else:
+            # There is at least one unstability. Find it and return the
+            # distance.
+            if re_res_stb and not fr_res_stb:
+                dis_stb = fr_dis_stb
+            elif not re_res_stb and fr_res_stb:
+                dis_stb = re_dis_stb
+            else:
+                # Both pairs of wheels are unstable. Returns the maximum
+                # distance of both pairs.
+                if distance > 0:
+                    dis_stb = min([re_dis_stb, fr_dis_stb])
+                else:
+                    # And viceversa.
+                    dis_stb =max([re_dis_stb, fr_dis_stb])
+            stb = {'res': False, 'dis': dis_stb}
+        
+        return col, stb
+      
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
         
@@ -115,80 +172,26 @@ class Base:
         if not check:
             return True, 0.0
         
-        # Check if any wheel has collided with the stairs.      
-        re_res_col, re_dis_col, __ = self.REAR.check_collision(distance)
-        fr_res_col, fr_dis_col, __ = self.FRNT.check_collision(distance)
-        # Check if any pair of wheels are not stable.
-        re_res_stb, re_dis_stb = self.REAR.check_stable(distance)
-        fr_res_stb, fr_dis_stb = self.FRNT.check_stable(distance)
+        col, stb = self.check_position(distance)
+        if col['res'] and stb['res']:
+            return True, 0.0
         
-        # Look for collisions;
-        if re_res_col and fr_res_col:
-            # No unstabilities. Everything is OK.
-            res_col = True
+        if not col['res'] and stb['res']:
+            dis = col['hor']
+        elif col['res'] and not stb['res']:
+            dis = stb['dis']
         else:
-            res_col = False
-            # There is at least one unstability. Find it and return the
-            # distance.
-            if re_res_col and not fr_res_col:
-                dis_col = fr_dis_col
-            elif not re_res_col and fr_res_col:
-                dis_col = re_dis_col
-            else:
-                # Both pairs of wheels are unstable. Returns the maximum
-                # distance of both pairs.
-                if distance > 0:
-                    dis_col = min([re_dis_col, fr_dis_col])
-                else:
-                    # And viceversa.
-                    dis_col =max([re_dis_col, fr_dis_col])
-        
-        # Look for unstabilities.
-        if re_res_stb and fr_res_stb:
-            # No unstabilities. Everything is OK.
-            res_stb = True
-        else:
-            res_stb = False
-            # There is at least one unstability. Find it and return the
-            # distance.
-            if re_res_stb and not fr_res_stb:
-                dis_stb = fr_dis_stb
-            elif not re_res_stb and fr_res_stb:
-                dis_stb = re_dis_stb
-            else:
-                # Both pairs of wheels are unstable. Returns the maximum
-                # distance of both pairs.
-                if distance > 0:
-                    dis_stb = min([re_dis_stb, fr_dis_stb])
-                else:
-                    # And viceversa.
-                    dis_stb =max([re_dis_stb, fr_dis_stb])
-
-        # Get the maximum distance of both checks.
-        if res_col:
-            if res_stb:
-                return True, 0.0
-            else:
-                dis = dis_stb
-        else:
-            if res_stb:
-                dis = dis_col
-            else:
-                if distance > 0:
-                    dis = min([dis_col, dis_stb])
-                else:
-                    # And viceversa.
-                    dis =max([dis_col, dis_stb])
-        
+            if distance > 0:
+                dis = min([col['hor'], stb['dis']])
+            else: 
+                dis = max([col['hor'], stb['dis']])
+                
         # Set the structure back to its original position.
         self.advance(-distance, False)
         # Check that everything is OK again.
-        re_res_col, __, __ = self.REAR.check_collision(distance)
-        fr_res_col, __, __ = self.FRNT.check_collision(distance)
-        re_res_stb, __ = self.REAR.check_stable(distance)
-        fr_res_stb, __ = self.FRNT.check_stable(distance)
+        col, stb = self.check_position(distance)
         
-        if re_res_col and fr_res_col and re_res_stb and fr_res_stb:
+        if col['res'] and stb['res']:
             return False, dis
         raise RuntimeError("Error in advance structure")
     
@@ -210,36 +213,18 @@ class Base:
         
         if not check:
             return True, 0.0
-        # Check if any actuator has reached one of its bounds.      
-        re_res, __, re_dis = self.REAR.check_collision(distance)
-        fr_res, __, fr_dis = self.FRNT.check_collision(distance)
-
-        # Look for collisions;
-        if re_res and fr_res:
-            # No unstabilities. Everything is OK.
+        
+        # Check if any actuator has reached one of its bounds.
+        col, __ = self.check_position(distance)
+        if col['res']:
             return True, 0.0
+        dis = col['ver']
 
-
-        # There is at least one unstability. Find it and return the
-        # distance.
-        if re_res and not fr_res:
-            dis = fr_dis
-        elif not re_res and fr_res:
-            dis = re_dis
-        else:
-            # Both pairs of wheels are unstable. Returns the maximum
-            # distance of both pairs.
-            if distance > 0:
-                dis = min([re_dis, fr_dis])
-            else:
-                # And viceversa.
-                dis = max([re_dis, fr_dis])
         # Leave the structure in its original position.
         self.elevate(-distance, False)
         # Check that everything is OK again.
-        re_res, __, __ = self.REAR.check_collision(distance)
-        fr_res, __, __ = self.FRNT.check_collision(distance)
-        if re_res and fr_res:
+        col, __ = self.check_position(distance)
+        if col['res']:
             return False, dis
         raise RuntimeError("Error in elevate")
         
@@ -267,29 +252,21 @@ class Base:
         if not check:
             return True, 0.0
         
-        re_res_stb, __ = self.REAR.check_stable(distance) 
-        fr_res_stb, __ = self.FRNT.check_stable(distance)
-        if re_res_stb and fr_res_stb:
-            re_res_col, __, re_dis = self.REAR.check_collision(distance)
-            fr_res_col, __, fr_dis = self.FRNT.check_collision(distance)       
-            if re_res_col and fr_res_col:
-                return True, 0.0
-            else:
-                if distance > 0:
-                    dis = min([re_dis, fr_dis])
-                else:
-                    dis = max([re_dis, fr_dis])
+        # Check if the actuator has reached one of its bounds.
+        col, stb = self.check_position(distance)
+        if not stb['res']:
+            dis = -distance
+        elif not col['res']:
+            dis = col['ver']
         else:
-            dis = distance  
+            return True, 0.0
         
         # Leave the actuator in its original position.
-        self.shift_actuator(index, -distance, False)
-        re_res_stb, __ = self.REAR.check_stable(distance) 
-        fr_res_stb, __ = self.FRNT.check_stable(distance)  
-        re_res_col, __, __ = self.REAR.check_collision(distance)
-        fr_res_col, __, __ = self.FRNT.check_collision(distance)
+        self.shift_actuator(index, -distance, False)        
+        # Check that everything is OK again.
+        col,stb = self.check_position(distance)
 
-        if re_res_stb and fr_res_stb and re_res_col and fr_res_col:
+        if col['res'] and stb['res']:
             return False, dis
         raise RuntimeError("Error in shift actuator.")  
       
@@ -365,9 +342,9 @@ class Base:
             if re_hgt != 0 or fr_hgt != 0:
                 self.incline(-distance, elevate_rear, fix_front, False)
                 if distance > 0:
-                    return False, min([re_hgt, fr_hgt])
+                    vert = min([re_hgt, fr_hgt])
                 else:
-                    return False, max([re_hgt, fr_hgt])
+                    vert = max([re_hgt, fr_hgt])
         return True, 0.0
         # Perform the motion for the actuators to incline the structure.
 #         res_mot = [m[0] for m in motion]

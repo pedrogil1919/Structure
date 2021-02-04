@@ -42,40 +42,48 @@ class Simulator():
 
         """
         try:
+            distance = instruction['distance']
+        except KeyError:
+            pass
+        else:
             # Advance structure
-            res, dis = structure.advance(instruction['distance'])
+            res, dis = structure.advance(distance)
             if not res:
                 print("Can not advance structure. Error:", dis)
+            
+        try:
+            height = instruction['elevate']
         except KeyError:
             pass
-
-        try:
+        else:
             # Elevate structure
-            res, dis = structure.elevate(instruction['elevate'])
+            res, dis = structure.elevate(height)
             if not res:
                 print("Can not elevate structure. Error:", dis)
+            
+        try:
+            height = instruction['incline']
+            rear = instruction['elevate_rear']
+            front = instruction['fix_front']
         except KeyError:
             pass
-
-        try:
+        else:
             # Incline structure
-            res, dis = structure.incline(instruction['incline'],
-                                     instruction['elevate_rear'],
-                                     instruction['fix_front'])
+            res, dis = structure.incline(height, rear, front)
             if not res:
                 print("Can not incline structure. Error:", dis)
-        except KeyError:
-            pass
 
         try:
-            # Shift actuator.
-            res, dis = structure.shift_actuator(
-                    instruction['wheel'], -instruction['shift'])
-            if not res:
-                print("Can not shift actuator. Error:", dis)
+            height = -instruction['shift']
+            wheel = instruction['wheel']
         except KeyError:
             pass
-
+        else:
+            # Shift actuator.
+            res, dis = structure.shift_actuator(wheel, height)
+            if not res:
+                print("Can not shift actuator. Error:", dis)
+            
         """
         # Check for the end of the trajectory.
         try:
