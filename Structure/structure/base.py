@@ -90,8 +90,10 @@ class Base:
     def check_position(self, distance):
 
         # Check if any wheel has collided with the stairs.      
-        re_res_col, re_hor_col, re_ver_col = self.REAR.check_collision(distance)
-        fr_res_col, fr_hor_col, fr_ver_col = self.FRNT.check_collision(distance)
+        re_res_col, re_hor_col, re_ver_col, re_act = \
+                self.REAR.check_collision(distance)
+        fr_res_col, fr_hor_col, fr_ver_col, fr_act = \
+                self.FRNT.check_collision(distance)
         # Check if any pair of wheels are not stable.
         re_res_stb, re_dis_stb = self.REAR.check_stable(distance)
         fr_res_stb, fr_dis_stb = self.FRNT.check_stable(distance)
@@ -106,20 +108,24 @@ class Base:
             if re_res_col and not fr_res_col:
                 hor_col = fr_hor_col
                 ver_col = fr_ver_col
+                act = fr_act
             elif not re_res_col and fr_res_col:
                 hor_col = re_hor_col
                 ver_col = re_ver_col
+                act = re_act
             else:
                 # Both pairs of wheels are unstable. Returns the maximum
                 # distance of both pairs.
                 if distance > 0:
                     hor_col = min([re_hor_col, fr_hor_col])
                     ver_col = min([re_ver_col, fr_ver_col])
+                    act = min([re_act, fr_act])
                 else:
                     # And viceversa.
                     hor_col = max([re_hor_col, fr_hor_col])
                     ver_col = max([re_ver_col, fr_ver_col])
-            col = {'res': False, 'ver': ver_col, 'hor': hor_col}
+                    act = max([re_act, fr_act])
+            col = {'res': False, 'ver': ver_col, 'hor': hor_col, 'act': act}
             
         # Look for unstabilities.
         if re_res_stb and fr_res_stb:
@@ -331,21 +337,31 @@ class Base:
  
         if not check:
             return True, 0.0
+ 
+        col, stb = self.check_position(distance)
+
+        if col['res'] and stb['res']:
+            return True, 0.0, 0.0
+        elif not col['res']:
+            # Check if there is a problem with an actuator.
+            if col['act'] != 0:
+                ver = col['act']
+            else:
+                ver = 0.0
+            hor = col['hor']
+        elif not stb['res']:
+            hor = stb['dis']
+            ver = 0.0
+        else:
+            raise RuntimeError("Error in incline function")
         
-        re_res_col, re_dis_col, re_hgt = self.REAR.check_collision(distance)
-        fr_res_col, fr_dis_col, fr_hgt = self.FRNT.check_collision(distance)
-        re_res_stb, re_dis_stb = self.REAR.check_stable(distance)
-        fr_res_stb, fr_dis_stb = self.FRNT.check_stable(distance)
-        
-        # Check if any actuator has reached one of its bounds:
-        if  not re_res_col or not fr_res_col:
-            if re_hgt != 0 or fr_hgt != 0:
-                self.incline(-distance, elevate_rear, fix_front, False)
-                if distance > 0:
-                    vert = min([re_hgt, fr_hgt])
-                else:
-                    vert = max([re_hgt, fr_hgt])
-        return True, 0.0
+        self.incline(-distance, elevate_rear, fix_front, False)
+        # Check that everything is OK again.
+        col, stb = self.check_position(distance)
+        if col['res'] and stb['res']:
+            return False, hor, ver
+        raise RuntimeError("Error in incline function")
+    
         # Perform the motion for the actuators to incline the structure.
 #         res_mot = [m[0] for m in motion]
 #         res_shf = [m[0] for m in shift]

@@ -147,18 +147,21 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT+self.d)
         check, h_err, v_err = self.WHEEL.check_wheel(position)
         # Check if the actuator has reached one of its bounds.
+        a_err = 0.0
         if self.state == ActuatorState.ExitLowerBound:
             # The actuator has gone out of its lower bound.
             check = False
-            v_err = -self.d
+            a_err = -self.d
+            v_err = a_err
         elif self.state == ActuatorState.ExitUpperBound:
             # The actuator has gone out if its upper bound. In this case, we
             # have to check also if the wheel is in a valid position with
             # respect to the stair, and get the maximum of both.
             check = False
-            v_err = min([v_err, self.LENGTH - self.d])
+            a_err = self.LENGTH - self.d
+            v_err = min([v_err, a_err])
          
-        return check, h_err, v_err
+        return check, h_err, v_err, a_err
 
 #     def shift_actuator(self):
 #         """Shift the actuator.

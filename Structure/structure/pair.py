@@ -57,8 +57,8 @@ class ActuatorPair:
         
         """
         # Check for possible wheel collisions.
-        fr_res, fr_hor, fr_ver= self.REAR.check_actuator()
-        re_res, re_hor, re_ver = self.FRNT.check_actuator()
+        fr_res, fr_hor, fr_ver, fr_act = self.REAR.check_actuator()
+        re_res, re_hor, re_ver, re_act = self.FRNT.check_actuator()
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
@@ -66,23 +66,27 @@ class ActuatorPair:
                 if distance > 0:
                     hor = min([fr_hor, re_hor])
                     ver = min([fr_ver, re_ver])
+                    act = min([fr_act, re_act])
                 else:
                     hor = max([fr_hor, re_hor])
                     ver = max([fr_ver, re_ver])
+                    act = max([fr_act, re_act])
             else:
                 # In this case, only the front wheel have collided.
                 hor = fr_hor
                 ver = fr_ver
+                act = fr_act
             res = False
         elif not re_res:
             # In this case, only the rear wheel has collided.
             hor = re_hor
             ver = re_ver
+            act = re_act
             res = False
         else:
             # In this case, none of the wheels have collided.
-            return True, 0.0, 0.0
-        return res, hor, ver
+            return True, 0.0, 0.0, 0.0
+        return res, hor, ver, act
           
 
     # =========================================================================

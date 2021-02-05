@@ -69,9 +69,11 @@ class Simulator():
             pass
         else:
             # Incline structure
-            res, dis = structure.incline(height, rear, front)
+            res, hor, ver = structure.incline(height, rear, front)
             if not res:
-                print("Can not incline structure. Error:", dis)
+                print("Can not incline structure:")
+                print(" Vertical:", ver)
+                print(" Horizontal:", hor)
 
         try:
             height = -instruction['shift']
