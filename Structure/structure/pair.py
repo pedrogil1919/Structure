@@ -4,7 +4,7 @@ Created on 29 ene. 2021
 @author: pedro.gil@uah.es
 
 The structure can be considered as a set of two sets of a pairs of wheels.
-This module define the funcionality ot the the two pairs of wheels.
+This module define the functionality of the two pairs of wheels.
 
 '''
 
@@ -53,7 +53,8 @@ class ActuatorPair:
         Returns:
         - False if any of the wheels have collided, True otherwise.
         - If True, returns the distance the pair need to be moved to place
-            it in a safe position, both in horizontal and in vertical.
+            it in a safe position, both in horizontal and in vertical, and for
+            the actuator.
         
         """
         # Check for possible wheel collisions.
@@ -62,7 +63,7 @@ class ActuatorPair:
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
-                # Both wheels have collided. Get the maximum distance.
+                # Both wheels have collided. Get the largest distance.
                 if distance > 0:
                     hor = min([fr_hor, re_hor])
                     ver = min([fr_ver, re_ver])
@@ -87,11 +88,6 @@ class ActuatorPair:
             # In this case, none of the wheels have collided.
             return True, 0.0, 0.0, 0.0
         return res, hor, ver, act
-          
-
-    # =========================================================================
-    # Drawing functions.
-    # =========================================================================
 
     def check_stable(self, distance):
         """Check the position of the pair of wheels.
@@ -144,6 +140,10 @@ class ActuatorPair:
             # Al least one wheel is stable, so that the structure in safe.
             return True, 0.0
   
+    # =========================================================================
+    # Drawing functions.
+    # =========================================================================
+
     def position(self, height):
         xr, yr = self.REAR.JOINT.position(height)
         xf, yf = self.FRNT.JOINT.position(height)

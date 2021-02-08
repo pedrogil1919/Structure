@@ -83,13 +83,16 @@ class Wheel:
         # distance the wheel is inside the stair.
         return False, w, h
 
-    def distance_to_stable(self, cx, cy):
+    def distance_to_stable(self, position):
         """Return the distance needed to place the wheel in a stable position.
         
         Compute the distance between the bottom of the wheel and the outer
         corner of a step. If the structure is moved this distance, the wheel
         will be stable. This function works only when the wheel is in
         unstable state.
+        
+        Parameters:
+        position -- Coordinates (x,y) for the required center of the wheel.
         
         """
         #TODO
@@ -99,7 +102,7 @@ class Wheel:
             return None
         # Compute the distance for a radius equal 0. With this trick, the
         # function returns the desired distance.
-        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)
+        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, 0)
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.

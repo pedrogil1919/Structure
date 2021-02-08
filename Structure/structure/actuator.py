@@ -90,7 +90,7 @@ class WheelActuator:
         
         """
         # Shift actuator.
-        # NOTE: This function does not check whether the shift is posible. 
+        # NOTE: This function does not check whether the shift is possible. 
         # Calling function MUST check the position, using check_actuator
         # function.
         self.d += distance
@@ -126,6 +126,11 @@ class WheelActuator:
         self.shift_actuator(prop_distance)
 
     def distance_to_stable(self):
+        """Compute the distance to place the wheel in a stable position.
+        
+        See wheel.distance_to_stable.
+        
+        """
         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.distance_to_stable(cx, cy)
     
@@ -162,57 +167,6 @@ class WheelActuator:
             v_err = min([v_err, a_err])
          
         return check, h_err, v_err, a_err
-
-#     def shift_actuator(self):
-#         """Shift the actuator.
-#         
-#         This function 
-#         
-#         """
-#         # Get wheel center coordinates.
-#         hx0, hy0 = self.JOINT.position(self.HEIGHT+self.d)
-#         # Check if the wheel can be moved.
-#         return self.WHEEL.move_wheel( (hx0, hy0) )
-
-
-
-#     def shift_actuator_from_horizontal(self, distance, front):
-#         """Compute the proportional shift of an actuator to get a horizontal
-#         shift of a wheel when inclining the structure.
-#         
-#         Returns the proportional actuator shift
-#         Parameters:
-#         distance -- horizontal distance to move.
-#         front -- see function incline in wheelchair.structure.
-#         
-#         """
-#         # Compute the absolute vertical distance.
-#         y = self.JOINT.lift_from_horizontal_motion(distance, front)
-#         # And convert it to proportional.
-#         y1 = self.JOINT.inverse_prop_lift(y)
-#         return y1
-
-#     def get_wheel_distances(self):
-#         """Returns the distances of the ending wheel to the stair.
-#         
-#         See stair.set_distances function, and getDistances.svg.
-#         
-#         """
-#         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
-#         return self.WHEEL.get_distances(cx, cy)
-#     
-#     def state(self):
-#         """Return the state of the actuator with respect to its range of
-#         operation.
-#         
-#         See ActuatorState function for more information.
-#         
-#         """
-#         if -MAX_GAP < self.d < +MAX_GAP:
-#             return ActuatorState.UpperBound
-#         if -MAX_GAP < self.d - self.LENGTH < +MAX_GAP:
-#             return ActuatorState.LowerBound
-#         return ActuatorState.Center
 
     def ground(self):
         """Return True if its ending wheel is lying on an horizontal surface.
@@ -270,4 +224,53 @@ class WheelActuator:
 ###############################################################################
 # End of file.
 ###############################################################################
-            
+#     def shift_actuator(self):
+#         """Shift the actuator.
+#         
+#         This function 
+#         
+#         """
+#         # Get wheel center coordinates.
+#         hx0, hy0 = self.JOINT.position(self.HEIGHT+self.d)
+#         # Check if the wheel can be moved.
+#         return self.WHEEL.move_wheel( (hx0, hy0) )
+
+
+
+#     def shift_actuator_from_horizontal(self, distance, front):
+#         """Compute the proportional shift of an actuator to get a horizontal
+#         shift of a wheel when inclining the structure.
+#         
+#         Returns the proportional actuator shift
+#         Parameters:
+#         distance -- horizontal distance to move.
+#         front -- see function incline in wheelchair.structure.
+#         
+#         """
+#         # Compute the absolute vertical distance.
+#         y = self.JOINT.lift_from_horizontal_motion(distance, front)
+#         # And convert it to proportional.
+#         y1 = self.JOINT.inverse_prop_lift(y)
+#         return y1
+
+#     def get_wheel_distances(self):
+#         """Returns the distances of the ending wheel to the stair.
+#         
+#         See stair.set_distances function, and getDistances.svg.
+#         
+#         """
+#         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+#         return self.WHEEL.get_distances(cx, cy)
+#     
+#     def state(self):
+#         """Return the state of the actuator with respect to its range of
+#         operation.
+#         
+#         See ActuatorState function for more information.
+#         
+#         """
+#         if -MAX_GAP < self.d < +MAX_GAP:
+#             return ActuatorState.UpperBound
+#         if -MAX_GAP < self.d - self.LENGTH < +MAX_GAP:
+#             return ActuatorState.LowerBound
+#         return ActuatorState.Center   
