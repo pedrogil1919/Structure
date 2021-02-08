@@ -116,7 +116,96 @@ class Wheel:
         self.check_wheel(position)
         return self.state == WheelState.Ground or \
             self.state == WheelState.Corner
+
+    # =========================================================================
+    # Control functions.
+    # =========================================================================
+
+    def get_distances(self, cx, cy):
+        """Computes distances from the wheel to the stair for control module.
+         
+        Arguments:
+        -- cx, cy: Coordinates of the center of the wheel (remember that the
+            coordinates are not stored. They are computed from the actuator
+            position and state).
+         
+        Returns a dictionary with the following keys:
+        -- st: True if the wheel is in the ground, in a stable position.
+        -- hc: Vertical distance from the bottom of the wheel to the ground,
+              when the wheel is in a not unstable position. If not, the key
+              does not exist.
+        -- hr: Vertical distance from the bottom of the wheel to the top of the
+              next step. If the wheel is on an unstable position, it is the
+              distance to the step just beneath the wheel (but not the bottom
+              center of the wheel, since it lies on the previous step).
+        -- wr: Horizontal distance from the wheel to the next step. If the step
+              is positive, is the distance from the right edge of the wheel to
+              the edge of the step. If it is a negative step, is the distance
+              from the left edge of the wheel to the edge of the step. If the
+              wheel is in an unstable position, the key does not exist.
+        -- ws: Horizontal distance that the wheel has to move to place it in
+              a stable position. If it is already stable over a step, is the
+              minimum distance to the next step. If it is on an unstable
+              position, is the distance to the current step. Always with respect
+              to the bottom of the wheel.
+               
+        NOTE: Take into account that horizontal distances are always negative
+        when the wheel is in a valid position. For that reason, a sign change
+        will be needed for almost all the cases.
+        """
  
+        # Get the distances to the stair (see getDistances.svg).
+        r = self.RADIUS
+        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), r)
+        # Check if going upstairs, downstairs or the end of the stairs.
+        # TODO: Check if in a change of direction in a double stair.
+        if hr > hc and hc >= hl:
+            # Upstairs direction. The comparison hc = hl happens at the
+            # beginning of the stair.
+            upstairs = True
+        elif hr < hc and hc <= hl:
+            # Downstairs direction.
+            upstairs = False
+        elif hr == hc:
+            # End of the stair.
+            return None
+        else:
+            raise NotImplementedError("Detect when this case happens...")
+             
+#         if self.state == WheelState.Ground or \
+#                 self.state == WheelState.Corner:
+#             # The wheel is on the ground on a stable position.
+#             if upstairs:
+#                 return {'st': True, 
+#                         'hc': hc, 'hr': hr, 'wr': -wr, 'ws': -wr}
+#             else:
+#                 return {'st': True, 
+#                         'hc': hc, 'hr': hr, 'wr': -wr - 2*r, 'ws': -wr}
+#         elif self.state == WheelState.Outer or \
+#                 self.state == WheelState.Over or \
+#                 self.state == WheelState.Unstable:
+#             if upstairs:
+#                 return {'st': False, 
+#                         'hr': hr, 'wr': -wr + r, 'ws': -wr + r}
+#             else:
+#                 raise NotImplementedError()
+# #                 # This case will never happen.
+# #                 # TODO: Review. I just only copy - paste from above.
+# #                 return {'st': False, 
+# #                         'hr': hr, 'wr': -wl + r, 'ws': -wl + r}
+#                 
+#         elif self.state == WheelState.Air or \
+#                 self.state == WheelState.Contact:
+#             if upstairs:
+#                 return {'st': False, 
+#                         'hc': hc, 'hr': hr, 'wr': -wr, 'ws': -wr}
+#             else:
+#                 raise NotImplementedError()
+# #                 # This case will never happen.
+# #                 # TODO: Review. I just only copy - paste from above.
+# #                 return {'st': False, 
+# #                         'hc': hc, 'hr': hr, 'wr': -wl, 'ws': -wl}
+#  
     # =========================================================================
     # Drawing functions.
     # =========================================================================
