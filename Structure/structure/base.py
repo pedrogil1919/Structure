@@ -183,10 +183,13 @@ class Base:
             return True, 0.0
         
         if not col['res'] and stb['res']:
+            # Only collision detected.
             dis = col['hor']
         elif col['res'] and not stb['res']:
+            # Only unstability detected.
             dis = stb['dis']
         else:
+            # Both error happens. Get the larger of them.
             if distance > 0:
                 dis = min([col['hor'], stb['dis']])
             else: 
@@ -342,19 +345,27 @@ class Base:
 
         if col['res'] and stb['res']:
             return True, 0.0, 0.0
-        elif not col['res']:
-            # Check if there is a problem with an actuator.
-            if col['act'] != 0:
-                ver = col['act']
-            else:
-                ver = 0.0
+        
+        # This code is similar to advance function.
+        if not col['res'] and stb['res']:
+            # Only collision detected.
             hor = col['hor']
-        elif not stb['res']:
+            # For the horizontal case, only the actuator error is needed,
+            # because no wheel error can happen when inclining.
+            ver = col['act']
+        elif col['res'] and not stb['res']:
+            # Only unstability detected.
             hor = stb['dis']
             ver = 0.0
         else:
-            raise RuntimeError("Error in incline function")
-        
+            ver = col['act']
+            # Both error happens. Get the larger of them.
+            if distance > 0:
+                hor = min([col['hor'], stb['dis']])
+            else: 
+                hor = max([col['hor'], stb['dis']])
+            
+        # Set the structure back to its original position.
         self.incline(-distance, elevate_rear, fix_front, False)
         # Check that everything is OK again.
         col, stb = self.check_position(distance)

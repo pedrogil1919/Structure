@@ -13,6 +13,7 @@ class CollisionTest(unittest.TestCase):
 
     def testConstructor(self):
         """Check if the wheel constructor raises correct exceptions.
+        
         """
         # Positive steps.
         landing = 100.0

@@ -3,7 +3,7 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Definition of the actuator connecting the wheel to the main base.
+Definition of the actuator connecting the wheel to the main structure.
 
 '''
 
@@ -61,29 +61,21 @@ class WheelActuator:
         self.LENGTH = length
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
-        # Create a joint to join it to the main base.
+        # Create a joint to join the actuator to the main base.
         self.JOINT = Joint(base, position)
         # and create the ending wheel.
         # NOTE: The wheel construction checks whether the new created wheel is
-        # place in a valid position. If false, it raise a ValueError exception.
+        # place in a valid position. If not correct, it raises a ValueError
+        # exception.
         self.WHEEL = Wheel(radius, stairs, self.JOINT.position(height))
 
     def shift_actuator(self, distance):
-        """Shift the actuator and check if its validity.
+        """Shift the actuator and update its state.
         
-        Return True when the actuator can reach the required position.
-        If not, return False, along with the correction needed to place
-        the actuator in a valid position.
-        The function can fail when:
-        - The actuator reach either the upper or the lower limit.
-        - The ending wheel touches the ground.
-        
+        This function check if the actuator is in a valid or invalid position.
         However, in case of failure, the function does not place the actuator
         back to its original position, so that the actuator is left in an
         invalid. The calling function have to do the correction.
-        
-        NOTE: If calling with distance = 0, this function can be used to
-        only check the position of the actuator.
         
         Parameters:
         distance -- Distance to move the actuator.
@@ -111,10 +103,9 @@ class WheelActuator:
         """Shift the actuator a value proportional to the position with
         respect to the whole structure.
         
-        This function must be used when inclining the structure. Return True if
-        it succeed (see function shift_actuator), or False otherwise. In this
-        case, it also returns the proportional value to correct the actuator to
-        a valid position.
+        This function must be used when inclining the structure. See function
+        shift_actuator for more info. 
+        
          Parameters:
          distance -- Absolute distance (the actual value to move is 
            proportional to this value.
@@ -126,7 +117,14 @@ class WheelActuator:
         self.shift_actuator(prop_distance)
 
     def distance_to_stable(self):
+        """Compute the distance to place the wheel in a stable position
+        
+        See wheel.distance_to_stable for more info.
+        
+        """
+        # Compute actual position for the wheel.
         cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+        # And return the required distance.
         return self.WHEEL.distance_to_stable(cx, cy)
     
     def check_actuator(self):
@@ -140,12 +138,22 @@ class WheelActuator:
         - If False, returns the horizontal distance to place the wheel back to
             a valid position.
         - If False, returns the vertical distance to place the wheel and the
-            actuator back to a valid position.
+            actuator back to a valid position. This is the maximum distance
+            (in absolute value) between the wheel error and the actuator error.
+        - If False, returns also the distance to place the actuator in a valid
+            position. If the actuator error is greater than the wheel error,
+            this value is the same than the previous value. This is needed for
+            incline fuction, because this function need to differenciate
+            between wheel and actuator error.
         
         """
         # Check if the wheel is in a valid position.
         position = self.JOINT.position(self.HEIGHT+self.d)
         check, h_err, v_err = self.WHEEL.check_wheel(position)
+        # Change the sign to the vertical error, since wheel error is measured
+        # upwards, while actuator error is downwards (see 
+        # actuator_sign_criteria.svg):
+        v_err = -v_err
         # Check if the actuator has reached one of its bounds.
         a_err = 0.0
         if self.state == ActuatorState.ExitLowerBound:

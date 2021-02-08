@@ -92,13 +92,13 @@ class Wheel:
         unstable state.
         
         """
-        #TODO
         if self.state != WheelState.Unstable:
             # If the wheel is not in an unstable position, this value has no
             # sense (is not useful at all).
             return None
+        
         # Compute the distance for a radius equal 0. With this trick, the
-        # function returns the desired distance.
+        # function will compute the desired distance.
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), 0)
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
@@ -107,7 +107,8 @@ class Wheel:
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             return wl
-        return 0
+        # Other cases are not possible, but in any case, returns 0.
+        return 0.0
 
     def ground(self, position):
         """Check whether the wheel is lying in a horizontal place.
