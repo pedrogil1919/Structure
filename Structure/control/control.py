@@ -3,9 +3,36 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
+Module to generate the instructions to move the structure.
+
+List of instructions, along with its arguments:
+
+- distance: Horizontal shift.
+  - float: distance. If positive, shift forwards.
+- elevate: Vertical elevation of the structure.
+  - float: height: If positive, elevate; if negative, take down.
+- incline: Incline structure.
+  - float: height: If positive, structure front elevate.
+  - bool: fix_front: If true, fix the front wheel when inclining.
+  - bool: elevate_rear: If true, the structure rear is shift.
+- shift: Shift an actuator.
+  - float: height. If positive, the wheel is moved downwards.
+  - int: wheel. Index. 0: rear wheel, 1, 2: middle wheel, 3: front wheel.
+
 '''
 
+def next_instruction(structure):
+    """Generate in an automatic fashion the next instruction for the structure.
+    
+    Returns a dictionary with the instructions to perform. 
+    
+    """
+    
+
 def manual_control(key_pressed, simulator):
+    """Function to convert a key to a instruction.
+    
+    """
 
     if key_pressed == ord('4'):
         command = {'distance': -simulator.wheel_speed}

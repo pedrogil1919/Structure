@@ -408,6 +408,21 @@ class Base:
         raise RuntimeError("Error in incline function")
 
     # =========================================================================
+    # Control functions.
+    # =========================================================================
+    def get_wheels_distances(self):
+        """Computes the distances from a wheel to the stairs.
+        
+        Returns an array of four elements, each element belongs to a wheel.
+        Each element has the following data:
+        
+        
+        See stair.set_distances function, and getDistances.svg.
+        """
+        return [act.get_wheel_distances() for act in self.ACTUATORS]
+ 
+
+    # =========================================================================
     # Drawing functions.
     # =========================================================================
     # Base colors and widths.
@@ -462,12 +477,6 @@ class Base:
 #         
 #         """
 #         return [act.get_maximum_shift() for act in self.ACTUATORS]
-# 
-#     def get_wheels_distances(self):
-#         """Return the distances from a wheel to the stairs.
-#         See stair.set_distances function, and getDistances.svg.
-#         """
-#         return [act.get_wheel_distances() for act in self.ACTUATORS]
 # 
 #     def get_inclination(self):
 #         """Returns the inclination of the structure.
