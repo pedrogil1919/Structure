@@ -4,7 +4,7 @@ Created on 29 ene. 2021
 @author: pedro.gil@uah.es
 
 The structure can be considered as a set of two sets of a pairs of wheels.
-This module define the funcionality ot the the two pairs of wheels.
+This module define the functionality of the two pairs of wheels.
 
 '''
 
@@ -47,13 +47,14 @@ class ActuatorPair:
         if front:
             self.FRNT.shift_actuator_proportional(distance)
        
-    def check_collision(self, distance):
+    def check_collision(self):
         """Check if any of the wheels (or both) are in a forbidden position.
         
         Returns:
         - False if any of the wheels have collided, True otherwise.
         - If True, returns the distance the pair need to be moved to place
-            it in a safe position, both in horizontal and in vertical.
+            it in a safe position, both in horizontal and in vertical, and for
+            the actuator.
         
         """
         # Check for possible wheel collisions.
@@ -62,15 +63,24 @@ class ActuatorPair:
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
-                # Both wheels have collided. Get the maximum distance.
-                if distance > 0:
-                    hor = min([fr_hor, re_hor])
-                    ver = min([fr_ver, re_ver])
-                    act = min([fr_act, re_act])
+                # Both wheels have collided. Get the largest distance.
+                # NOTE: Take into account that the error can be negative or
+                # positive, but always both are either positive or negative.
+                # For that reason, we compare the absolute value of both
+                # distances, and choose the largest one, keeping its actual
+                # sign.
+                if abs(fr_hor) > abs(re_hor):
+                    hor = fr_hor
                 else:
-                    hor = max([fr_hor, re_hor])
-                    ver = max([fr_ver, re_ver])
-                    act = max([fr_act, re_act])
+                    hor = re_hor
+                if abs(fr_ver) > abs(re_ver):
+                    ver = fr_ver
+                else:
+                    ver = re_ver
+                if abs(fr_act) > abs(re_act):
+                    act = fr_act
+                else:
+                    act = re_act
             else:
                 # In this case, only the front wheel have collided.
                 hor = fr_hor
@@ -87,21 +97,12 @@ class ActuatorPair:
             # In this case, none of the wheels have collided.
             return True, 0.0, 0.0, 0.0
         return res, hor, ver, act
-          
 
-    # =========================================================================
-    # Drawing functions.
-    # =========================================================================
-
-    def check_stable(self, distance):
+    def check_stable(self):
         """Check the position of the pair of wheels.
         
         This function check if the wheels get in unstable position (at any
         time, at least one wheel must remain stable).
-            
-        Parameters:
-        - Distance: distance that the wheels have moved prior the current
-            check.
             
         Returns:
         - True if the motion succeed. False otherwise.
@@ -135,15 +136,113 @@ class ActuatorPair:
                     # Get the minimum value of both distances. In this case, we
                     # need the minimum, since this is the distance to get the
                     # structure back to a safe position.
-                    if distance > 0:
-                        dis = max([fr_grd_dis, re_grd_dis])
+                    if abs(fr_grd_dis) < abs(re_grd_dis):
+                        dis = fr_grd_dis
                     else:
-                        dis = min([fr_grd_dis, re_grd_dis])
+                        dis = re_grd_dis
             return False, dis
         else:
             # Al least one wheel is stable, so that the structure in safe.
             return True, 0.0
   
+    # =========================================================================
+    # Control functions.
+    # =========================================================================
+    
+    def get_wheel_distances(self):
+        
+        re_res = self.REAR.get_wheel_distances()
+        fr_res = self.FRNT.get_wheel_distances()
+        
+        
+        
+"""
+def compute_motion(motion):
+    Computes motion according a pair of wheels (front or rear wheels).
+    
+    Returns:
+    -- Wheel to lift (or take down).
+    -- Height for the wheel to lift (or take down).
+    -- Distance for the structure to move.
+    
+    # Check if front wheel has reached the end of the stair.
+    if motion[1] is None:
+        # If so, check if also does the rear wheel.
+        if motion[0] is None:
+            # Both wheels have reached the end of the stair. Return an infinity
+            # value to ensure this case will never be chosen.
+            return 0, 0.0, None
+        # The rear wheel still has not reached the end. Return the distance
+        # needed to advance.
+        if motion[0]['hr'] < 0:
+            return 0, motion[0]['hr'], \
+                motion[0]['wr'] + EDGE_MARGIN
+        else:
+            return 0, motion[0]['hr'], \
+                motion[0]['wr'] - EDGE_MARGIN        
+    # Get distances from the wheel to the next step.
+    try:
+        # Rear wheel:
+        m_r = motion[0]['wr']
+    except TypeError:
+        # If an error raises on either instruction, the next instruction MUST
+        # be issued to place this wheel on a stable position. Take into account 
+        # that it is not possible that both wheel were in an unstable position
+        # at the same time.
+        return 0, motion[0]['hr'], motion[0]['wr']
+    try:
+        # Front wheel
+        m_f = motion[1]['wr']
+    except TypeError:
+        return 1, motion[1]['hr'], motion[1]['wr']
+    
+    # In any other case, get the maximum value the structure can be moved
+    # before a collision (or falling down) happens.
+    if m_r < m_f:
+        # The rear wheel is closer than the front one.
+        active = 0
+        passive = 1
+    else: 
+        active = 1
+        passive = 0
+        
+    if motion[passive]['hc'] is None:
+        # However, the other wheel is not on the ground, so that we can
+        # not lift the active wheel.
+        # So, in the first place, we need to take the other wheel down
+        # before lift the current wheel.
+        return passive, motion[passive]['hr'], motion[passive]['wr']
+    else:
+        if not motion[passive]['st']:
+            # In this case, the other wheel is not on the ground, so we
+            # can not lift the current wheel.
+            # To reduce time, divide the total distance to move (given by
+            # active wheel) in two, one part to take the passive wheel to the
+            # ground, and other part to perform the current motion (but this
+            # part will be performed on the next iteration).
+            # Divide the distance proportional to the total height to
+            # correct.
+            try:
+                ka = abs(motion[active]['hr'])
+                kp = abs(motion[passive]['hc'])
+                #TODO: Ensure that this case never happen when the key hc is
+                # not included in the dictionary (unstable position).
+                k = kp / (ka + kp + EDGE_MARGIN)
+            except ZeroDivisionError:
+                k = 1.0
+            return passive, motion[passive]['hc'], k*motion[active]['wr']
+        else:
+            if motion[active]['hr'] < 0:
+                return active, motion[active]['hr'], \
+                    motion[active]['wr'] + EDGE_MARGIN
+            else:
+                return active, motion[active]['hr'], \
+                    motion[active]['wr'] - EDGE_MARGIN      
+"""
+    # =========================================================================
+    # Drawing functions.
+    # =========================================================================
+
     def position(self, height):
         xr, yr = self.REAR.JOINT.position(height)
         xf, yf = self.FRNT.JOINT.position(height)

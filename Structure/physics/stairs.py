@@ -140,8 +140,14 @@ class Stair:
         if hc > MAX_GAP:
             # The bottom of the wheel is beneath the ground. Set the wheel on
             # top of step.
-            return WheelState.Inside, 0.0, hc
-
+            if hr > hl:
+                # For upstairs, return also the distance to place the wheel on
+                # the previous step.
+                return WheelState.Inside, wl-2*r, hc
+            else:
+                # For downstairs, return also the distance to place the wheel
+                # on the next step.
+                return WheelState.Inside, -wr+2*r, hc
         # Check if the right edge of the wheel is inside the next step to the
         # right.
         if wr > MAX_GAP and hr > MAX_GAP:
