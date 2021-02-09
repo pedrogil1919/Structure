@@ -129,9 +129,9 @@ class WheelActuator:
         
         """
         # Compute actual position for the wheel.
-        cx, cy = self.JOINT.position(self.HEIGHT+self.d)
+        position = self.JOINT.position(self.HEIGHT+self.d)
         # And return the required distance.
-        return self.WHEEL.distance_to_stable(cx, cy)
+        return self.WHEEL.distance_to_stable(position)
     
     def check_actuator(self):
         """Check if the actuator is in a valid position.

@@ -37,6 +37,7 @@ class ErrorDistancesTest(unittest.TestCase):
         base_test = base.Base(size, wheels, stair_test)
 
         res, __ = base_test.elevate(10.0)
+        self.assertTrue(res, "Error in base.elevate. Wrong collision detected.")
         # Check that both wheel of a pair can be in the air at the same time.
         res, __ = base_test.shift_actuator(3, -5.0)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
@@ -55,11 +56,25 @@ class ErrorDistancesTest(unittest.TestCase):
         self.assertFalse(res, "Error in base.advance. No collision detected.")
         self.assertEqual(dis, -1.0, 
                          "Error in base.advance. Error distance wrong")
-         
-         
-        # Place the first wheel over the first step.
-        res, __ = base_test.advance(35.0)
+        res, dis = base_test.advance(36.0 + dis)
         self.assertTrue(res, "Error in base.advance. Wrong collision detected.")
+        # Double collision. Both wheel get inside the first step.
+        # NOTE: This kind of double collision will not be a normal case, for
+        # generating this collision the structure must advance a large distance,
+        # but normally the structure will advance smaller distances. An error
+        # will be raised when advancing a distance greater than the step, since
+        # the wheels will be located 2 steps further than there was, so that
+        # the error returned will be refered to the second step, and not the
+        # first, so that the distance returned will not place the wheel in
+        # the appropiate location. However, for this error to happen, we have
+        # to advance the structure a distance larger than the step, and this
+        # should not happen ever.
+        res, dis = base_test.advance(35.0)
+        self.assertFalse(res, "Error in base.advance. No collision detected.")
+        self.assertEqual(dis, -35.0, 
+                         "Error in base.advance. Error distance wrong")
+         
+         
         res, __ = base_test.elevate(40.0)
         self.assertTrue(res, "Error in base.elevate. Wrong collision detected.")
         res, __ = base_test.shift_actuator(3, -40.0)
@@ -68,7 +83,7 @@ class ErrorDistancesTest(unittest.TestCase):
         # Prepare a wheel unstability when inclining.
         res, __ = base_test.shift_actuator(2, -15)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        
+         
         # Now, when inclining the structure, the first wheel will move back,
         # so that it gets to an unstable position, and since the second wheel
         # is on air, the motion is not posible.
@@ -80,8 +95,14 @@ class ErrorDistancesTest(unittest.TestCase):
         # by the function in opposite direction, now the wheel will not gets
         # to an unstable position.
         res, __ = base_test.advance(-hor)
-        res, hor, ver = base_test.incline(10.0)
+        res, hor, __ = base_test.incline(10.0)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
+        # Now the front wheel is at the limit, so that moving the structure
+        # back is not possible.
+        res, dis = base_test.advance(-5.0)
+        self.assertFalse(res, "Error in base.incline. Wrong collision detected.")
+        self.assertEqual(dis, -5.0, 
+                         "Error in base.advance. Error distance wrong")
         
 #         res, dis = base_test.elevate(10.0)
 #         self.assertFalse(res, "Error in base.incline No collision detected")

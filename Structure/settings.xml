@@ -21,7 +21,7 @@
 	<stairs landing="220">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="-20" d="200"/>
+		<dimensions N="6" w="80" h="20" d="200"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>

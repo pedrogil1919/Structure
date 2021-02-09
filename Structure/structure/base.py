@@ -87,7 +87,7 @@ class Base:
     # distance will be the required distance plus the distance returned by the
     # function.
     
-    def check_position(self, distance):
+    def check_position(self):
         """General function to check the validity of the current position.
         
         After any structure motion, the position of the structure MUST be
@@ -115,20 +115,16 @@ class Base:
             dis: horizontal distance needed to advance the structure so that
                 the one of the wheel pair is place back to a stable position.
         
-        Parameters:
-        distance: Value of the distance employed in the motion function that
-          called this function. Only the sign of this value is important.
-          
         """
 
         # Check if any wheel has collided with the stairs.      
         re_res_col, re_hor_col, re_ver_col, re_act = \
-                self.REAR.check_collision(distance)
+                self.REAR.check_collision()
         fr_res_col, fr_hor_col, fr_ver_col, fr_act = \
-                self.FRNT.check_collision(distance)
+                self.FRNT.check_collision()
         # Check if any pair of wheels are not stable.
-        re_res_stb, re_dis_stb = self.REAR.check_stable(distance)
-        fr_res_stb, fr_dis_stb = self.FRNT.check_stable(distance)
+        re_res_stb, re_dis_stb = self.REAR.check_stable()
+        fr_res_stb, fr_dis_stb = self.FRNT.check_stable()
         
         # Look for collisions;
         if re_res_col and fr_res_col:
@@ -150,19 +146,19 @@ class Base:
             else:
                 # Both pairs of wheels have collided. Returns the maximum
                 # distance of both pairs.
-                if distance > 0:
-                    # If the distance used in the motion is positive, it is
-                    # clear that the correction must be negative. For that
-                    # reason, the largest value is the minimum of both
-                    # distances.
-                    hor_col = min([re_hor_col, fr_hor_col])
-                    ver_col = min([re_ver_col, fr_ver_col])
-                    act = min([re_act, fr_act])
+                if abs(re_hor_col) > abs(fr_hor_col):
+                    hor_col = re_hor_col
                 else:
-                    # And viceversa.
-                    hor_col = max([re_hor_col, fr_hor_col])
-                    ver_col = max([re_ver_col, fr_ver_col])
-                    act = max([re_act, fr_act])
+                    hor_col = fr_hor_col
+                if abs(re_ver_col) > abs(fr_ver_col):
+                    ver_col = re_ver_col
+                else:
+                    ver_col = fr_ver_col
+                if abs(re_act) > abs(fr_act):
+                    act = re_act
+                else:
+                    act = fr_act
+                    
             col = {'res': False, 'ver': ver_col, 'hor': hor_col, 'act': act}
             
         # Look for unstabilities.
@@ -178,12 +174,12 @@ class Base:
                 dis_stb = re_dis_stb
             else:
                 # Both pairs of wheels are unstable. Returns the largest
-                # distance of both pairs. See comment above.
-                if distance > 0:
-                    dis_stb = min([re_dis_stb, fr_dis_stb])
+                # distance of both pairs.
+                if abs(re_dis_stb) > abs(fr_dis_stb):
+                    dis_stb = re_dis_stb
                 else:
                     # And viceversa.
-                    dis_stb =max([re_dis_stb, fr_dis_stb])
+                    dis_stb = fr_dis_stb
             stb = {'res': False, 'dis': dis_stb}
         
         return col, stb
@@ -217,7 +213,7 @@ class Base:
             return True, 0.0
         
         # From here on, check the validity of the motion.
-        col, stb = self.check_position(distance)
+        col, stb = self.check_position()
         if col['res'] and stb['res']:
             # Everything is OK.
             return True, 0.0
@@ -242,7 +238,7 @@ class Base:
         # Set the structure back to its original position.
         self.advance(-distance, False)
         # Check that everything is OK again.
-        col, stb = self.check_position(distance)
+        col, stb = self.check_position()
         if col['res'] and stb['res']:
             return False, dis
         raise RuntimeError("Error in advance structure")
@@ -267,7 +263,7 @@ class Base:
             return True, 0.0
         
         # Check if any of the actuators has reached one of its bounds.
-        col, __ = self.check_position(distance)
+        col, __ = self.check_position()
         if col['res']:
             return True, 0.0
         dis = col['ver']
@@ -275,7 +271,7 @@ class Base:
         # Leave the structure in its original position.
         self.elevate(-distance, False)
         # Check that everything is OK again.
-        col, __ = self.check_position(distance)
+        col, __ = self.check_position()
         if col['res']:
             return False, dis
         raise RuntimeError("Error in elevate")
@@ -305,7 +301,7 @@ class Base:
             return True, 0.0
         
         # Check if the actuator has reached one of its bounds.
-        col, stb = self.check_position(distance)
+        col, stb = self.check_position()
         if not stb['res']:
             dis = -distance
         elif not col['res']:
@@ -316,7 +312,7 @@ class Base:
         # Leave the actuator in its original position.
         self.shift_actuator(index, -distance, False)        
         # Check that everything is OK again.
-        col,stb = self.check_position(distance)
+        col,stb = self.check_position()
 
         if col['res'] and stb['res']:
             return False, dis
@@ -387,7 +383,7 @@ class Base:
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
-        col, stb = self.check_position(distance)
+        col, stb = self.check_position()
 
         if col['res'] and stb['res']:
             return True, 0.0, 0.0
@@ -406,7 +402,7 @@ class Base:
         
         self.incline(-distance, elevate_rear, fix_front, False)
         # Check that everything is OK again.
-        col, stb = self.check_position(distance)
+        col, stb = self.check_position()
         if col['res'] and stb['res']:
             return False, hor, ver
         raise RuntimeError("Error in incline function")

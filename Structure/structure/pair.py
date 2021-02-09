@@ -47,7 +47,7 @@ class ActuatorPair:
         if front:
             self.FRNT.shift_actuator_proportional(distance)
        
-    def check_collision(self, distance):
+    def check_collision(self):
         """Check if any of the wheels (or both) are in a forbidden position.
         
         Returns:
@@ -64,14 +64,23 @@ class ActuatorPair:
             # If the front wheel have collided,
             if not re_res:
                 # Both wheels have collided. Get the largest distance.
-                if distance > 0:
-                    hor = min([fr_hor, re_hor])
-                    ver = min([fr_ver, re_ver])
-                    act = min([fr_act, re_act])
+                # NOTE: Take into account that the error can be negative or
+                # positive, but always both are either positive or negative.
+                # For that reason, we compare the absolute value of both
+                # distances, and choose the largest one, keeping its actual
+                # sign.
+                if abs(fr_hor) > abs(re_hor):
+                    hor = fr_hor
                 else:
-                    hor = max([fr_hor, re_hor])
-                    ver = max([fr_ver, re_ver])
-                    act = max([fr_act, re_act])
+                    hor = re_hor
+                if abs(fr_ver) > abs(re_ver):
+                    ver = fr_ver
+                else:
+                    ver = re_ver
+                if abs(fr_act) > abs(re_act):
+                    act = fr_act
+                else:
+                    act = re_act
             else:
                 # In this case, only the front wheel have collided.
                 hor = fr_hor
@@ -89,15 +98,11 @@ class ActuatorPair:
             return True, 0.0, 0.0, 0.0
         return res, hor, ver, act
 
-    def check_stable(self, distance):
+    def check_stable(self):
         """Check the position of the pair of wheels.
         
         This function check if the wheels get in unstable position (at any
         time, at least one wheel must remain stable).
-            
-        Parameters:
-        - Distance: distance that the wheels have moved prior the current
-            check.
             
         Returns:
         - True if the motion succeed. False otherwise.
@@ -131,10 +136,10 @@ class ActuatorPair:
                     # Get the minimum value of both distances. In this case, we
                     # need the minimum, since this is the distance to get the
                     # structure back to a safe position.
-                    if distance > 0:
-                        dis = max([fr_grd_dis, re_grd_dis])
+                    if abs(fr_grd_dis) < abs(re_grd_dis):
+                        dis = fr_grd_dis
                     else:
-                        dis = min([fr_grd_dis, re_grd_dis])
+                        dis = re_grd_dis
             return False, dis
         else:
             # Al least one wheel is stable, so that the structure in safe.
