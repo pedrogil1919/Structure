@@ -11,7 +11,6 @@ Module to define all the elements which composes the structure:
 '''
 
 from math import asin
-
 from numpy import float32
 import cv2
 
@@ -38,7 +37,6 @@ class Base:
         stairs -- Physics structure for the stairs.
         
         """
-        
         # Main distances of the structure.
         a = size['a']
         b = size['b']
@@ -74,19 +72,6 @@ class Base:
         # Total width of the structure.
         Base.WIDTH = a+b+c
         
-    def __copy__(self):
-        """Copy method.
-        
-        The deep copy is needed by the control module to simulate a proposed
-        instruction, to check if the instruction fails, and if so, get the
-        distances to correct the instruction. The copy is needed since the
-        simulation need to be performed on a copy of the actual structure, not
-        on the actual structure itself, to leave everything as it was before
-        the simulation.
-        
-        """
-        pass
-        
     ###########################################################################
     # MOTION FUNCTION
     ###########################################################################
@@ -94,7 +79,7 @@ class Base:
     # When a given motion can not be completed for any cause (wheel collision
     # or wheel pair unstable), the corresponding function does not perform the
     # required motion, and returns the error distance, that is, if we call
-    # the same function again substracting the distance returned, the motion
+    # the same function again subtracting the distance returned, the motion
     # now can be completed, and the structure will be set at the limit. In
     # fact, the distance returned is of the opposite sign, so that, the correct
     # distance will be the required distance plus the distance returned by the
@@ -213,13 +198,6 @@ class Base:
           the own function.
         
         """
-        # TODO: In some cases both collision and unstable wheel pair can happen
-        # for two different wheels. In that case, this function will not work
-        # because only check for one of then (first it checks collisions, and
-        # only if no collision happens, it check for unstability). This can
-        # only happens when we combine up and downstairs steps. If only up or
-        # only down exist, this event can never happens.
-        
         # Update structure position
         self.shift += distance
         if not check:
@@ -268,7 +246,9 @@ class Base:
         check -- See advance function.
                      
         """
+        # Elevate the structure,
         self.elevation += distance
+        # and place the actuators in the correct position.
         self.REAR.shift_actuator(True, True, distance)
         self.FRNT.shift_actuator(True, True, distance)
         
@@ -278,7 +258,10 @@ class Base:
         # Check if any of the actuators has reached one of its bounds.
         col, __ = self.check_position()
         if col['res']:
+            # Everything is OK.
             return True, 0.0
+        
+        # In case of failure, take the distance the actuators have failed.
         dis = col['ver']
 
         # Leave the structure in its original position.
@@ -299,8 +282,10 @@ class Base:
         Parameters:
         index -- Index of actuator (0-3)
         distance -- Distance to shift (positive, move downwards).
+        cehck -- See advance function.
          
         """
+        # Select the actuator to shift.
         if index == 0:
             self.REAR.shift_actuator(True, False, distance)
         elif index == 1:
@@ -315,7 +300,14 @@ class Base:
         
         # Check if the actuator has reached one of its bounds.
         col, stb = self.check_position()
+        # The variable col is for possible collisions with the steps, or an
+        # actuator reaching one of its bounds.
+        # The variable stb is for checking that, after elevating one wheel,
+        # the other wheel of the pair is still in a stable position.
         if not stb['res']:
+            # We can not shift the actuator, because the other wheel is not
+            # in the ground. For this, the error distance is the whole distance
+            # required, because we can not move the actuator at all.
             dis = -distance
         elif not col['res']:
             dis = col['ver']
@@ -380,7 +372,7 @@ class Base:
         x3d = 0.0
         if fix_front:
             # Compute the motion undergone by the front wheel.
-            x3d, __ = self.FRNT.FRNT.JOINT.position(0)
+            __, __, x3d, __ = self.FRNT.position(0)
             x3d -= x3
             # And move the structure in the opposite direction.
             self.shift -= x3d
@@ -402,10 +394,15 @@ class Base:
             return True, 0.0, 0.0
         elif not col['res']:
             # Check if there is a problem with an actuator.
-            if col['act'] != 0:
-                ver = col['act']
-            else:
-                ver = 0.0
+#             if col['act'] != 0:
+#                 ver = col['act']
+#             else:
+#                 ver = 0.0
+            # NOTE: When inclining the structure, a wheel collision can never
+            # happen, because the wheel do not change its height with respect
+            # to the ground. For that reason, only need to check for actuator
+            # collisions.
+            ver = col['act']
             hor = col['hor']
         elif not stb['res']:
             hor = stb['dis']
@@ -413,6 +410,7 @@ class Base:
         else:
             raise RuntimeError("Error in incline function")
         
+        # Leave the structure in its original position.
         self.incline(-distance, elevate_rear, fix_front, False)
         # Check that everything is OK again.
         col, stb = self.check_position()
@@ -426,40 +424,56 @@ class Base:
     def get_wheels_distances(self):
         """Computes the distances from a wheel to the stairs.
         
-        Returns an array of four elements, each element belongs to a wheel.
-        Each element has the following data:
-        
+        Returns:
+        - The index of the wheel to shift, that is, the wheel that is closest
+            to its corresponding step:
+            - 0: Rearmost wheel.
+            - 3: Frontmost wheel.
+        - The horizontal distance to move.
+        - The vertical height for the wheel to shift.
         
         See stair.set_distances function, and getDistances.svg.
         """
+        # Compute distances for the rear pair, and the front pair.
         re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
         fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
+        # Take the minimum of both pairs.
         if re_hor < fr_hor:
             return re_id, re_hor, re_ver
         else:
+            # NOTE: The index of wheel are numbered from 0. Since the rear
+            # wheel is the third wheel of the structure, we have to add 2 to
+            # the index returned for the pair. 
             return fr_id + 2, fr_hor, fr_ver
  
     def set_horizontal(self):
         """Returns the distances needed to place the structure in horizontal.
         
         """
-        res = {
-            'distance': 20.0,
-            'incline': -self.get_inclination(),
-            'elevate': -self.get_elevation(),
-            'end': True}
         
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
         if re_res is not None and fr_res is not None:
+            # TODO: Do this when it is possible for the simulator to shift
+            # two actuators at the same time.
             raise NotImplementedError("Move two actuator")
         elif re_res is not None:
-            res['wheel'] = re_res[0]
-            res['shift'] = re_res[1]
+            res = {
+                'wheel': re_res[0],
+                'shift': -re_res[1]}
         elif fr_res is not None:
-            res['wheel'] = fr_res[0] + 2
-            res['shift'] = fr_res[1]
+            res = {
+                'wheel': fr_res[0] + 2,
+                'shift': -fr_res[1]}
+        else:
+            res = {
+                'distance': 20.0,
+                'incline': -self.get_inclination(),
+                'elevate': -self.get_elevation(),
+                'end': True}
+            # NOTE: Add 20 unit in horizontal so that the structure stops 20 units
+            # far away from the edge of the last step of the stair.
         return res
 
     def get_inclination(self):
@@ -508,37 +522,3 @@ class Base:
 ###############################################################################
 # End of file.
 ###############################################################################
-#     def save_state(self, ws):
-#         """Save current state to a csv file.
-#         
-#         """
-#         # Get actual number of rows saved in the spreadsheet:
-#         i = len(ws.rows)
-#         # Write data:
-#         ws.write(i, 0, self.ACTUATORS[0].d)
-#         ws.write(i, 1, self.ACTUATORS[1].d)
-#         ws.write(i, 2, self.ACTUATORS[2].d)
-#         ws.write(i, 3, self.ACTUATORS[3].d)
-#         ws.write(i, 4, self.angle)
-#         ws.write(i, 5, self.shift)
-#        
-#     def get_actuator_shifts(self):
-#         """Returns maximum shift for all the actuators.
-#         
-#         For the current structure position, get the maximum allowed shift for
-#         each actuator, both in positive and in negative direction.
-#         Note that the minimum value in each direction is also the maximum
-#         elevation allowed for the structure.
-#         
-#         """
-#         return [act.get_maximum_shift() for act in self.ACTUATORS]
-# 
-#     def get_inclination(self):
-#         """Returns the inclination of the structure.
-#         
-#         """
-#         # The inclination is computed as the difference in height between the
-#         # front and the rear joints of the structure.
-#         __, y0 = self.ACTUATORS[0].JOINT.position()
-#         __, y3 = self.ACTUATORS[3].JOINT.position()
-#         return y3-y0     

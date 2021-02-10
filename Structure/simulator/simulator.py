@@ -50,7 +50,7 @@ class Simulator():
             res, dis = structure.advance(distance)
             if not res:
                 print("Can not advance structure. Error:", dis)
-            
+        #######################################################################  
         try:
             height = instruction['elevate']
         except KeyError:
@@ -60,7 +60,7 @@ class Simulator():
             res, dis = structure.elevate(height)
             if not res:
                 print("Can not elevate structure. Error:", dis)
-            
+        #######################################################################  
         try:
             height = instruction['incline']
         except KeyError:
@@ -74,7 +74,7 @@ class Simulator():
                 print("Can not incline structure:")
                 print(" Vertical:", ver)
                 print(" Horizontal:", hor)
-
+        #######################################################################  
         try:
             height = instruction['shift']
             wheel = instruction['wheel']
@@ -85,14 +85,14 @@ class Simulator():
             res, dis = structure.shift_actuator(wheel, height)
             if not res:
                 print("Can not shift actuator. Error:", dis)
-            
+        #######################################################################  
         # Check for the end of the trajectory.
         try:
             if instruction['end']:
                 yield False
         except KeyError:
             pass
-
+        #######################################################################  
         yield True
         
 ###############################################################################

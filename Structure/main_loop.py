@@ -72,11 +72,13 @@ while continue_loop:
         if not switching_mode:
             instruction = control.next_instruction(structure)
             print("automatic:", instruction)
+        # Allow the program to generate a new instruction in the next
+        # iteration
         switching_mode = False
         
         for res in sm.simulate_instruction(structure, instruction):
             if not res:
-                # The simulation has failed, so, finish the program.
+                # The simulation has finished or failed: finish the program.
                 print("Press any key to finish...")
                 graphics.draw(stairs, structure, True)
                 # Finish the outermost loop.
@@ -93,4 +95,8 @@ while continue_loop:
                 # with a new iteration of the outermost while loop.
                 break
     ###########################################################################    
-print("End")
+print("End of program.")
+
+###############################################################################
+# End of file.
+###############################################################################

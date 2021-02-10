@@ -184,7 +184,6 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.ground(position)
 
-
     def get_wheel_distances(self):
         """Returns the distances of the ending wheel to the stair.
          
@@ -194,7 +193,6 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.get_distances(position)
      
-
     # =========================================================================
     # Drawing functions.
     # =========================================================================
@@ -244,44 +242,3 @@ class WheelActuator:
 ###############################################################################
 # End of file.
 ###############################################################################
-#     def shift_actuator(self):
-#         """Shift the actuator.
-#         
-#         This function 
-#         
-#         """
-#         # Get wheel center coordinates.
-#         hx0, hy0 = self.JOINT.position(self.HEIGHT+self.d)
-#         # Check if the wheel can be moved.
-#         return self.WHEEL.move_wheel( (hx0, hy0) )
-
-
-
-#     def shift_actuator_from_horizontal(self, distance, front):
-#         """Compute the proportional shift of an actuator to get a horizontal
-#         shift of a wheel when inclining the structure.
-#         
-#         Returns the proportional actuator shift
-#         Parameters:
-#         distance -- horizontal distance to move.
-#         front -- see function incline in wheelchair.structure.
-#         
-#         """
-#         # Compute the absolute vertical distance.
-#         y = self.JOINT.lift_from_horizontal_motion(distance, front)
-#         # And convert it to proportional.
-#         y1 = self.JOINT.inverse_prop_lift(y)
-#         return y1
-
-#     def state(self):
-#         """Return the state of the actuator with respect to its range of
-#         operation.
-#         
-#         See ActuatorState function for more information.
-#         
-#         """
-#         if -MAX_GAP < self.d < +MAX_GAP:
-#             return ActuatorState.UpperBound
-#         if -MAX_GAP < self.d - self.LENGTH < +MAX_GAP:
-#             return ActuatorState.LowerBound
-#         return ActuatorState.Center   

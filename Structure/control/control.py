@@ -61,7 +61,8 @@ def next_instruction(structure):
         if ac_id == 3:
             # Front actuator. In this case, the algorithm incline the
             # structure.
-            res, distance, elevate = st_aux.incline(height)
+            # TODO: Check when inclining the structure and a collision raises.
+            res, __, elevate = st_aux.incline(height)
             if not res:
                 # In this case, the structure can not be incline because
                 # an actuator can not complete the motion. To solve this,
@@ -91,6 +92,7 @@ def next_instruction(structure):
             res, __ = st_aux.shift_actuator(ac_id, -ver)
             if not res:
                 raise RuntimeError("Error in control module")
+        #######################################################################
         elif ac_id == 0:
             res, incline = st_aux.elevate(height)
             if not res:
@@ -113,7 +115,6 @@ def manual_control(key_pressed, simulator):
     """Function to convert a key to a instruction.
     
     """
-
     if key_pressed == ord('4'):
         command = {'distance': -simulator.wheel_speed}
     elif key_pressed == ord('6'):
