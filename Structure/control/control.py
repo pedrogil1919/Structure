@@ -21,13 +21,89 @@ List of instructions, along with its arguments:
 
 '''
 
+import copy
+
+# Distance margin
+# MARGIN = 2.0
+
 def next_instruction(structure):
     """Generate in an automatic fashion the next instruction for the structure.
     
     Returns a dictionary with the instructions to perform. 
     
     """
-    
+    ac_id, hor, ver = structure.get_wheels_distances()
+    # Create a deep copy of the structure, to simulate all the motions computed
+    # without modifying the actual structure.
+    st_aux = copy.deepcopy(structure)
+    # Simulate the horizontal shift, to check that it is correct.
+    res, err = st_aux.advance(hor)
+    if not res:
+        res, __ = st_aux.advance(hor+err)
+        if not res:
+            raise RuntimeError("Error in control module")
+    # Add the distance to move to the instruction.
+    instruction = {"distance": hor+err}
+    # Simulate elevation of the actuator. Note that the vertical distance is
+    # positive downwards, but the actuator position is measured in the opposite
+    # direction. For that reason, we change the sign of the vertical distance.
+    res, height = st_aux.shift_actuator(ac_id, -ver)
+    instruction["wheel"] = ac_id
+    instruction["shift"] = -ver
+    if not res:
+        # If the actuator can not be sift, we have to make room for the
+        # actuator to compete the motion. This action depends on the index
+        # of the actuator. Continue reading the code:
+        #######################################################################
+        if ac_id == 3:
+            # Front actuator. In this case, the algorithm incline the
+            # structure.
+            res, distance, elevate = st_aux.incline(height)
+            if not res:
+                # In this case, the structure can not be incline because
+                # an actuator can not complete the motion. To solve this,
+                # if possible, elevate the structure the distance left.
+                res, __ = st_aux.elevate(elevate)
+                if not res:
+                    raise ValueError("Motion can not be completed")
+                instruction["elevate"] = elevate
+                # If succeeded, the inclination can now be completed.
+                res, __, __ = st_aux.incline(height)
+                if not res:
+                    raise RuntimeError("Error in control module")
+            instruction['incline'] = height
+            # If succeeded, the actuator can now be shifted.
+            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            if not res:
+                raise RuntimeError("Error in control module")
+        #######################################################################
+        elif ac_id == 2 or ac_id == 1:
+            res, __ = st_aux.elevate(height)
+            if not res:
+                raise NotImplementedError("Can not elevate. I think I have to \
+                     incline also. Wait for an example to happen")
+            instruction["elevate"] = height
+            # If succeeded, the actuator can now be shifted.
+            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            if not res:
+                raise RuntimeError("Error in control module")
+        elif ac_id == 0:
+            res, incline = st_aux.elevate(height)
+            if not res:
+                res, __, __ = st_aux.incline(-incline, True)
+                if not res:
+                    raise ValueError("Motion can not be completed")
+                instruction["incline"] = -incline
+                instruction["fix_front"] = True
+            res, __ = st_aux.elevate(height)
+            if not res:
+                raise RuntimeError("Error in control module")              
+            instruction["elevate"] = height
+            # If succeeded, the actuator can now be shifted.
+            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            if not res:
+                raise RuntimeError("Error in control module")            
+    return instruction
 
 def manual_control(key_pressed, simulator):
     """Function to convert a key to a instruction.

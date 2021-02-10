@@ -63,11 +63,11 @@ class Simulator():
             
         try:
             height = instruction['incline']
-            rear = instruction['elevate_rear']
-            front = instruction['fix_front']
         except KeyError:
             pass
         else:
+            rear = instruction.get('elevate_rear', False)
+            front = instruction.get('fix_front', False)
             # Incline structure
             res, hor, ver = structure.incline(height, rear, front)
             if not res:
@@ -76,7 +76,7 @@ class Simulator():
                 print(" Horizontal:", hor)
 
         try:
-            height = -instruction['shift']
+            height = instruction['shift']
             wheel = instruction['wheel']
         except KeyError:
             pass
@@ -94,6 +94,7 @@ class Simulator():
         except KeyError:
             pass
         """
+        yield True
         
 ###############################################################################
 # End of file.

@@ -8,6 +8,9 @@ This module define the functionality of the two pairs of wheels.
 
 '''
 
+EDGE_MARGIN = 2
+
+
 class ActuatorPair:
     
     def __init__(self, rear, front):
@@ -150,13 +153,67 @@ class ActuatorPair:
     # =========================================================================
     
     def get_wheel_distances(self):
+        """Get distances from wheels to stairs for control module.
         
+        """
+        # Get distances for both wheel of the pair.
         re_res = self.REAR.get_wheel_distances()
         fr_res = self.FRNT.get_wheel_distances()
         
+        # Choose the wheel which is closest to its nearest step. This is the
+        # maximum distance the wheel pair can move.
+        if re_res['up'] and fr_res['up']:
+            # Both wheels are facing a positive step. Select the active and
+            # the passive wheel. Active wheel is the wheel which leads the motion
+            # for this pair.
+            if re_res['wr'] < fr_res['wr']:
+                active = re_res
+                passive = fr_res
+                index = 0
+            else:
+                active = fr_res
+                passive = re_res
+                index = 1
+            
+            hor = active['wr']
+            ver = active['hr']
+            if not passive['st']:
+                # The passive wheel is not on the ground, so that we can not
+                # elevate the active wheel before the passive is on the ground.
+                # Divide the instruction into two. The first one will be used
+                # to take the passive wheel to the ground, and the second to
+                # complete the motion for the active wheel, but this will be
+                # done, hopefully, in the following iteration.
+                # NOTE: Although the key hc is not always present, for this
+                # case, that is, the chosen wheel is the one that is on the
+                # ground, it is not possible that the passive wheel is in an
+                # unstable position. If this happened, it will be impossible
+                # to pass the stair.
+                ver_total = abs(active['hr']) + abs(passive['hc'])
+                k = passive['hc'] / ver_total
+                hor = k * active['wr']
+                ver = k * passive['hc']
+                # Change the wheel to move.
+                index = (index + 1) % 2
+            else:  
+                # The passive wheel is on the ground, so that we need not take
+                # care of this wheel.
+                if ver > 0:
+                    ver += EDGE_MARGIN
+                    hor -= EDGE_MARGIN
+                else:
+                    hor += EDGE_MARGIN
+            
+        elif re_res['up'] and fr_res['up']:
+            pass
+    
+        else:
+            raise NotImplementedError("Wheel facing steps with different sign.")
+        
+        return index, hor, ver
         
         
-"""
+    """
 def compute_motion(motion):
     Computes motion according a pair of wheels (front or rear wheels).
     
@@ -238,7 +295,7 @@ def compute_motion(motion):
             else:
                 return active, motion[active]['hr'], \
                     motion[active]['wr'] - EDGE_MARGIN      
-"""
+    """
     # =========================================================================
     # Drawing functions.
     # =========================================================================

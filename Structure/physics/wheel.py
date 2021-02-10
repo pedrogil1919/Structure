@@ -125,56 +125,56 @@ class Wheel:
     # Control functions.
     # =========================================================================
 
-    def get_distances(self, cx, cy):
-        """Computes distances from the wheel to the stair for control module.
-         
-        Arguments:
-        -- cx, cy: Coordinates of the center of the wheel (remember that the
-            coordinates are not stored. They are computed from the actuator
-            position and state).
-         
-        Returns a dictionary with the following keys:
-        -- st: True if the wheel is in the ground, in a stable position.
-        -- hc: Vertical distance from the bottom of the wheel to the ground,
-              when the wheel is in a not unstable position. If not, the key
-              does not exist.
-        -- hr: Vertical distance from the bottom of the wheel to the top of the
-              next step. If the wheel is on an unstable position, it is the
-              distance to the step just beneath the wheel (but not the bottom
-              center of the wheel, since it lies on the previous step).
-        -- wr: Horizontal distance from the wheel to the next step. If the step
-              is positive, is the distance from the right edge of the wheel to
-              the edge of the step. If it is a negative step, is the distance
-              from the left edge of the wheel to the edge of the step. If the
-              wheel is in an unstable position, the key does not exist.
-        -- ws: Horizontal distance that the wheel has to move to place it in
-              a stable position. If it is already stable over a step, is the
-              minimum distance to the next step. If it is on an unstable
-              position, is the distance to the current step. Always with respect
-              to the bottom of the wheel.
-               
-        NOTE: Take into account that horizontal distances are always negative
-        when the wheel is in a valid position. For that reason, a sign change
-        will be needed for almost all the cases.
-        """
- 
-        # Get the distances to the stair (see getDistances.svg).
-        r = self.RADIUS
-        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), r)
-        # Check if going upstairs, downstairs or the end of the stairs.
-        # TODO: Check if in a change of direction in a double stair.
-        if hr > hc and hc >= hl:
-            # Upstairs direction. The comparison hc = hl happens at the
-            # beginning of the stair.
-            upstairs = True
-        elif hr < hc and hc <= hl:
-            # Downstairs direction.
-            upstairs = False
-        elif hr == hc:
-            # End of the stair.
-            return None
-        else:
-            raise NotImplementedError("Detect when this case happens...")
+#     def get_distances(self, cx, cy):
+#         """Computes distances from the wheel to the stair for control module.
+#          
+#         Arguments:
+#         -- cx, cy: Coordinates of the center of the wheel (remember that the
+#             coordinates are not stored. They are computed from the actuator
+#             position and state).
+#          
+#         Returns a dictionary with the following keys:
+#         -- st: True if the wheel is in the ground, in a stable position.
+#         -- hc: Vertical distance from the bottom of the wheel to the ground,
+#               when the wheel is in a not unstable position. If not, the key
+#               does not exist.
+#         -- hr: Vertical distance from the bottom of the wheel to the top of the
+#               next step. If the wheel is on an unstable position, it is the
+#               distance to the step just beneath the wheel (but not the bottom
+#               center of the wheel, since it lies on the previous step).
+#         -- wr: Horizontal distance from the wheel to the next step. If the step
+#               is positive, is the distance from the right edge of the wheel to
+#               the edge of the step. If it is a negative step, is the distance
+#               from the left edge of the wheel to the edge of the step. If the
+#               wheel is in an unstable position, the key does not exist.
+#         -- ws: Horizontal distance that the wheel has to move to place it in
+#               a stable position. If it is already stable over a step, is the
+#               minimum distance to the next step. If it is on an unstable
+#               position, is the distance to the current step. Always with respect
+#               to the bottom of the wheel.
+#                
+#         NOTE: Take into account that horizontal distances are always negative
+#         when the wheel is in a valid position. For that reason, a sign change
+#         will be needed for almost all the cases.
+#         """
+#  
+#         # Get the distances to the stair (see getDistances.svg).
+#         r = self.RADIUS
+#         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances((cx, cy), r)
+#         # Check if going upstairs, downstairs or the end of the stairs.
+#         # TODO: Check if in a change of direction in a double stair.
+#         if hr > hc and hc >= hl:
+#             # Upstairs direction. The comparison hc = hl happens at the
+#             # beginning of the stair.
+#             upstairs = True
+#         elif hr < hc and hc <= hl:
+#             # Downstairs direction.
+#             upstairs = False
+#         elif hr == hc:
+#             # End of the stair.
+#             return None
+#         else:
+#             raise NotImplementedError("Detect when this case happens...")
              
 #         if self.state == WheelState.Ground or \
 #                 self.state == WheelState.Corner:
@@ -285,17 +285,20 @@ class Wheel:
             elif self.state == WheelState.Ground:
                 res['st'] = True
                 res['hr'] = hr + MAX_GAP
-                res['wr'] = wr
+                res['wr'] = -wr
             elif self.state == WheelState.Outer:
                 res['st'] = False
                 res['hr'] = hr
                 res['hc'] = hc
-                res['wr'] = wr + MAX_GAP
+                res['wr'] = -wr + r + MAX_GAP
             elif self.state == WheelState.Over:
                 res['st'] = False
                 res['hr'] = hr
-                res['wr'] = wr + MAX_GAP
-            
+                res['wr'] = -wr + r + MAX_GAP
+            elif self.state == WheelState.Unstable:
+                res['st'] = False
+                res['hr'] = 0.0
+                res['wr'] = -wr + r + MAX_GAP            
         ########################################################################
         # Downstairs:
         ########################################################################

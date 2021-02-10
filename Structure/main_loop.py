@@ -47,7 +47,9 @@ while continue_loop:
         continue_loop, manual_mode, key_pressed = \
             graphics.draw(stairs, structure)
         instruction = control.manual_control(key_pressed, sm)
-        sm.simulate_instruction(structure, instruction)
+        print("manual:", instruction)
+        for res in sm.simulate_instruction(structure, instruction):
+            pass
     ###########################################################################
     # Exiting manual mode and entering automatic mode.
 
@@ -69,7 +71,7 @@ while continue_loop:
     ###########################################################################
         if not switching_mode:
             instruction = control.next_instruction(structure)
-            print(instruction)
+            print("automatic:", instruction)
         switching_mode = False
         
         for res in sm.simulate_instruction(structure, instruction):

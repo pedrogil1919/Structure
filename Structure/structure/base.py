@@ -74,6 +74,19 @@ class Base:
         # Total width of the structure.
         Base.WIDTH = a+b+c
         
+    def __copy__(self):
+        """Copy method.
+        
+        The deep copy is needed by the control module to simulate a proposed
+        instruction, to check if the instruction fails, and if so, get the
+        distances to correct the instruction. The copy is needed since the
+        simulation need to be performed on a copy of the actual structure, not
+        on the actual structure itself, to leave everything as it was before
+        the simulation.
+        
+        """
+        pass
+        
     ###########################################################################
     # MOTION FUNCTION
     ###########################################################################
@@ -378,7 +391,7 @@ class Base:
         self.FRNT.shift_actuator_proportional(True, True, distance)
  
         if not check:
-            return True, 0.0
+            return True, 0.0, 0.0
         
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
@@ -419,7 +432,12 @@ class Base:
         
         See stair.set_distances function, and getDistances.svg.
         """
-        return [act.get_wheel_distances() for act in self.ACTUATORS]
+        re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
+        fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
+        if re_hor < fr_hor:
+            return re_id, re_hor, re_ver
+        else:
+            return fr_id + 2, fr_hor, fr_ver
  
 
     # =========================================================================
