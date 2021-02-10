@@ -22,6 +22,7 @@ List of instructions, along with its arguments:
 '''
 
 import copy
+from math import isinf
 
 # Distance margin
 # MARGIN = 2.0
@@ -33,6 +34,8 @@ def next_instruction(structure):
     
     """
     ac_id, hor, ver = structure.get_wheels_distances()
+    if isinf(hor):
+        return structure.set_horizontal()
     # Create a deep copy of the structure, to simulate all the motions computed
     # without modifying the actual structure.
     st_aux = copy.deepcopy(structure)
@@ -68,7 +71,8 @@ def next_instruction(structure):
                     raise ValueError("Motion can not be completed")
                 instruction["elevate"] = elevate
                 # If succeeded, the inclination can now be completed.
-                res, __, __ = st_aux.incline(height)
+                # TODO: Review this instruction
+                res, __, __ = st_aux.incline(height-elevate)
                 if not res:
                     raise RuntimeError("Error in control module")
             instruction['incline'] = height
@@ -90,15 +94,15 @@ def next_instruction(structure):
         elif ac_id == 0:
             res, incline = st_aux.elevate(height)
             if not res:
-                res, __, __ = st_aux.incline(-incline, True)
+                res, __, __ = st_aux.incline(incline, True)
                 if not res:
                     raise ValueError("Motion can not be completed")
-                instruction["incline"] = -incline
-                instruction["fix_front"] = True
-            res, __ = st_aux.elevate(height)
+                instruction["incline"] = incline
+                instruction["elevate_rear"] = True
+            res, __ = st_aux.elevate(height+incline)
             if not res:
                 raise RuntimeError("Error in control module")              
-            instruction["elevate"] = height
+            instruction["elevate"] = height+incline
             # If succeeded, the actuator can now be shifted.
             res, __ = st_aux.shift_actuator(ac_id, -ver)
             if not res:
@@ -119,21 +123,21 @@ def manual_control(key_pressed, simulator):
     elif key_pressed == ord('8'):
         command = {'elevate': +simulator.str_up_speed}
     elif key_pressed == ord('q'):
-        command = {'wheel': 0, 'shift': +simulator.actuator_speed}
-    elif key_pressed == ord('a'):
         command = {'wheel': 0, 'shift': -simulator.actuator_speed}
+    elif key_pressed == ord('a'):
+        command = {'wheel': 0, 'shift': +simulator.actuator_speed}
     elif key_pressed == ord('w'):
-        command = {'wheel': 1, 'shift': +simulator.actuator_speed}
-    elif key_pressed == ord('s'):
         command = {'wheel': 1, 'shift': -simulator.actuator_speed}
+    elif key_pressed == ord('s'):
+        command = {'wheel': 1, 'shift': +simulator.actuator_speed}
     elif key_pressed == ord('e'):
-        command = {'wheel': 2, 'shift': +simulator.actuator_speed}
-    elif key_pressed == ord('d'):
         command = {'wheel': 2, 'shift': -simulator.actuator_speed}
+    elif key_pressed == ord('d'):
+        command = {'wheel': 2, 'shift': +simulator.actuator_speed}
     elif key_pressed == ord('r'):
-        command = {'wheel': 3, 'shift': +simulator.actuator_speed}
-    elif key_pressed == ord('f'):
         command = {'wheel': 3, 'shift': -simulator.actuator_speed}
+    elif key_pressed == ord('f'):
+        command = {'wheel': 3, 'shift': +simulator.actuator_speed}
     ###########################################################################
     elif key_pressed == ord('t'):
         command = {'incline': +simulator.str_up_speed, 

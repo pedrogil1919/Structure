@@ -10,6 +10,7 @@ implements the physical interactions with the stairs: collisions and contacts.
 
 import numpy
 import cv2
+from math import inf
 
 from physics.wheel_state import WheelState, MAX_GAP
 
@@ -124,6 +125,156 @@ class Wheel:
     # =========================================================================
     # Control functions.
     # =========================================================================
+    def get_distances(self, position):
+        """Computes distances from the wheel to the next step.
+         
+        Arguments:
+        -- position: Coordinates of the center of the wheel (remember that the
+            coordinates are not stored. They are computed from the actuator
+            position and state).
+         
+        Returns a dictionary with the following keys (see get_distances folder):
+        -- up: True if the next step is positive (upstairs).
+        -- st: True if the wheel is in the ground, in a stable position.
+        -- hr: Vertical distance from the bottom of the wheel to the top of the
+            next step. If the wheel is on an unstable position, it is the
+            distance to the step just beneath the wheel (not to the step just
+            beneath the center of the wheel, since this step is the previous
+            one).
+        -- hc: Vertical distance from the bottom of the wheel to the ground,
+            when the wheel is in a not unstable position nor in the ground.
+            If not, the key does not exist.
+        -- wr: Horizontal distance from the wheel to the next step. If the step
+            is positive and the wheel is below the next step, is the distance
+            from the right edge of the wheel to the edge of the step. If the
+            wheel is above the next step, is the distance to place the wheel
+            on a stable position in the next step.
+            If it is a negative step and the wheel is not on the ground, is
+            the distance to place the center of the wheel just in the outer
+            corner of the step. If it is on the ground, is the distance to
+            place the left edge of the wheel further from the current step
+            (so that if we take the wheel down, the wheel will be placed on
+            the ground in a stable position in the next step). To ensure that
+            the wheel get the state Air instead of Unstable, a small value
+            (MAX_GAP) is added to the distance to be returned.
+        -- wc: Only for negative steps and when the wheel is on the ground,
+            this is the value to place the wheel just in the outer corner of
+            the step. This is an alternative distance for when the other wheel
+            of the pair is not in the ground, so that moving this wheel to
+            this position ensures that never both wheel will be on air.
+               
+        NOTE: Take into account that horizontal distances are always negative
+        when the wheel is in a valid position. For that reason, a sign change
+        will be needed for almost all the cases.
+        """
+ 
+        # Get the distances to the stair (see getDistances.svg).
+        r = self.RADIUS
+        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, r)
+        
+        res = {'st': self.ground(position)}
+        # Check if going upstairs, downstairs or the end of the stairs.
+        # TODO: Check if in a change of direction in a double stair.
+        ########################################################################
+        # Upstairs:
+        ########################################################################
+        if hr > hc and hc >= hl:
+            res['up'] = True
+            # Upstairs direction. The comparison hc = hl happens at the
+            # beginning of the stair.
+            if self.state == WheelState.Air:
+                res['hc'] = hc
+                res['hr'] = hr + MAX_GAP
+                res['wr'] = -wr
+            elif self.state == WheelState.Contact:
+                res['hc'] = hc
+                res['hr'] = hr + MAX_GAP
+                res['wr'] = 0.0
+            elif self.state == WheelState.Corner:
+                res['hr'] = hr + MAX_GAP
+                res['wr'] = 0.0
+            elif self.state == WheelState.Ground:
+                res['hr'] = hr + MAX_GAP
+                res['wr'] = -wr
+            elif self.state == WheelState.Outer:
+                res['hr'] = hr
+                res['hc'] = hc
+                res['wr'] = -wr + r + MAX_GAP
+            elif self.state == WheelState.Over:
+                res['hr'] = hr
+                res['wr'] = -wr + r + MAX_GAP
+            elif self.state == WheelState.Unstable:
+                res['hr'] = 0.0
+                res['wr'] = -wr + r + MAX_GAP            
+        ########################################################################
+        # Downstairs:
+        ########################################################################
+        elif hr < hc and hc <= hl:
+            # Downstairs direction.
+            res['up'] = False
+            
+        ########################################################################
+        # End:
+        ########################################################################
+        elif hr == hc:
+            # The wheel has reached the end of the stair. Send an infinite value
+            # to warn the calling function.
+            res['wr'] = inf
+            res['hr'] = hr
+
+        else:
+            raise NotImplementedError("Detect when this case happens...")
+        
+        return res
+
+    # =========================================================================
+    # Drawing functions.
+    # =========================================================================
+    # Wheel colors:
+    AIR_COLOR = (0xFF, 0x00, 0x00)
+    GROUND_COLOR = (0x00, 0xFF, 0x00)
+    CONTACT_COLOR = (0x00, 0xFF, 0xFF)
+    CORNER_COLOR = (0xFF, 0xFF, 0x00)
+    UNSTABLE_COLOR = (0x00, 0x00, 0xFF)
+    OUTER_COLOR = (0xFF, 0x00, 0xFF)
+    OVER_COLOR = (0xFF, 0x80, 0x80)
+    INSIDE_COLOR = (0x40, 0x40, 0x40)
+    LINE_COLOR = (0x00, 0x00, 0x00)
+    LINE_WIDTH = 4
+
+    def draw(self, origin, image, position, scale, shift):
+        cx = numpy.float32(scale*(origin[0]+position[0]))
+        cy = numpy.float32(scale*(origin[1]-position[1]))
+        cr = numpy.int(scale*self.RADIUS)
+        if self.state == WheelState.Ground:
+            color = self.GROUND_COLOR
+        elif self.state == WheelState.Unstable:
+            color = self.UNSTABLE_COLOR
+        elif self.state == WheelState.Air:
+            color = self.AIR_COLOR
+        elif self.state == WheelState.Corner:
+            color = self.CORNER_COLOR
+        elif self.state == WheelState.Contact:
+            color = self.CONTACT_COLOR
+        elif self.state == WheelState.Outer:
+            color = self.OUTER_COLOR
+        elif self.state == WheelState.Over:
+            color = self.OVER_COLOR
+        elif self.state == WheelState.Inside:
+            color = self.INSIDE_COLOR
+        else:
+            raise(ValueError("Wheel state not supported."))
+        cv2.circle(image, (cx, cy), cr, color, -1, cv2.LINE_AA, shift)
+        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2,
+                   cv2.LINE_AA, shift)
+
+###############################################################################
+# End of file.
+###############################################################################
+
+    # =========================================================================
+    # Control functions.
+    # =========================================================================
 
 #     def get_distances(self, cx, cy):
 #         """Computes distances from the wheel to the stair for control module.
@@ -210,160 +361,6 @@ class Wheel:
 # #                 return {'st': False, 
 # #                         'hc': hc, 'hr': hr, 'wr': -wl, 'ws': -wl}
 #  
-    # =========================================================================
-    # Control functions.
-    # =========================================================================
-    def get_distances(self, position):
-        """Computes distances from the wheel to the next step.
-         
-        Arguments:
-        -- position: Coordinates of the center of the wheel (remember that the
-            coordinates are not stored. They are computed from the actuator
-            position and state).
-         
-        Returns a dictionary with the following keys (see get_distances folder):
-        -- up: True if the next step is positive (upstairs).
-        -- st: True if the wheel is in the ground, in a stable position.
-        -- hr: Vertical distance from the bottom of the wheel to the top of the
-            next step. If the wheel is on an unstable position, it is the
-            distance to the step just beneath the wheel (not to the step just
-            beneath the center of the wheel, since this step is the previous
-            one).
-        -- hc: Vertical distance from the bottom of the wheel to the ground,
-            when the wheel is in a not unstable position nor in the ground.
-            If not, the key does not exist.
-        -- wr: Horizontal distance from the wheel to the next step. If the step
-            is positive and the wheel is below the next step, is the distance
-            from the right edge of the wheel to the edge of the step. If the
-            wheel is above the next step, is the distance to place the wheel
-            on a stable position in the next step.
-            If it is a negative step and the wheel is not on the ground, is
-            the distance to place the center of the wheel just in the outer
-            corner of the step. If it is on the ground, is the distance to
-            place the left edge of the wheel further from the current step
-            (so that if we take the wheel down, the wheel will be placed on
-            the ground in a stable position in the next step). To ensure that
-            the wheel get the state Air instead of Unstable, a small value
-            (MAX_GAP) is added to the distance to be returned.
-        -- wc: Only for negative steps and when the wheel is on the ground,
-            this is the value to place the wheel just in the outer corner of
-            the step. This is an alternative distance for when the other wheel
-            of the pair is not in the ground, so that moving this wheel to
-            this position ensures that never both wheel will be on air.
-               
-        NOTE: Take into account that horizontal distances are always negative
-        when the wheel is in a valid position. For that reason, a sign change
-        will be needed for almost all the cases.
-        """
- 
-        # Get the distances to the stair (see getDistances.svg).
-        r = self.RADIUS
-        hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, r)
-        # Check if going upstairs, downstairs or the end of the stairs.
-        # TODO: Check if in a change of direction in a double stair.
-        ########################################################################
-        # Upstairs:
-        ########################################################################
-        if hr > hc and hc >= hl:
-            res = {'up': True}
-            # Upstairs direction. The comparison hc = hl happens at the
-            # beginning of the stair.
-            if self.state == WheelState.Air:
-                res['st'] = False
-                res['hc'] = hc
-                res['hr'] = hr + MAX_GAP
-                res['wr'] = -wr
-            elif self.state == WheelState.Contact:
-                res['st'] = False
-                res['hc'] = hc
-                res['hr'] = hr + MAX_GAP
-                res['wr'] = 0.0
-            elif self.state == WheelState.Corner:
-                res['st'] = True
-                res['hr'] = hr + MAX_GAP
-                res['wr'] = 0.0
-            elif self.state == WheelState.Ground:
-                res['st'] = True
-                res['hr'] = hr + MAX_GAP
-                res['wr'] = -wr
-            elif self.state == WheelState.Outer:
-                res['st'] = False
-                res['hr'] = hr
-                res['hc'] = hc
-                res['wr'] = -wr + r + MAX_GAP
-            elif self.state == WheelState.Over:
-                res['st'] = False
-                res['hr'] = hr
-                res['wr'] = -wr + r + MAX_GAP
-            elif self.state == WheelState.Unstable:
-                res['st'] = False
-                res['hr'] = 0.0
-                res['wr'] = -wr + r + MAX_GAP            
-        ########################################################################
-        # Downstairs:
-        ########################################################################
-        elif hr < hc and hc <= hl:
-            # Downstairs direction.
-            res = {'up': False}
-
-        ########################################################################
-        # End:
-        ########################################################################
-        elif hr == hc:
-            # End of the stair.
-            return None
-
-        else:
-            raise NotImplementedError("Detect when this case happens...")
-        
-        return res
-
-    # =========================================================================
-    # Drawing functions.
-    # =========================================================================
-    # Wheel colors:
-    AIR_COLOR = (0xFF, 0x00, 0x00)
-    GROUND_COLOR = (0x00, 0xFF, 0x00)
-    CONTACT_COLOR = (0x00, 0xFF, 0xFF)
-    CORNER_COLOR = (0xFF, 0xFF, 0x00)
-    UNSTABLE_COLOR = (0x00, 0x00, 0xFF)
-    OUTER_COLOR = (0xFF, 0x00, 0xFF)
-    OVER_COLOR = (0xFF, 0x80, 0x80)
-    INSIDE_COLOR = (0x40, 0x40, 0x40)
-    LINE_COLOR = (0x00, 0x00, 0x00)
-    LINE_WIDTH = 4
-
-    def draw(self, origin, image, position, scale, shift):
-        cx = numpy.float32(scale*(origin[0]+position[0]))
-        cy = numpy.float32(scale*(origin[1]-position[1]))
-        cr = numpy.int(scale*self.RADIUS)
-        if self.state == WheelState.Ground:
-            color = self.GROUND_COLOR
-        elif self.state == WheelState.Unstable:
-            color = self.UNSTABLE_COLOR
-        elif self.state == WheelState.Air:
-            color = self.AIR_COLOR
-        elif self.state == WheelState.Corner:
-            color = self.CORNER_COLOR
-        elif self.state == WheelState.Contact:
-            color = self.CONTACT_COLOR
-        elif self.state == WheelState.Outer:
-            color = self.OUTER_COLOR
-        elif self.state == WheelState.Over:
-            color = self.OVER_COLOR
-        elif self.state == WheelState.Inside:
-            color = self.INSIDE_COLOR
-        else:
-            raise(ValueError("Wheel state not supported."))
-        cv2.circle(image, (cx, cy), cr, color, -1, cv2.LINE_AA, shift)
-        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2,
-                   cv2.LINE_AA, shift)
-
-###############################################################################
-# End of file.
-###############################################################################
-
-
 
 #     # TODO: Check if this function is needed (is similar to the one above).
 #     def lift_wheel(self, position):

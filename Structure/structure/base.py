@@ -439,7 +439,44 @@ class Base:
         else:
             return fr_id + 2, fr_hor, fr_ver
  
+    def set_horizontal(self):
+        """Returns the distances needed to place the structure in horizontal.
+        
+        """
+        res = {
+            'distance': 20.0,
+            'incline': -self.get_inclination(),
+            'elevate': -self.get_elevation(),
+            'end': True}
+        
+        # Check if also any wheel need to be set to the ground.
+        re_res = self.REAR.set_to_ground()
+        fr_res = self.FRNT.set_to_ground()
+        if re_res is not None and fr_res is not None:
+            raise NotImplementedError("Move two actuator")
+        elif re_res is not None:
+            res['wheel'] = re_res[0]
+            res['shift'] = re_res[1]
+        elif fr_res is not None:
+            res['wheel'] = fr_res[0] + 2
+            res['shift'] = fr_res[1]
+        return res
 
+    def get_inclination(self):
+        """Returns the inclination of the structure.
+         
+        """
+        # The inclination is computed as the difference in height between the
+        # front and the rear joints of the structure.
+        __, y0, __, __ = self.REAR.position(0)
+        __, __, __, y3 = self.FRNT.position(0)
+        return y3-y0
+    
+    def get_elevation(self):
+        """Returns the elevation of the rear actuator.
+        
+        """
+        return self.REAR.REAR.d
     # =========================================================================
     # Drawing functions.
     # =========================================================================

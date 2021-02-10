@@ -86,14 +86,13 @@ class Simulator():
             if not res:
                 print("Can not shift actuator. Error:", dis)
             
-        """
         # Check for the end of the trajectory.
         try:
             if instruction['end']:
                 yield False
         except KeyError:
             pass
-        """
+
         yield True
         
 ###############################################################################

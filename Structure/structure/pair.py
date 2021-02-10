@@ -8,6 +8,8 @@ This module define the functionality of the two pairs of wheels.
 
 '''
 
+from math import isinf, inf
+
 EDGE_MARGIN = 2
 
 
@@ -160,6 +162,14 @@ class ActuatorPair:
         re_res = self.REAR.get_wheel_distances()
         fr_res = self.FRNT.get_wheel_distances()
         
+        if isinf(fr_res['wr']):
+            # The front wheel has reached the end of the stair.
+            if isinf(re_res['wr']):
+                # The rear wheel has also reached the end of the stair.
+                return 0, inf, min([fr_res['hr'], re_res['hr']])
+            else:
+                fr_res['up'] = re_res['up']
+                
         # Choose the wheel which is closest to its nearest step. This is the
         # maximum distance the wheel pair can move.
         if re_res['up'] and fr_res['up']:
@@ -189,10 +199,14 @@ class ActuatorPair:
                 # ground, it is not possible that the passive wheel is in an
                 # unstable position. If this happened, it will be impossible
                 # to pass the stair.
+                # Compute the total height to shift between both actuators.
                 ver_total = abs(active['hr']) + abs(passive['hc'])
-                k = passive['hc'] / ver_total
+                # Divide the horizontal distance to advance proportional to
+                # both heights.
+                k = abs(passive['hc']) / ver_total
                 hor = k * active['wr']
-                ver = k * passive['hc']
+                # Now, take the passive actuator to the ground.
+                ver = passive['hc']
                 # Change the wheel to move.
                 index = (index + 1) % 2
             else:  
@@ -204,7 +218,7 @@ class ActuatorPair:
                 else:
                     hor += EDGE_MARGIN
             
-        elif re_res['up'] and fr_res['up']:
+        elif not re_res['up'] and not fr_res['up']:
             pass
     
         else:
@@ -212,6 +226,20 @@ class ActuatorPair:
         
         return index, hor, ver
         
+    def set_to_ground(self):
+        """Return the distance to place both wheel on the ground, is possible.
+        
+        """
+        re_res = self.REAR.get_wheel_distances()
+        fr_res = self.FRNT.get_wheel_distances()
+        if not re_res['st'] and fr_res['st']:
+            return 0, re_res['hr']
+        elif not fr_res['st'] and re_res['st']:
+            return 1, fr_res['hr']
+        elif fr_res['st'] and re_res['st']:
+            return None
+        else:
+            raise RuntimeError("Both wheel on the air.")
         
     """
 def compute_motion(motion):
