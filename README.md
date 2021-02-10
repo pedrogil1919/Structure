@@ -61,7 +61,7 @@ The following figure shows the main classes defined, and their relationships:\
 \
 \
 \
-![Class structure](https://github.com/pedrogil1919/WheelChair/blob/master/wheelchair/docs/structure.svg)
+![Class structure](https://github.com/pedrogil1919/Structure/blob/master/Structure/docs/structure.svg)
 
 - **Base**: defines the main dimensions of the structure, and the array of actuator (4). It also exposes the functions to move the different elements of the structure (actuators and wheels).
 - **Actuator** (x4): It it used to join the ending wheel with the base structure. It exposes to the base the function to shift the actuator vertically.
