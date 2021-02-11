@@ -41,51 +41,64 @@ class Simulator():
         (for more details, see simulate_simple_step function).
 
         """
-        try:
-            distance = instruction['distance']
-        except KeyError:
-            pass
-        else:
-            # Advance structure
-            res, dis = structure.advance(distance)
-            if not res:
-                print("Can not advance structure. Error:", dis)
-        #######################################################################  
-        try:
-            height = instruction['elevate']
-        except KeyError:
-            pass
-        else:
-            # Elevate structure
-            res, dis = structure.elevate(height)
-            if not res:
-                print("Can not elevate structure. Error:", dis)
-        #######################################################################  
-        try:
-            height = instruction['incline']
-        except KeyError:
-            pass
-        else:
-            rear = instruction.get('elevate_rear', False)
-            front = instruction.get('fix_front', False)
-            # Incline structure
-            res, hor, ver = structure.incline(height, rear, front)
-            if not res:
-                print("Can not incline structure:")
-                print(" Vertical:", ver)
-                print(" Horizontal:", hor)
-        #######################################################################  
-        try:
-            height = instruction['shift']
-            wheel = instruction['wheel']
-        except KeyError:
-            pass
-        else:
-            # Shift actuator.
-            res, dis = structure.shift_actuator(wheel, height)
-            if not res:
-                print("Can not shift actuator. Error:", dis)
-        #######################################################################  
+        for n in range(2):
+            try:
+                distance = instruction['distance']
+            except KeyError:
+                pass
+            else:
+                # Advance structure
+                res, dis = structure.advance(distance)
+                if not res:
+                    print("Can not advance structure. Error:", dis)
+                else:
+                    del instruction['distance']
+            #######################################################################  
+            try:
+                height = instruction['elevate']
+            except KeyError:
+                pass
+            else:
+                # Elevate structure
+                res, dis, rear, front = structure.elevate(height)
+                if not res:
+                    print("Can not elevate structure. Error:", dis)
+                    print("Rear actuator:", rear)
+                    print("Front actuator:", front)
+                else:
+                    del instruction['elevate']
+            #######################################################################  
+            try:
+                height = instruction['incline']
+            except KeyError:
+                pass
+            else:
+                rear = instruction.get('elevate_rear', False)
+                front = instruction.get('fix_front', False)
+                # Incline structure
+                res, hor, ver, rear, front = structure.incline(height, rear, front)
+                if not res:
+                    print("Can not incline structure:")
+                    print("Vertical:", ver)
+                    print("Horizontal:", hor)
+                    print("Rear actuator:", rear)
+                    print("Front actuator:", front)
+                else:
+                    del instruction['incline']
+            #######################################################################  
+            try:
+                height = instruction['shift']
+                wheel = instruction['wheel']
+            except KeyError:
+                pass
+            else:
+                # Shift actuator.
+                res, dis = structure.shift_actuator(wheel, height)
+                if not res:
+                    print("Can not shift actuator. Error:", dis)
+                else:
+                    del instruction['shift']
+            #######################################################################  
         # Check for the end of the trajectory.
         try:
             if instruction['end']:

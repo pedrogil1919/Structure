@@ -104,7 +104,7 @@ class WheelActuator:
         else:
             self.state = ActuatorState.Center
         
-    def shift_actuator_proportional(self, distance):
+    def shift_actuator_proportional(self, height):
         """Shift the actuator a value proportional to the position with
         respect to the whole structure.
         
@@ -118,9 +118,9 @@ class WheelActuator:
            
         """
         # Compute the actual value to move the actuator.
-        prop_distance = self.JOINT.proportional_lift(distance)
+        prop_height = self.JOINT.proportional_lift(height)
         # Move the actuator.
-        self.shift_actuator(prop_distance)
+        self.shift_actuator(prop_height)
 
     def distance_to_stable(self):
         """Compute the distance to place the wheel in a stable position
@@ -184,6 +184,10 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.ground(position)
 
+    # =========================================================================
+    # Control functions.
+    # =========================================================================
+    
     def get_wheel_distances(self):
         """Returns the distances of the ending wheel to the stair.
          
@@ -192,7 +196,10 @@ class WheelActuator:
         """
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.get_distances(position)
-     
+    
+    def get_inverse_lift(self, height):
+        
+        return self.JOINT.inverse_prop_lift(height)
     # =========================================================================
     # Drawing functions.
     # =========================================================================

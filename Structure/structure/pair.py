@@ -10,7 +10,7 @@ This module define the functionality of the two pairs of wheels.
 
 from math import isinf, inf
 
-EDGE_MARGIN = 2
+EDGE_MARGIN = 4.0
 
 
 class ActuatorPair:
@@ -62,9 +62,14 @@ class ActuatorPair:
             the actuator.
         
         """
+        # TODO: Add comments for inverse_lift
         # Check for possible wheel collisions.
-        fr_res, fr_hor, fr_ver, fr_act = self.REAR.check_actuator()
-        re_res, re_hor, re_ver, re_act = self.FRNT.check_actuator()
+        re_res, re_hor, re_ver, re_act = self.REAR.check_actuator()
+        fr_res, fr_hor, fr_ver, fr_act = self.FRNT.check_actuator()
+
+        re_inc = self.REAR.get_inverse_lift(re_act)    
+        fr_inc = self.FRNT.get_inverse_lift(fr_act)
+
         if not fr_res:
             # If the front wheel have collided,
             if not re_res:
@@ -100,8 +105,8 @@ class ActuatorPair:
             res = False
         else:
             # In this case, none of the wheels have collided.
-            return True, 0.0, 0.0, 0.0
-        return res, hor, ver, act
+            return True, 0.0, 0.0, 0.0, None, None
+        return res, hor, ver, act, re_inc, fr_inc
 
     def check_stable(self):
         """Check the position of the pair of wheels.
@@ -149,7 +154,7 @@ class ActuatorPair:
         else:
             # Al least one wheel is stable, so that the structure in safe.
             return True, 0.0
-  
+    
     # =========================================================================
     # Control functions.
     # =========================================================================
@@ -214,7 +219,6 @@ class ActuatorPair:
                 # care of this wheel.
             if ver > 0:
                 ver += EDGE_MARGIN
-                hor -= EDGE_MARGIN
             else:
                 hor += EDGE_MARGIN            
         elif not re_res['up'] and not fr_res['up']:
@@ -222,7 +226,7 @@ class ActuatorPair:
                 # If the passive wheel is on the ground, check if the active
                 # wheel can be moved pass the edge of the step.
                 try:
-                    hor = active['wc']
+                    hor = active['wc'] + EDGE_MARGIN
                 except KeyError:
                     pass
             else:
@@ -255,7 +259,7 @@ class ActuatorPair:
             return None
         else:
             raise RuntimeError("Both wheel on the air.")
-        
+
     # =========================================================================
     # Drawing functions.
     # =========================================================================

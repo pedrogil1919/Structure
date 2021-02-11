@@ -62,51 +62,65 @@ def next_instruction(structure):
             # Front actuator. In this case, the algorithm incline the
             # structure.
             # TODO: Check when inclining the structure and a collision raises.
-            res, __, elevate = st_aux.incline(height)
+            res, dis, elevate, rear, front = st_aux.incline(height)
             if not res:
                 # In this case, the structure can not be incline because
                 # an actuator can not complete the motion. To solve this,
                 # if possible, elevate the structure the distance left.
-                res, __ = st_aux.elevate(elevate)
+                res, __, __, __ = st_aux.elevate(rear)
                 if not res:
                     raise ValueError("Motion can not be completed")
-                instruction["elevate"] = elevate
+                instruction["elevate"] = rear
                 # If succeeded, the inclination can now be completed.
                 # TODO: Review this instruction
-                res, __, __ = st_aux.incline(height+elevate)
+                    
+                res, __, __, __, __ = st_aux.incline(height-rear)
                 if not res:
                     raise RuntimeError("Error in control module")
-            instruction['incline'] = height+elevate
+            instruction['incline'] = height-rear
             # If succeeded, the actuator can now be shifted.
-            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            res, xxx = st_aux.shift_actuator(ac_id, -ver)
             if not res:
                 raise RuntimeError("Error in control module")
         #######################################################################
         elif ac_id == 2 or ac_id == 1:
-            res, __ = st_aux.elevate(height)
+            res, incline, rear, front = st_aux.elevate(height)
             if not res:
-                raise NotImplementedError("Can not elevate. I think I have to \
-                     incline also. Wait for an example to happen")
-            instruction["elevate"] = height
+                
+                fix = (height < 0)
+                if ac_id == 2:
+                    h_aux = front
+                else:
+                    h_aux = rear
+                res, __, __, __, __ = st_aux.incline(-h_aux, True, fix)
+                if not res:
+                    raise NotImplementedError("Can not elevate.")
+                instruction["incline"] = -h_aux
+                instruction["elevate_rear"] = True
+                instruction["fix_front"] = fix
+                res, __, __, __ = st_aux.elevate(height-incline)
+                if not res:
+                    raise NotImplementedError("Can not elevate.")
+            instruction["elevate"] = height-incline
             # If succeeded, the actuator can now be shifted.
-            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            res, height2 = st_aux.shift_actuator(ac_id, -ver)
             if not res:
                 raise RuntimeError("Error in control module")
         #######################################################################
         elif ac_id == 0:
             fix = (height < 0)
-            res, __, elevate = st_aux.incline(-height, True, fix)
+            res, __, elevate, rear, front = st_aux.incline(-height, True, fix)
             if not res:
-                res, __ = st_aux.elevate(elevate)
+                res, __, __, __ = st_aux.elevate(rear)
                 if not res:
                     raise ValueError("Motion can not be completed")
                 instruction["elevate"] = elevate
-                res, __, __ = st_aux.incline(height+elevate)
+                res, __, __, __, __ = st_aux.incline(height-rear)
                 if not res:
                     raise RuntimeError("Error in control module")              
             instruction["incline"] = -height+elevate
             instruction["elevate_rear"] = True
-            instruction["fix_front"] = True
+            instruction["fix_front"] = fix
             # If succeeded, the actuator can now be shifted.
             res, ddd = st_aux.shift_actuator(ac_id, -ver)
             if not res:

@@ -125,6 +125,7 @@ class Wheel:
     # =========================================================================
     # Control functions.
     # =========================================================================
+    
     def get_distances(self, position):
         """Computes distances from the wheel to the next step.
          
@@ -246,11 +247,7 @@ class Wheel:
         elif hr == hc:
             # The wheel has reached the end of the stair. Send an infinite value
             # to warn the calling function.
-            if self.state == WheelState.Air:
-                res['wr'] = inf
-            else:
-                res['up'] = (hr > hc)
-                res['wr'] = -wr + MAX_GAP
+            res['wr'] = inf
             res['hr'] = hr
 
         else:

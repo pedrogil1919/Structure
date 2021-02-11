@@ -63,18 +63,26 @@ class Joint:
     def inverse_prop_lift(self, height):
         """Function inverse to function proportional_lift.
         
-        """
-        return height*self.base.WIDTH / self.x
-
-    def rear_inv_prop_lift(self, height):
-        """Function inverse to function proportional_lift, fixing rear wheel.
+        The function returns the shift the exterior actuators need to move to
+        get the current actuator shift the given height when inclining. The
+        values returned are:
+        - Height for the front actuator.
+        - Height for the rear actuator.
         
-        The function computes the lift needed for the rear actuator when the
-        current actuator has to be shifted the given height.
+        This function can only be called for the interior actuators. For the
+        exterior actuators this value will be 0 and infinity.
         
         """
-        return height*self.base.WIDTH/ \
-            (self.base.WIDTH-self.x)
+        if height == 0.0 or self.x == 0 or self.base.WIDTH == self.x:
+            return {
+                "front": 0.0,
+                "rear": 0.0}
+        fr_height = height*self.base.WIDTH / self.x
+        re_height = height*self.base.WIDTH / (self.base.WIDTH-self.x)
+        return { 
+            "front": fr_height,
+            "rear": re_height}
+        
 
     def lift_from_horizontal_motion(self, distance, front):
         """Computes a vertical motion when inclining the structure.
