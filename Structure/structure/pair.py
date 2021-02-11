@@ -172,21 +172,22 @@ class ActuatorPair:
                 
         # Choose the wheel which is closest to its nearest step. This is the
         # maximum distance the wheel pair can move.
+        # Select the active and the passive wheel. Active wheel is the wheel
+        # which leads the motion for this pair.
+        if re_res['wr'] < fr_res['wr']:
+            active = re_res
+            passive = fr_res
+            index = 0
+        else:
+            active = fr_res
+            passive = re_res
+            index = 1
+        # Get the horizontal and vertical distances to move.
+        hor = active['wr']
+        ver = active['hr']
+
         if re_res['up'] and fr_res['up']:
-            # Both wheels are facing a positive step. Select the active and
-            # the passive wheel. Active wheel is the wheel which leads the motion
-            # for this pair.
-            if re_res['wr'] < fr_res['wr']:
-                active = re_res
-                passive = fr_res
-                index = 0
-            else:
-                active = fr_res
-                passive = re_res
-                index = 1
-            
-            hor = active['wr']
-            ver = active['hr']
+            # Check for possible unstabilities when shifting the wheel.
             if not passive['st']:
                 # The passive wheel is not on the ground, so that we can not
                 # elevate the active wheel before the passive is on the ground.
@@ -209,18 +210,32 @@ class ActuatorPair:
                 ver = passive['hc']
                 # Change the wheel to move.
                 index = (index + 1) % 2
-            else:  
                 # The passive wheel is on the ground, so that we need not take
                 # care of this wheel.
-                if ver > 0:
-                    ver += EDGE_MARGIN
-                    hor -= EDGE_MARGIN
-                else:
-                    hor += EDGE_MARGIN
-            
+            if ver > 0:
+                ver += EDGE_MARGIN
+                hor -= EDGE_MARGIN
+            else:
+                hor += EDGE_MARGIN            
         elif not re_res['up'] and not fr_res['up']:
-            pass
-    
+            if passive['st']:
+                # If the passive wheel is on the ground, check if the active
+                # wheel can be moved pass the edge of the step.
+                try:
+                    hor = active['wc']
+                except KeyError:
+                    pass
+            else:
+                # Else, if the passive wheel is not on the ground, but the
+                # active wheel does, use this instruction to take the passive
+                # wheel to the ground as the active wheel moves the distance
+                # required (to be still stable).
+                # Change the active wheel
+                index = (index + 1) % 2
+                # Note that if the active wheel is stable, the vertical
+                # distance must be 0 (you can not take a wheel down if it is
+                # on the ground).
+                ver = passive['hr']
         else:
             raise NotImplementedError("Wheel facing steps with different sign.")
         

@@ -10,7 +10,7 @@ Module to define all the elements which composes the structure:
 
 '''
 
-from math import asin
+from math import asin, isinf
 from numpy import float32
 import cv2
 
@@ -437,6 +437,8 @@ class Base:
         # Compute distances for the rear pair, and the front pair.
         re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
         fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
+        if isinf(fr_hor) and fr_ver < 0.0:
+            return fr_id, re_hor / 2, fr_ver
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
             return re_id, re_hor, re_ver

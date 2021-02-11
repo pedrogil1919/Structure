@@ -73,10 +73,10 @@ def next_instruction(structure):
                 instruction["elevate"] = elevate
                 # If succeeded, the inclination can now be completed.
                 # TODO: Review this instruction
-                res, __, __ = st_aux.incline(height-elevate)
+                res, __, __ = st_aux.incline(height+elevate)
                 if not res:
                     raise RuntimeError("Error in control module")
-            instruction['incline'] = height
+            instruction['incline'] = height+elevate
             # If succeeded, the actuator can now be shifted.
             res, __ = st_aux.shift_actuator(ac_id, -ver)
             if not res:
@@ -94,19 +94,21 @@ def next_instruction(structure):
                 raise RuntimeError("Error in control module")
         #######################################################################
         elif ac_id == 0:
-            res, incline = st_aux.elevate(height)
+            fix = (height < 0)
+            res, __, elevate = st_aux.incline(-height, True, fix)
             if not res:
-                res, __, __ = st_aux.incline(incline, True)
+                res, __ = st_aux.elevate(elevate)
                 if not res:
                     raise ValueError("Motion can not be completed")
-                instruction["incline"] = incline
-                instruction["elevate_rear"] = True
-            res, __ = st_aux.elevate(height+incline)
-            if not res:
-                raise RuntimeError("Error in control module")              
-            instruction["elevate"] = height+incline
+                instruction["elevate"] = elevate
+                res, __, __ = st_aux.incline(height+elevate)
+                if not res:
+                    raise RuntimeError("Error in control module")              
+            instruction["incline"] = -height+elevate
+            instruction["elevate_rear"] = True
+            instruction["fix_front"] = True
             # If succeeded, the actuator can now be shifted.
-            res, __ = st_aux.shift_actuator(ac_id, -ver)
+            res, ddd = st_aux.shift_actuator(ac_id, -ver)
             if not res:
                 raise RuntimeError("Error in control module")            
     return instruction
