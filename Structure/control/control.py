@@ -35,7 +35,16 @@ def next_instruction(structure):
     """
     ac_id, hor, ver = structure.get_wheels_distances()
     if isinf(hor):
-        return structure.set_horizontal()
+        ac_id, ver = structure.set_horizontal()
+        if ac_id is None:
+            return {
+                'distance': 20.0,
+                'incline': -structure.get_inclination(),
+                'elevate': -structure.get_elevation(),
+                'end': True}
+        else:
+            hor = 0.0
+             
     # Create a deep copy of the structure, to simulate all the motions computed
     # without modifying the actual structure.
     st_aux = copy.deepcopy(structure)

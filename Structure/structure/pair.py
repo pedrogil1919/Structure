@@ -174,6 +174,10 @@ class ActuatorPair:
                 return 0, inf, min([fr_res['hr'], re_res['hr']])
             else:
                 fr_res['up'] = re_res['up']
+                try:
+                    fr_res['wr'] = fr_res['wc']
+                except KeyError:
+                    pass
                 
         # Choose the wheel which is closest to its nearest step. This is the
         # maximum distance the wheel pair can move.

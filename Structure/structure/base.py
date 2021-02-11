@@ -456,7 +456,7 @@ class Base:
         re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
         fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
         if isinf(fr_hor) and fr_ver < 0.0:
-            return fr_id, re_hor / 2, fr_ver
+            return fr_id + 2, re_hor / 2, fr_ver
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
             return re_id, re_hor, re_ver
@@ -474,27 +474,47 @@ class Base:
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
-        if re_res is not None and fr_res is not None:
-            # TODO: Do this when it is possible for the simulator to shift
-            # two actuators at the same time.
-            raise NotImplementedError("Move two actuator")
-        elif re_res is not None:
-            res = {
-                'wheel': re_res[0],
-                'shift': -re_res[1]}
+#         if re_res is not None and fr_res is not None:
+#             # TODO: Do this when it is possible for the simulator to shift
+#             # two actuators at the same time.
+#             raise NotImplementedError("Move two actuator")
+        
+        if re_res is not None:
+            return re_res[0], re_res[1]
         elif fr_res is not None:
-            res = {
-                'wheel': fr_res[0] + 2,
-                'shift': -fr_res[1]}
-        else:
-            res = {
-                'distance': 20.0,
-                'incline': -self.get_inclination(),
-                'elevate': -self.get_elevation(),
-                'end': True}
-            # NOTE: Add 20 unit in horizontal so that the structure stops 20 units
-            # far away from the edge of the last step of the stair.
-        return res
+            return fr_res[0] + 2, fr_res[1]
+        return None, None
+
+#     def set_horizontal(self):
+#         """Returns the distances needed to place the structure in horizontal.
+#         
+#         """
+#         
+#         # Check if also any wheel need to be set to the ground.
+#         re_res = self.REAR.set_to_ground()
+#         fr_res = self.FRNT.set_to_ground()
+#         if re_res is not None and fr_res is not None:
+#             # TODO: Do this when it is possible for the simulator to shift
+#             # two actuators at the same time.
+#             raise NotImplementedError("Move two actuator")
+#         
+#         elif re_res is not None:
+#             res = {
+#                 'wheel': re_res[0],
+#                 'shift': -re_res[1]}
+#         elif fr_res is not None:
+#             res = {
+#                 'wheel': fr_res[0] + 2,
+#                 'shift': -fr_res[1]}
+#         else:
+#             res = {
+#                 'distance': 20.0,
+#                 'incline': -self.get_inclination(),
+#                 'elevate': -self.get_elevation(),
+#                 'end': True}
+#             # NOTE: Add 20 unit in horizontal so that the structure stops 20 units
+#             # far away from the edge of the last step of the stair.
+#         return res
 
     def get_inclination(self):
         """Returns the inclination of the structure.
