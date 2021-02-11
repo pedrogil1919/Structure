@@ -95,7 +95,10 @@ def next_instruction(structure):
                 res, __, __, __, __ = st_aux.incline(-h_aux, True, fix)
                 if not res:
                     raise NotImplementedError("Can not elevate.")
-                instruction["incline"] = -h_aux
+                # Since the simulator perform first the elevate function, in
+                # this case it is necessary that the simulator performs in the
+                # opposite order. With this key, we inform of that.
+                instruction["incline_prev"] = -h_aux
                 instruction["elevate_rear"] = True
                 instruction["fix_front"] = fix
                 res, __, __, __ = st_aux.elevate(height-incline)
