@@ -73,15 +73,10 @@ class Joint:
         exterior actuators this value will be 0 and infinity.
         
         """
-        if height == 0.0 or self.x == 0 or self.base.WIDTH == self.x:
-            return {
-                "front": 0.0,
-                "rear": 0.0}
+
         fr_height = height*self.base.WIDTH / self.x
         re_height = height*self.base.WIDTH / (self.base.WIDTH-self.x)
-        return { 
-            "front": fr_height,
-            "rear": re_height}
+        return fr_height, re_height
         
 
     def lift_from_horizontal_motion(self, distance, front):

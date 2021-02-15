@@ -16,6 +16,7 @@ import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
+from control.distance_errors import CollisionErrors, StabilityErrors
 
 
 class Base:
@@ -62,10 +63,10 @@ class Base:
         # TODO: Comment
         self.REAR = ActuatorPair(
                 WheelActuator(0, d, d+g-r1, r1, self, stairs),
-                WheelActuator(a, d, d+g-r2, r2, self, stairs))
+                WheelActuator(a, d, d+g-r2, r2, self, stairs), True)
         self.FRNT = ActuatorPair(
                 WheelActuator(a+b, d, d+g-r3, r3, self, stairs),
-                WheelActuator(a+b+c, d, d+g-r4, r4, self, stairs))
+                WheelActuator(a+b+c, d, d+g-r4, r4, self, stairs), False)
 
         # Size of the structure.
         self.HEIGHT = d
@@ -116,85 +117,74 @@ class Base:
         """
 
         # Check if any wheel has collided with the stairs.      
-        re_res_col, re_hor_col, re_ver_col, re_act, __, inc_re = \
-                self.REAR.check_collision()
-        fr_res_col, fr_hor_col, fr_ver_col, fr_act, inc_fr, __ = \
-                self.FRNT.check_collision()
+        re_col = self.REAR.check_collision()
+        fr_col = self.FRNT.check_collision()
         # Check if any pair of wheels are not stable.
-        re_res_stb, re_dis_stb = self.REAR.check_stable()
-        fr_res_stb, fr_dis_stb = self.FRNT.check_stable()
+        re_stb = self.REAR.check_stable()
+        fr_stb = self.FRNT.check_stable()
         
         # Look for collisions;
-        if re_res_col and fr_res_col:
+        if re_col.correct and fr_col.correct:
             # No unstabilities. Everything is OK.
-            col = {'res': True}
+            col_error = CollisionErrors()
         else:
             # There is at least one collision. Find it and return the
             # distance.
-            if re_res_col and not fr_res_col:
+            if re_col.correct and not fr_col.correct:
                 # Only the front pair has collided.
-                hor_col = fr_hor_col
-                ver_col = fr_ver_col
-                act = fr_act
-                re_inc = inc_fr['rear']
-                fr_inc = inc_fr['front']
-            elif not re_res_col and fr_res_col:
+                col_error = fr_col
+            elif not re_col.correct and fr_col.correct:
                 # Only the rear pair has collided.
-                hor_col = re_hor_col
-                ver_col = re_ver_col
-                act = re_act
-                re_inc = inc_re['rear']
-                fr_inc = inc_re['front']
+                col_error = re_col
             else:
                 # Both pairs of wheels have collided. Returns the maximum
                 # distance of both pairs.
-                if abs(re_hor_col) > abs(fr_hor_col):
-                    hor_col = re_hor_col
+                if abs(re_col.horizontal) > abs(fr_col.horizontal):
+                    hor_col = re_col.horizontal
                 else:
-                    hor_col = fr_hor_col
-                if abs(re_ver_col) > abs(fr_ver_col):
-                    ver_col = re_ver_col
+                    hor_col = fr_col.horizontal
+                if abs(re_col.central) > abs(fr_col.central):
+                    cen_col = re_col.central
                 else:
-                    ver_col = fr_ver_col
-                if abs(re_act) > abs(fr_act):
-                    act = re_act
+                    cen_col = fr_col.central
+                if abs(re_col.actuator) > abs(fr_col.actuator):
+                    act_col = re_col.actuator
                 else:
-                    act = fr_act
+                    act_col = fr_col.actuator
                 # Inverse proportional inclination
-                if abs(inc_re['rear']) > abs(inc_fr['rear']):
-                    re_inc = inc_re['rear']
+                if abs(re_col.rear) > abs(fr_col.rear):
+                    re_inc = re_col.rear
                 else:
-                    re_inc = inc_fr['rear']
-                if abs(inc_re['front']) > abs(inc_fr['front']):
-                    fr_inc = inc_re['front']
+                    re_inc = fr_col.rear
+                if abs(re_col.front) > abs(fr_col.front):
+                    fr_inc = re_col.front
                 else:
-                    fr_inc = inc_fr['front']
-                                        
-            col = {'res': False, 'ver': ver_col, 'hor': hor_col,
-                   'act': act, 'rear': re_inc, 'front': fr_inc}
-            
+                    fr_inc = fr_col.front
+                col_error = CollisionErrors(False, hor_col, act_col,
+                                            cen_col, fr_inc, re_inc)
+        
         # Look for unstabilities.
-        if re_res_stb and fr_res_stb:
+        if re_stb.correct and fr_stb.correct:
             # No unstabilities. Everything is OK.
-            stb = {'res': True}
+            stb_error = StabilityErrors()
         else:
             # There is at least one unstability. Find it and return the
             # distance.
-            if re_res_stb and not fr_res_stb:
-                dis_stb = fr_dis_stb
-            elif not re_res_stb and fr_res_stb:
-                dis_stb = re_dis_stb
+            if re_stb.correct and not fr_stb.correct:
+                stb_error = fr_stb
+            elif not re_stb.correct and fr_stb.correct:
+                stb_error = re_stb
             else:
                 # Both pairs of wheels are unstable. Returns the largest
                 # distance of both pairs.
-                if abs(re_dis_stb) > abs(fr_dis_stb):
-                    dis_stb = re_dis_stb
+                if abs(re_stb.horizontal) > abs(fr_stb.horizontal):
+                    hor_stb = re_stb.horizontal
                 else:
                     # And viceversa.
-                    dis_stb = fr_dis_stb
-            stb = {'res': False, 'dis': dis_stb}
+                    hor_stb = fr_stb.horizontal
+                stb_error = StabilityErrors(False, hor_stb)
         
-        return col, stb
+        return col_error, stb_error
       
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
@@ -215,37 +205,37 @@ class Base:
         # Update structure position
         self.shift += distance
         if not check:
-            return True, 0.0
+            return CollisionErrors()
         
         # From here on, check the validity of the motion.
         col, stb = self.check_position()
-        if col['res'] and stb['res']:
+        if col and stb:
             # Everything is OK.
-            return True, 0.0
+            return CollisionErrors()
         
-        if not col['res'] and stb['res']:
+        if not col and stb:
             # Only collision detected.
             # Only a collision happens.
-            dis = col['hor']
-        elif col['res'] and not stb['res']:
+            pass
+        elif col and not stb:
             # Only unstability detected.
             # Only a unstability happens.
-            dis = stb['dis']
+            col.horizontal = stb.horizontal
         else:
             # Both error happens. Get the larger of them.
             # Both collision ans unstability happens. Get the largest of both
             # distances.
             if distance > 0:
-                dis = min([col['hor'], stb['dis']])
+                col.horizontal = min([col.horizontal, stb.horizontal])
             else: 
-                dis = max([col['hor'], stb['dis']])
+                col.horizontal = max([col.horizontal, stb.horizontal])
                 
         # Set the structure back to its original position.
         self.advance(-distance, False)
         # Check that everything is OK again.
-        col, stb = self.check_position()
-        if col['res'] and stb['res']:
-            return False, dis
+        col_aux, stb_aux = self.check_position()
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in advance structure")
     
     def elevate(self, distance, check=True):
@@ -271,21 +261,16 @@ class Base:
         
         # Check if any of the actuators has reached one of its bounds.
         col, __ = self.check_position()
-        if col['res']:
+        if col:
             # Everything is OK.
-            return True, 0.0, 0.0, 0.0
-        
-        # In case of failure, take the distance the actuators have failed.
-        dis = col['ver']
-        rear = col['rear']
-        front = col['front']
+            return CollisionErrors()
 
         # Leave the structure in its original position.
         self.elevate(-distance, False)
         # Check that everything is OK again.
-        col, __ = self.check_position()
-        if col['res']:
-            return False, dis, rear, front
+        col_aux, __ = self.check_position()
+        if col_aux:
+            return col
         raise RuntimeError("Error in elevate")
         
     def shift_actuator(self, index, distance, check=True):
@@ -312,7 +297,7 @@ class Base:
             self.FRNT.shift_actuator(False, True, distance)
         
         if not check:
-            return True, 0.0
+            return CollisionErrors()
         
         # Check if the actuator has reached one of its bounds.
         col, stb = self.check_position()
@@ -320,23 +305,24 @@ class Base:
         # actuator reaching one of its bounds.
         # The variable stb is for checking that, after elevating one wheel,
         # the other wheel of the pair is still in a stable position.
-        if not stb['res']:
+        if not stb:
             # We can not shift the actuator, because the other wheel is not
             # in the ground. For this, the error distance is the whole distance
             # required, because we can not move the actuator at all.
-            dis = -distance
-        elif not col['res']:
-            dis = col['ver']
+            col.actuator = -distance
+        elif not col:
+            pass
+        #    dis = col.actuator
         else:
-            return True, 0.0
+            return CollisionErrors()
         
         # Leave the actuator in its original position.
         self.shift_actuator(index, -distance, False)        
         # Check that everything is OK again.
-        col,stb = self.check_position()
+        col_aux, stb_aux = self.check_position()
 
-        if col['res'] and stb['res']:
-            return False, dis
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in shift actuator.")  
       
     def incline(self, distance, 

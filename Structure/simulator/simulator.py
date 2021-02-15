@@ -47,9 +47,9 @@ class Simulator():
             pass
         else:
             # Advance structure
-            res, dis = structure.advance(distance)
+            res = structure.advance(distance)
             if not res:
-                print("Can not advance structure. Error:", dis)
+                print("Can not advance structure. Error:", res.horizontal)
         #######################################################################  
         try:
             height = instruction['incline_prev']
@@ -73,11 +73,11 @@ class Simulator():
             pass
         else:
             # Elevate structure
-            res, dis, rear, front = structure.elevate(height)
+            res = structure.elevate(height)
             if not res:
-                print("Can not elevate structure. Error:", dis)
-                print("Rear actuator:", rear)
-                print("Front actuator:", front)
+                print("Can not elevate structure. Error:", res.central)
+                print("Rear actuator:", res.rear)
+                print("Front actuator:", res.front)
         #######################################################################  
         try:
             height = instruction['incline']
@@ -102,9 +102,9 @@ class Simulator():
             pass
         else:
             # Shift actuator.
-            res, dis = structure.shift_actuator(wheel, height)
+            res = structure.shift_actuator(wheel, height)
             if not res:
-                print("Can not shift actuator. Error:", dis)
+                print("Can not shift actuator. Error:", res.actuator)
         #######################################################################  
         # Check for the end of the trajectory.
         try:

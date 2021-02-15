@@ -149,7 +149,7 @@ class WheelActuator:
         - If False, returns also the distance to place the actuator in a valid
             position. If the actuator error is greater than the wheel error,
             this value is the same than the previous value. This is needed for
-            incline fuction, because this function need to differenciate
+            incline function, because this function need to differenciate
             between wheel and actuator error.
         
         """

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <StairsClimbing>
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
-	<size a="40" b="100" c="40" d="50" g="50"/>
+	<size a="40" b="100" c="30" d="50" g="50"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
 	<wheels r1="20" r2="20" r3="20" r4="20"/>
 	<!--Stairs definition. Can be defined as many as needed:
@@ -21,7 +21,7 @@
 	<stairs landing="220">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="-30" d="200"/>
+		<dimensions N="6" w="80" h="30" d="200"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>

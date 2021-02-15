@@ -10,21 +10,26 @@ This module define the functionality of the two pairs of wheels.
 
 from math import isinf, inf
 
+from control.distance_errors import CollisionErrors, StabilityErrors
+
 EDGE_MARGIN = 4.0
 
 
 class ActuatorPair:
     
-    def __init__(self, rear, front):
+    def __init__(self, rear, front, rear_pair):
         """Constructor:
         
         Parameters:
         - rear: Rear actuator.
         - front: Front actuator.
+        - rear_pair: If true, this is the pair placed in the rear part of the
+            structure.
         
         """
         self.REAR = rear
         self.FRNT = front
+        self.REAR_PAIR = rear_pair
         
     def shift_actuator(self, rear, front, distance):
         """Shift the given actuator.
@@ -67,8 +72,13 @@ class ActuatorPair:
         re_res, re_hor, re_ver, re_act = self.REAR.check_actuator()
         fr_res, fr_hor, fr_ver, fr_act = self.FRNT.check_actuator()
 
-        re_inc = self.REAR.get_inverse_lift(re_act)    
-        fr_inc = self.FRNT.get_inverse_lift(fr_act)
+        if self.REAR_PAIR:
+            # If this is the rear pair, only the front actuator is needed,
+            # since the rear actuator is one of the exterior actuator.
+            fr_inc, re_inc = self.FRNT.get_inverse_lift(fr_act)
+        else:   
+            # And the opposite.
+            fr_inc, re_inc = self.REAR.get_inverse_lift(re_act)
 
         if not fr_res:
             # If the front wheel have collided,
@@ -96,18 +106,18 @@ class ActuatorPair:
                 hor = fr_hor
                 ver = fr_ver
                 act = fr_act
-            res = False
         elif not re_res:
             # In this case, only the rear wheel has collided.
             hor = re_hor
             ver = re_ver
             act = re_act
-            res = False
         else:
             # In this case, none of the wheels have collided.
-            return True, 0.0, 0.0, 0.0, None, None
-        return res, hor, ver, act, re_inc, fr_inc
-
+            errors = CollisionErrors(True)
+            return errors
+        errors = CollisionErrors(False, hor, ver, act, re_inc, fr_inc)
+        return errors
+    
     def check_stable(self):
         """Check the position of the pair of wheels.
         
@@ -150,10 +160,11 @@ class ActuatorPair:
                         dis = fr_grd_dis
                     else:
                         dis = re_grd_dis
-            return False, dis
-        else:
-            # Al least one wheel is stable, so that the structure in safe.
-            return True, 0.0
+            error = StabilityErrors(False, dis)
+            return error
+        # At least one wheel is stable, so that the structure in safe.
+        error = StabilityErrors(True)
+        return error
     
     # =========================================================================
     # Control functions.
