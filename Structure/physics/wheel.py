@@ -112,7 +112,7 @@ class Wheel:
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             return wl
-        return 0
+        return None
 
     def ground(self, position):
         """Check whether the wheel is lying in a horizontal place.

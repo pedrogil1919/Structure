@@ -10,7 +10,7 @@ This module define the functionality of the two pairs of wheels.
 
 from math import isinf, inf
 
-from control.distance_errors import CollisionErrors, StabilityErrors
+from control.distance_errors import merge_collision, merge_stability, StabilityErrors
 
 EDGE_MARGIN = 4.0
 
@@ -69,54 +69,59 @@ class ActuatorPair:
         """
         # TODO: Add comments for inverse_lift
         # Check for possible wheel collisions.
-        re_res, re_hor, re_ver, re_act = self.REAR.check_actuator()
-        fr_res, fr_hor, fr_ver, fr_act = self.FRNT.check_actuator()
+        fr_res = self.FRNT.check_actuator()
+        re_res = self.REAR.check_actuator()
 
+        res = merge_collision(fr_res, re_res)
+        
         if self.REAR_PAIR:
             # If this is the rear pair, only the front actuator is needed,
             # since the rear actuator is one of the exterior actuator.
-            fr_inc, re_inc = self.FRNT.get_inverse_lift(fr_act)
+            res.add_inclination_errors(
+                self.FRNT.get_inverse_lift(fr_res.actuator))
         else:   
             # And the opposite.
-            fr_inc, re_inc = self.REAR.get_inverse_lift(re_act)
-
-        if not fr_res:
-            # If the front wheel have collided,
-            if not re_res:
-                # Both wheels have collided. Get the largest distance.
-                # NOTE: Take into account that the error can be negative or
-                # positive, but always both are either positive or negative.
-                # For that reason, we compare the absolute value of both
-                # distances, and choose the largest one, keeping its actual
-                # sign.
-                if abs(fr_hor) > abs(re_hor):
-                    hor = fr_hor
-                else:
-                    hor = re_hor
-                if abs(fr_ver) > abs(re_ver):
-                    ver = fr_ver
-                else:
-                    ver = re_ver
-                if abs(fr_act) > abs(re_act):
-                    act = fr_act
-                else:
-                    act = re_act
-            else:
-                # In this case, only the front wheel have collided.
-                hor = fr_hor
-                ver = fr_ver
-                act = fr_act
-        elif not re_res:
-            # In this case, only the rear wheel has collided.
-            hor = re_hor
-            ver = re_ver
-            act = re_act
-        else:
-            # In this case, none of the wheels have collided.
-            errors = CollisionErrors(True)
-            return errors
-        errors = CollisionErrors(False, hor, ver, act, re_inc, fr_inc)
-        return errors
+            res.add_inclination_errors(
+                self.REAR.get_inverse_lift(re_res.actuator))
+        return res
+    
+#         if not fr_res:
+#             # If the front wheel have collided,
+#             if not re_res:
+#                 # Both wheels have collided. Get the largest distance.
+#                 # NOTE: Take into account that the error can be negative or
+#                 # positive, but always both are either positive or negative.
+#                 # For that reason, we compare the absolute value of both
+#                 # distances, and choose the largest one, keeping its actual
+#                 # sign.
+#                 if abs(fr_hor) > abs(re_hor):
+#                     hor = fr_hor
+#                 else:
+#                     hor = re_hor
+#                 if abs(fr_ver) > abs(re_ver):
+#                     ver = fr_ver
+#                 else:
+#                     ver = re_ver
+#                 if abs(fr_act) > abs(re_act):
+#                     act = fr_act
+#                 else:
+#                     act = re_act
+#             else:
+#                 # In this case, only the front wheel have collided.
+#                 hor = fr_hor
+#                 ver = fr_ver
+#                 act = fr_act
+#         elif not re_res:
+#             # In this case, only the rear wheel has collided.
+#             hor = re_hor
+#             ver = re_ver
+#             act = re_act
+#         else:
+#             # In this case, none of the wheels have collided.
+#             errors = CollisionErrors(True)
+#             return errors
+#         errors = CollisionErrors(False, hor, ver, act, re_inc, fr_inc)
+#         return errors
     
     def check_stable(self):
         """Check the position of the pair of wheels.
@@ -139,32 +144,37 @@ class ActuatorPair:
             # Both wheels are not on the ground:
             # Get the minimum distance the pair has to be moved to place one of
             # the wheels back to a stable position.
-            re_grd_dis = self.REAR.distance_to_stable()
-            fr_grd_dis = self.FRNT.distance_to_stable()
+            fr_stb = self.FRNT.distance_to_stable()
+            re_stb = self.REAR.distance_to_stable()
             
-            if re_grd_dis is None:
-                if fr_grd_dis is None:
-                    # This happens when shifting one actuator with the other
-                    # already in the air.
-                    dis = 0.0
-                else:
-                    dis = fr_grd_dis
-            else:
-                if fr_grd_dis is None:
-                    dis = re_grd_dis
-                else:
-                    # Get the minimum value of both distances. In this case, we
-                    # need the minimum, since this is the distance to get the
-                    # structure back to a safe position.
-                    if abs(fr_grd_dis) < abs(re_grd_dis):
-                        dis = fr_grd_dis
-                    else:
-                        dis = re_grd_dis
-            error = StabilityErrors(False, dis)
-            return error
-        # At least one wheel is stable, so that the structure in safe.
-        error = StabilityErrors(True)
-        return error
+            res = StabilityErrors(False, fr_stb, re_stb)
+            return res
+        return StabilityErrors()
+    
+    
+#             if re_grd_dis is None:
+#                 if fr_grd_dis is None:
+#                     # This happens when shifting one actuator with the other
+#                     # already in the air.
+#                     dis = 0.0
+#                 else:
+#                     dis = fr_grd_dis
+#             else:
+#                 if fr_grd_dis is None:
+#                     dis = re_grd_dis
+#                 else:
+#                     # Get the minimum value of both distances. In this case, we
+#                     # need the minimum, since this is the distance to get the
+#                     # structure back to a safe position.
+#                     if abs(fr_grd_dis) < abs(re_grd_dis):
+#                         dis = fr_grd_dis
+#                     else:
+#                         dis = re_grd_dis
+#             error = StabilityErrors(False, dis)
+#             return error
+#         # At least one wheel is stable, so that the structure in safe.
+#         error = StabilityErrors(True)
+#         return error
     
     # =========================================================================
     # Control functions.

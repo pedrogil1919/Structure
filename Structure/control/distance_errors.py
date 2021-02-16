@@ -7,6 +7,45 @@ Class to return the list of distance errors when checking the position of the
 structure.
 '''
 
+
+def greatest(v1, v2):
+    return v1 if abs(v1) > abs(v2) else v2
+
+def smallest(v1, v2):
+    return v1 if abs(v1) < abs(v2) else v2
+
+def merge_collision(res1, res2):
+    
+        if res1 and res2:
+            return CollisionErrors()
+        elif not res1 and res2:
+            return res1
+        elif res1 and not res2:
+            return res2
+        else:
+            horizontal = greatest(res1.horizontal, res2.horizontal)
+            actuator   = greatest(res1.actuator,   res2.actuator)
+            central    = greatest(res1.central,    res2.central)
+            front      = greatest(res1.front,      res2.front)
+            rear       = greatest(res1.rear,       res2.rear)
+            return CollisionErrors(
+                False, horizontal, actuator, central, front, rear)
+
+def merge_stability(res1, res2):
+        if res1 and res2:
+            return StabilityErrors()
+        elif not res1 and res2:
+            return res1
+        elif res1 and not res2:
+            return res2
+        else:
+            horizontal = greatest(res1.horizontal, res2.horizontal)
+            return StabilityErrors(False, horizontal)
+
+###############################################################################
+###############################################################################
+
+                
 class CollisionErrors():
     '''
     classdocs
@@ -30,22 +69,46 @@ class CollisionErrors():
           the structure in a valid position.
         rear -- Same as front, for the rear actuator.
         '''
-        self.correct = correct
+        self.correct    = correct
         self.horizontal = horizontal
-        self.actuator = actuator
-        self.central = central
-        self. front = front
-        self.rear = rear
+        self.actuator   = actuator
+        self.central    = central
+        self. front     = front
+        self.rear       = rear
         
     def __bool__(self):
         return self.correct
+    
+    def add_inclination_errors(self, inclination_errors):
+        self.front = inclination_errors[0]
+        self.rear = inclination_errors[1]
+    
+    def add_stability(self, error):
         
+        if self and not error:
+            self.horizontal = error.horizontal
+            self.correct = False
+        elif not self and not error:
+            self.horizontal = greatest(self.horizontal, error.horizontal)
+        
+
+###############################################################################
+###############################################################################
+
 class StabilityErrors():
     
-    def __init__(self, correct=True, horizontal=0.0):
+    def __init__(self, correct=True, front=0.0, rear=0.0):
         
         self.correct = correct
-        self.horizontal = horizontal
+        if front is None and rear is None:
+            self.horizontal = 0.0
+        elif front is None and rear is not None:
+            self.horizontal = rear
+        elif front is not None and rear is None:
+            self.horizontal = front
+        else:
+            self.horizontal = smallest(front, rear)
 
     def __bool__(self):
         return self.correct
+    

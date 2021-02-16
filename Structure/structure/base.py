@@ -16,7 +16,8 @@ import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
-from control.distance_errors import CollisionErrors, StabilityErrors
+from control.distance_errors import CollisionErrors, StabilityErrors,\
+    merge_collision, merge_stability
 
 
 class Base:
@@ -119,73 +120,15 @@ class Base:
         # Check if any wheel has collided with the stairs.      
         re_col = self.REAR.check_collision()
         fr_col = self.FRNT.check_collision()
+        col = merge_collision(re_col, fr_col)
+        
         # Check if any pair of wheels are not stable.
         re_stb = self.REAR.check_stable()
         fr_stb = self.FRNT.check_stable()
+        stb = merge_stability(re_stb, fr_stb)
         
-        # Look for collisions;
-        if re_col.correct and fr_col.correct:
-            # No unstabilities. Everything is OK.
-            col_error = CollisionErrors()
-        else:
-            # There is at least one collision. Find it and return the
-            # distance.
-            if re_col.correct and not fr_col.correct:
-                # Only the front pair has collided.
-                col_error = fr_col
-            elif not re_col.correct and fr_col.correct:
-                # Only the rear pair has collided.
-                col_error = re_col
-            else:
-                # Both pairs of wheels have collided. Returns the maximum
-                # distance of both pairs.
-                if abs(re_col.horizontal) > abs(fr_col.horizontal):
-                    hor_col = re_col.horizontal
-                else:
-                    hor_col = fr_col.horizontal
-                if abs(re_col.central) > abs(fr_col.central):
-                    cen_col = re_col.central
-                else:
-                    cen_col = fr_col.central
-                if abs(re_col.actuator) > abs(fr_col.actuator):
-                    act_col = re_col.actuator
-                else:
-                    act_col = fr_col.actuator
-                # Inverse proportional inclination
-                if abs(re_col.rear) > abs(fr_col.rear):
-                    re_inc = re_col.rear
-                else:
-                    re_inc = fr_col.rear
-                if abs(re_col.front) > abs(fr_col.front):
-                    fr_inc = re_col.front
-                else:
-                    fr_inc = fr_col.front
-                col_error = CollisionErrors(False, hor_col, act_col,
-                                            cen_col, fr_inc, re_inc)
+        return col, stb
         
-        # Look for unstabilities.
-        if re_stb.correct and fr_stb.correct:
-            # No unstabilities. Everything is OK.
-            stb_error = StabilityErrors()
-        else:
-            # There is at least one unstability. Find it and return the
-            # distance.
-            if re_stb.correct and not fr_stb.correct:
-                stb_error = fr_stb
-            elif not re_stb.correct and fr_stb.correct:
-                stb_error = re_stb
-            else:
-                # Both pairs of wheels are unstable. Returns the largest
-                # distance of both pairs.
-                if abs(re_stb.horizontal) > abs(fr_stb.horizontal):
-                    hor_stb = re_stb.horizontal
-                else:
-                    # And viceversa.
-                    hor_stb = fr_stb.horizontal
-                stb_error = StabilityErrors(False, hor_stb)
-        
-        return col_error, stb_error
-      
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
         
@@ -209,27 +152,12 @@ class Base:
         
         # From here on, check the validity of the motion.
         col, stb = self.check_position()
-        if col and stb:
-            # Everything is OK.
-            return CollisionErrors()
         
-        if not col and stb:
-            # Only collision detected.
-            # Only a collision happens.
-            pass
-        elif col and not stb:
-            # Only unstability detected.
-            # Only a unstability happens.
-            col.horizontal = stb.horizontal
-        else:
-            # Both error happens. Get the larger of them.
-            # Both collision ans unstability happens. Get the largest of both
-            # distances.
-            if distance > 0:
-                col.horizontal = min([col.horizontal, stb.horizontal])
-            else: 
-                col.horizontal = max([col.horizontal, stb.horizontal])
-                
+        col.add_stability(stb)
+        
+        if col:
+            return col
+    
         # Set the structure back to its original position.
         self.advance(-distance, False)
         # Check that everything is OK again.
@@ -257,7 +185,7 @@ class Base:
         self.FRNT.shift_actuator(True, True, distance)
         
         if not check:
-            return True, 0.0
+            return CollisionErrors()
         
         # Check if any of the actuators has reached one of its bounds.
         col, __ = self.check_position()
@@ -392,30 +320,10 @@ class Base:
         # that this function work wrongly. Check it.
         col, stb = self.check_position()
 
-        if col and stb:
+        col.add_stability(stb)
+        
+        if col:
             return CollisionErrors()
-        elif not col:
-            # Check if there is a problem with an actuator.
-#             if col['act'] != 0:
-#                 ver = col['act']
-#             else:
-#                 ver = 0.0
-            # NOTE: When inclining the structure, a wheel collision can never
-            # happen, because the wheel do not change its height with respect
-            # to the ground. For that reason, only need to check for actuator
-            # collisions.
-            pass
-            # ver = col['act']
-            # hor = col['hor']
-        elif not stb:
-            col.correct = False
-            col.horizontal = stb.horizontal
-            # hor = stb['dis']
-            # ver = 0.0
-        else:
-            raise RuntimeError("Error in incline function")
-        #rear = col['rear']
-        #front = col['front']
         
         # Leave the structure in its original position.
         self.incline(-distance, elevate_rear, fix_front, False)

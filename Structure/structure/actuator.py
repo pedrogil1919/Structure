@@ -15,6 +15,7 @@ import cv2
 from physics.wheel_state import MAX_GAP
 from physics.wheel import Wheel
 from structure.joint import Joint
+from control.distance_errors import CollisionErrors 
 
 # Possible positions for an actuator:
 #   - UpperBound.
@@ -175,7 +176,7 @@ class WheelActuator:
             a_err = self.LENGTH - self.d
             v_err = min([v_err, a_err])
          
-        return check, h_err, v_err, a_err
+        return CollisionErrors(check, h_err, a_err, v_err)
 
     def ground(self):
         """Return True if its ending wheel is lying on an horizontal surface.
