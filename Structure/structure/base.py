@@ -385,16 +385,16 @@ class Base:
         self.FRNT.shift_actuator_proportional(True, True, distance)
  
         if not check:
-            return True, 0.0, 0.0
+            return CollisionErrors()
         
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
         col, stb = self.check_position()
 
-        if col['res'] and stb['res']:
-            return True, 0.0, 0.0, 0.0, 0.0
-        elif not col['res']:
+        if col and stb:
+            return CollisionErrors()
+        elif not col:
             # Check if there is a problem with an actuator.
 #             if col['act'] != 0:
 #                 ver = col['act']
@@ -404,22 +404,25 @@ class Base:
             # happen, because the wheel do not change its height with respect
             # to the ground. For that reason, only need to check for actuator
             # collisions.
-            ver = col['act']
-            hor = col['hor']
-        elif not stb['res']:
-            hor = stb['dis']
-            ver = 0.0
+            pass
+            # ver = col['act']
+            # hor = col['hor']
+        elif not stb:
+            col.correct = False
+            col.horizontal = stb.horizontal
+            # hor = stb['dis']
+            # ver = 0.0
         else:
             raise RuntimeError("Error in incline function")
-        rear = col['rear']
-        front = col['front']
+        #rear = col['rear']
+        #front = col['front']
         
         # Leave the structure in its original position.
         self.incline(-distance, elevate_rear, fix_front, False)
         # Check that everything is OK again.
-        col, stb = self.check_position()
-        if col['res'] and stb['res']:
-            return False, hor, ver, rear, front
+        col_aux, stb_aux = self.check_position()
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in incline function")
 
     # =========================================================================

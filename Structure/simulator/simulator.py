@@ -87,13 +87,13 @@ class Simulator():
             rear = instruction.get('elevate_rear', False)
             front = instruction.get('fix_front', False)
             # Incline structure
-            res, hor, ver, rear, front = structure.incline(height, rear, front)
+            res = structure.incline(height, rear, front)
             if not res:
                 print("Can not incline structure:")
-                print("Vertical:", ver)
-                print("Horizontal:", hor)
-                print("Rear actuator:", rear)
-                print("Front actuator:", front)
+                print("Vertical:", res.central)
+                print("Horizontal:", res.horizontal)
+                print("Rear actuator:", res.rear)
+                print("Front actuator:", res.front)
         #######################################################################  
         try:
             height = instruction['shift']
