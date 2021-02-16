@@ -36,27 +36,39 @@ class ErrorDistancesTest(unittest.TestCase):
         stair_test = stairs.Stair(stair_list, landing)                
         base_test = base.Base(size, wheels, stair_test)
 
-        res, __ = base_test.elevate(10.0)
+        # Check simple wheel collision.
+        res = base_test.shift_actuator(2, 5.0)
+        self.assertFalse(res, "Error in base.shift. Both wheel on air.")
+        self.assertEqual(res.central, -5.0, "Error in base.shift. Error distance wrong")
+
+        # Check simple actuator collision.
+        res = base_test.shift_actuator(2, -5.0)
+        self.assertFalse(res, "Error in base.shift. Both wheel on air.")
+        self.assertEqual(res.actuator, 5.0, "Error in base.shift. Error distance wrong")
+
+        res = base_test.elevate(10.0)
         self.assertTrue(res, "Error in base.elevate. Wrong collision detected.")
         # Check that both wheel of a pair can be in the air at the same time.
-        res, __ = base_test.shift_actuator(3, -5.0)
+        res = base_test.shift_actuator(3, -5.0)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, __ = base_test.shift_actuator(2, -5.0)
+        res = base_test.shift_actuator(2, -5.0)
         self.assertFalse(res, "Error in base.shift. Both wheel on air.")
-        # Check simple actuator collision.
-        res, err = base_test.shift_actuator(3, 10.0)
+        self.assertEqual(res.actuator, 5.0, "Error in base.shift. Error distance wrong")
+        # Take the wheel to the ground.
+        res = base_test.shift_actuator(3, 10.0)
         self.assertFalse(res, "Error in base.shift. No collision detected.")
+        self.assertEqual(res.central, -5.0, "Error in base.shift. Error distance wrong")
         # Correct the distance required by the error returned by the function.
         # This should place the wheel on the ground.
-        res, err = base_test.shift_actuator(3, 10.0 + err)
+        res = base_test.shift_actuator(3, 10.0 + res.central)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
         
         # Simple collision.
-        res, dis = base_test.advance(36.0)
+        res = base_test.advance(36.0)
         self.assertFalse(res, "Error in base.advance. No collision detected.")
-        self.assertEqual(dis, -1.0, 
+        self.assertEqual(res.horizontal, -1.0, 
                          "Error in base.advance. Error distance wrong")
-        res, dis = base_test.advance(36.0 + dis)
+        res = base_test.advance(36.0 + res.horizontal)
         self.assertTrue(res, "Error in base.advance. Wrong collision detected.")
         # Double collision. Both wheel get inside the first step.
         # NOTE: This kind of double collision will not be a normal case, for
@@ -69,91 +81,91 @@ class ErrorDistancesTest(unittest.TestCase):
         # the appropiate location. However, for this error to happen, we have
         # to advance the structure a distance larger than the step, and this
         # should not happen ever.
-        res, dis = base_test.advance(35.0)
+        res = base_test.advance(35.0)
         self.assertFalse(res, "Error in base.advance. No collision detected.")
-        self.assertEqual(dis, -35.0, 
+        self.assertEqual(res.horizontal, -35.0, 
                          "Error in base.advance. Error distance wrong")
          
-        res, __ = base_test.elevate(40.0)
+        res = base_test.elevate(40.0)
         self.assertTrue(res, "Error in base.elevate. Wrong collision detected.")
-        res, __ = base_test.shift_actuator(3, -40.0)
+        res = base_test.shift_actuator(3, -40.0)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, __ = base_test.advance(15.0)
+        res = base_test.advance(15.0)
         # Prepare a wheel unstability when inclining.
-        res, __ = base_test.shift_actuator(2, -15)
+        res = base_test.shift_actuator(2, -15)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
          
         # Now, when inclining the structure, the first wheel will move back,
         # so that it gets to an unstable position, and since the second wheel
         # is on air, the motion is not posible.
-        res, __ = base_test.shift_actuator(1, -10)
+        res = base_test.shift_actuator(1, -10)
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, hor, ver = base_test.incline(10.0)
+        res = base_test.incline(10.0)
         self.assertFalse(res, "Error in base.incline. No collision detected.")
         # However, if we move the structure the horizontal distance returned
         # by the function in opposite direction, now the wheel will not gets
         # to an unstable position.
-        res, __ = base_test.advance(-hor)
-        res, hor, __ = base_test.incline(10.0)
+        res = base_test.advance(-res.horizontal)
+        res = base_test.incline(10.0)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
         # Now the front wheel is at the limit, so that moving the structure
         # back is not possible.
-        res, dis = base_test.advance(-5.0)
+        res = base_test.advance(-5.0)
         self.assertFalse(res, "Error in base.incline. Wrong collision detected.")
-        self.assertEqual(dis, -5.0, 
+        self.assertEqual(res.horizontal, -5.0, 
                          "Error in base.advance. Error distance wrong")
         
-        res, __ = base_test.shift_actuator(2, -30.0)                
+        res = base_test.shift_actuator(2, -30.0)                
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, __ = base_test.advance(40.0)
+        res = base_test.advance(40.0)
         self.assertTrue(res, "Error in base.advance. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(2, 20.0)                
+        res = base_test.shift_actuator(2, 20.0)                
         self.assertFalse(res, "Error in base.shift. No collision detected.")
-        res, dis = base_test.shift_actuator(2, 20.0+dis)                
+        res = base_test.shift_actuator(2, 20.0+res.central)                
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(1, -30.0)                
+        res = base_test.shift_actuator(1, -30.0)                
         self.assertTrue(res, "Error in base.shift. Wrong collision detected.")
-        res, hor, __ = base_test.incline(25.0)
+        res = base_test.incline(25.0)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.advance(50.0)
+        res = base_test.advance(50.0)
         self.assertFalse(res, "Error in base.advance. Wrong collision detected.")
-        res, __ = base_test.advance(50.0+dis)
-        res, dis = base_test.shift_actuator(3, -50.0)                
+        res = base_test.advance(50.0+res.horizontal)
+        res = base_test.shift_actuator(3, -50.0)                
         self.assertFalse(res, "Error in base.shift. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(3, -50.0+dis) 
+        res = base_test.shift_actuator(3, -50.0+res.actuator) 
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.advance(50.0)
+        res = base_test.advance(50.0)
         self.assertFalse(res, "Error in base.advance. Wrong collision detected.")
-        res, dis = base_test.advance(50.0+dis)
+        res = base_test.advance(50.0+res.horizontal)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
         
-        res, dis = base_test.shift_actuator(3, 30.0)                
+        res = base_test.shift_actuator(3, 30.0)                
         self.assertFalse(res, "Error in base.shift. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(3, 30.0+dis) 
+        res = base_test.shift_actuator(3, 30.0+res.central) 
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(2, -40.0)                
+        res = base_test.shift_actuator(2, -40.0)                
         self.assertFalse(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(2, -40.0+dis) 
+        res = base_test.shift_actuator(2, -40.0+res.central) 
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, hor, __ = base_test.incline(10.0)
+        res = base_test.incline(10.0)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(2, -40.0)                
+        res = base_test.shift_actuator(2, -40.0)                
         self.assertFalse(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.shift_actuator(2, -40.0+dis) 
+        res = base_test.shift_actuator(2, -40.0+res.central) 
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, dis = base_test.advance(50.0)
+        res = base_test.advance(50.0)
         self.assertFalse(res, "Error in base.advance. Wrong collision detected.")
-        res, dis = base_test.advance(50.0+dis)
+        res = base_test.advance(50.0+res.horizontal)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
         # Collide the rear wheel when inclining the structure. In this case,
         # we fix the front wheel, wo that the rear wheel advance forward and
         # collides with the step. In this case, the error must be negative.
-        res, hor, __ = base_test.incline(10.0, False, True)
+        res = base_test.incline(10.0, False, True)
         self.assertFalse(res, "Error in base.advance. Wrong collision detected.")
-        self.assertTrue(hor, "Error in base.incline. Wrong collision detected.")
-        res, __ = base_test.advance(hor)
+        self.assertTrue(res.horizontal, "Error in base.incline. Wrong collision detected.")
+        res = base_test.advance(res.horizontal)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
-        res, __, __ = base_test.incline(10.0, False, True)
+        res = base_test.incline(10.0, False, True)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
 
         image = numpy.full((500, 800, 3), 0xFF, numpy.uint8)

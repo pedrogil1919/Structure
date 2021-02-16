@@ -229,6 +229,7 @@ class Base:
         
         # Check if the actuator has reached one of its bounds.
         col, stb = self.check_position()
+        
         # The variable col is for possible collisions with the steps, or an
         # actuator reaching one of its bounds.
         # The variable stb is for checking that, after elevating one wheel,
@@ -238,12 +239,12 @@ class Base:
             # in the ground. For this, the error distance is the whole distance
             # required, because we can not move the actuator at all.
             col.actuator = -distance
-        elif not col:
-            pass
-        #    dis = col.actuator
-        else:
-            return CollisionErrors()
-        
+            col.central = -distance
+            col.correct = False
+            
+        if col:
+            return col
+
         # Leave the actuator in its original position.
         self.shift_actuator(index, -distance, False)        
         # Check that everything is OK again.
