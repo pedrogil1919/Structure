@@ -16,7 +16,7 @@ import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
-from control.distance_errors import CollisionErrors, StabilityErrors,\
+from control.distance_errors import CollisionErrors,\
     merge_collision, merge_stability
 
 
@@ -148,7 +148,10 @@ class Base:
         # Update structure position
         self.shift += distance
         if not check:
-            return CollisionErrors()
+            # This option is called inside this function, so do not need to
+            # return any value as long as we take this into account bellow,
+            # where the function is called with check set to False.
+            return
         
         # From here on, check the validity of the motion.
         col, stb = self.check_position()
@@ -159,6 +162,8 @@ class Base:
             return col
     
         # Set the structure back to its original position.
+        # NOTE: When check is set to False, the function does not return any
+        # value, so leave the call without receiving any value.
         self.advance(-distance, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()
@@ -185,17 +190,20 @@ class Base:
         self.FRNT.shift_actuator(True, True, distance)
         
         if not check:
-            return CollisionErrors()
+            # See comment in advance function.
+            return
         
         # Check if any of the actuators has reached one of its bounds.
         col, __ = self.check_position()
         if col:
             # Everything is OK.
-            return CollisionErrors()
+            return col
 
         # Leave the structure in its original position.
         self.elevate(-distance, False)
         # Check that everything is OK again.
+        # NOTE: In this case, never a stability error can happen, and so, we
+        # need not collect the stability error.
         col_aux, __ = self.check_position()
         if col_aux:
             return col
@@ -225,7 +233,7 @@ class Base:
             self.FRNT.shift_actuator(False, True, distance)
         
         if not check:
-            return CollisionErrors()
+            return
         
         # Check if the actuator has reached one of its bounds.
         col, stb = self.check_position()
@@ -243,6 +251,7 @@ class Base:
             col.correct = False
             
         if col:
+            # Everything is OK.
             return col
 
         # Leave the actuator in its original position.
@@ -314,7 +323,7 @@ class Base:
         self.FRNT.shift_actuator_proportional(True, True, distance)
  
         if not check:
-            return CollisionErrors()
+            return
         
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
@@ -324,7 +333,7 @@ class Base:
         col.add_stability(stb)
         
         if col:
-            return CollisionErrors()
+            return col
         
         # Leave the structure in its original position.
         self.incline(-distance, elevate_rear, fix_front, False)
