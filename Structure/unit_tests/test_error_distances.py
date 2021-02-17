@@ -168,11 +168,11 @@ class ErrorDistancesTest(unittest.TestCase):
         res = base_test.incline(10.0, False, True)
         self.assertTrue(res, "Error in base.incline. Wrong collision detected.")
 
-        image = numpy.full((500, 800, 3), 0xFF, numpy.uint8)
-        stair_test.draw((0, 400), image, 8, 3)
-        base_test.draw((0, 400), image, 8, 3)
-        cv2.imshow("image", image)
-        cv2.waitKey()        
+#         image = numpy.full((500, 800, 3), 0xFF, numpy.uint8)
+#         stair_test.draw((0, 400), image, 8, 3)
+#         base_test.draw((0, 400), image, 8, 3)
+#         cv2.imshow("image", image)
+#         cv2.waitKey()        
         
     def testActuatorError(self):
         """Check if the actuator returns the correct value when both the
@@ -204,31 +204,38 @@ class ErrorDistancesTest(unittest.TestCase):
         res = base_test.shift_actuator(3, 25)
         self.assertTrue(res, "Error in shift actuator")
         # The front wheel is 15 above the step. The actuator 5 to its lower
-        # bound. 
+        # bound.
+        # The actuator is in error, but the wheel not. Both errors take the
+        # same value.
         res = base_test.shift_actuator(3, 10)
         self.assertFalse(res, "Error in shift actuator")
         self.assertEqual(res.central, -5.0, "Error in shift actuator")
         self.assertEqual(res.actuator, -5.0, "Error in shift actuator")
-        
-        # Example when the actuator has a greater error than the wheel.
+         
+        # Both the wheel and the actuator are in error, but the error of the
+        # actuator is greater. Again, both errors take the same value.
         res = base_test.shift_actuator(3, 20)
         self.assertFalse(res, "Error in shift actuator")
         self.assertEqual(res.central, -15.0, "Error in shift actuator")
         self.assertEqual(res.actuator, -15.0, "Error in shift actuator")
         # NOTE: If we correct the required distance by the amount returned by
         # the function, the actuator must be placed in its lower limit.
-        res = base_test.shift_actuator(3, 20 + res.actuator)
-
+        res = base_test.shift_actuator(3, 20 + res.central)
+ 
         # Now, prepare a case when the wheel is closer to the ground than the
         # actuator to its lower limit.
         res = base_test.elevate(-15)
         self.assertTrue(res, "Error in elevate")
+        # In this case, the wheel error is greater than the actuator error.
+        # and so, both errors take different values.
         res = base_test.shift_actuator(3, 20)
         self.assertFalse(res, "Error in shift actuator")
         self.assertEqual(res.central, -10.0, "Error in shift actuator")
         self.assertEqual(res.actuator, -5.0, "Error in shift actuator")
         # Again, if we correct the distance by the amount returned, the wheel
         # must be placed on the ground.
+        res = base_test.shift_actuator(3, 20 + res.central)
+        self.assertTrue(res, "Error in shift")
 
         image = numpy.full((500, 800, 3), 0xFF, numpy.uint8)
         stair_test.draw((0, 400), image, 8, 3)

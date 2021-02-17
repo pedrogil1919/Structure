@@ -80,7 +80,7 @@
 		<!--
 		<image shift="400"/>
 		-->
-		<image shift="200" scale="1.0"/>
+		<image shift="400" scale="1.0"/>
 		<framerate interval="10" pause="True"/>
 <!--
 		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True"/>

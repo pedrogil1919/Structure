@@ -108,7 +108,7 @@ class Wheel:
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
-            return wr
+            return -wr
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             return wl
@@ -262,6 +262,7 @@ class Wheel:
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
                 res['wc'] = wl + MAX_GAP
+            res['hc'] = res['hr']
 
         else:
             raise NotImplementedError("Detect when this case happens...")
