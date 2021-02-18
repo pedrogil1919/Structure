@@ -44,10 +44,16 @@ def next_instruction(structure, graphics, stairs):
         # lower position.
         ac_id, ver = structure.set_horizontal()
         if ac_id is None:
+            inclination = structure.get_inclination()
+            elevation = structure.get_elevation()
+            if inclination < 0:
+                inc_key = 'incline_prev'
+            else:
+                inc_key = 'incline'
             return {
                 'distance': 20.0,
-                'incline': -structure.get_inclination(),
-                'elevate': -structure.get_elevation(),
+                inc_key: -inclination,
+                'elevate': -elevation,
                 'end': True}
         else:
             hor = 0.0
@@ -157,6 +163,9 @@ def next_instruction(structure, graphics, stairs):
         elif ac_id == 0:
             res_inc = st_aux.incline(-res_shf.central, True)
             if not res_inc:
+#                 st_aux2 = copy.deepcopy(st_aux)
+#                 st_aux2.incline(-res_shf.central, True, False, False)
+#                 graphics.draw(stairs, st_aux2)
                 # If the inclination fails, one less likely cause is that,
                 # when inclining, one of the wheel other than then rear one,
                 # can collide. In this case, correct this distance, and try

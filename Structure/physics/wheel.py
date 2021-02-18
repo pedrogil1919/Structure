@@ -109,10 +109,16 @@ class Wheel:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
             return -wr
+        elif hr >= hc and hc > hl:
+            # Upstair direction, in the last step.
+            return -wr
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             return wl
-        return 0.0
+        elif hr <= hc and hc < hl:
+            # Downstairs direction, in the last step.
+            return wl
+        return None
 
     def ground(self, position):
         """Check whether the wheel is lying in a horizontal place.

@@ -17,6 +17,7 @@ import cv2
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from control.distance_errors import merge_collision, merge_stability
+from physics.wheel_state import MAX_GAP
 
 
 class Base:
@@ -363,7 +364,7 @@ class Base:
         fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
         # If the front pair has reached the end of the stair, but not the rear
         # pair.
-        if isinf(fr_hor) and fr_ver < 0.0:
+        if isinf(fr_hor) and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground 
             return fr_id+2, re_hor/2, fr_ver
