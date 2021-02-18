@@ -49,7 +49,7 @@ class Simulator():
             # Advance structure
             res = structure.advance(distance)
             if not res:
-                print("Can not advance structure. Error:", res.horizontal)
+                print("Can not advance structure.", res)
         #######################################################################  
         try:
             height = instruction['incline_prev']
@@ -59,13 +59,9 @@ class Simulator():
             rear = instruction.get('elevate_rear', False)
             front = instruction.get('fix_front', False)
             # Incline structure
-            res, hor, ver, rear, front = structure.incline(height, rear, front)
+            res = structure.incline(height, rear, front)
             if not res:
-                print("Can not incline structure:")
-                print("Vertical:", ver)
-                print("Horizontal:", hor)
-                print("Rear actuator:", rear)
-                print("Front actuator:", front)
+                print("Can not incline structure:", res)
         #######################################################################  
         try:
             height = instruction['elevate']
@@ -75,9 +71,7 @@ class Simulator():
             # Elevate structure
             res = structure.elevate(height)
             if not res:
-                print("Can not elevate structure. Error:", res.central)
-                print("Rear actuator:", res.rear)
-                print("Front actuator:", res.front)
+                print("Can not elevate structure.", res)
         #######################################################################  
         try:
             height = instruction['incline']
@@ -89,11 +83,7 @@ class Simulator():
             # Incline structure
             res = structure.incline(height, rear, front)
             if not res:
-                print("Can not incline structure:")
-                print("Vertical:", res.central)
-                print("Horizontal:", res.horizontal)
-                print("Rear actuator:", res.rear)
-                print("Front actuator:", res.front)
+                print("Can not incline structure:", res)
         #######################################################################  
         try:
             height = instruction['shift']
@@ -104,7 +94,7 @@ class Simulator():
             # Shift actuator.
             res = structure.shift_actuator(wheel, height)
             if not res:
-                print("Can not shift actuator. Error:", res.actuator)
+                print("Can not shift actuator. Error:", res)
         #######################################################################  
         # Check for the end of the trajectory.
         try:

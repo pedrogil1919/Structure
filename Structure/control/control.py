@@ -27,7 +27,7 @@ from math import isinf
 # Distance margin
 # MARGIN = 2.0
 
-def next_instruction(structure):
+def next_instruction(structure, graphics, stairs):
     """Generate in an automatic fashion the next instruction for the structure.
     
     Returns a dictionary with the instructions to perform. 
@@ -78,47 +78,73 @@ def next_instruction(structure):
             # structure.
             # TODO: Check when inclining the structure and a collision raises.
             res_inc = st_aux.incline(res_shf.central)
+            instruction['incline'] = res_shf.central
             if not res_inc:
                 # In this case, the structure can not be incline because
                 # an actuator can not complete the motion. To solve this,
                 # if possible, elevate the structure the distance left.
-                if not st_aux.elevate(res_inc.central):
+                if not st_aux.elevate(res_inc.rear):
                     raise ValueError("Motion can not be completed")
-                instruction["elevate"] = res_inc.central
+                instruction["elevate"] = res_inc.rear
                 # If succeeded, the inclination can now be completed.
                 # TODO: Review this instruction
-                if not st_aux.incline(res_shf.central-res_inc.central):
+                if not st_aux.incline(res_shf.central-res_inc.rear):
                     raise RuntimeError("Error in control module")
-            instruction['incline'] = res_shf.central-res_inc.central
+            instruction['incline'] -= res_inc.rear
             # If succeeded, the actuator can now be shifted.
             if not st_aux.shift_actuator(ac_id, -ver):
                 raise RuntimeError("Error in control module")
         #######################################################################
         elif ac_id == 2:
+            # Second actuator.
+            # Try to elevate the structure, to test if there is enough room
+            # for the actuator to complete the motion.
             res_elv = st_aux.elevate(res_shf.central)
-#             if not res:
-#                 
-#                 fix = (height < 0)
-#                 if ac_id == 2:
-#                     h_aux = front
-#                 else:
-#                     h_aux = rear
-#                 res, __, __, __, __ = st_aux.incline(-h_aux, True, fix)
-#                 if not res:
-#                     raise NotImplementedError("Can not elevate.")
-#                 # Since the simulator perform first the elevate function, in
-#                 # this case it is necessary that the simulator performs in the
-#                 # opposite order. With this key, we inform of that.
-#                 instruction["incline_prev"] = -h_aux
-#                 instruction["elevate_rear"] = True
-#                 instruction["fix_front"] = fix
-#                 res, __, __, __ = st_aux.elevate(height-incline)
-#                 if not res:
-#                     raise NotImplementedError("Can not elevate.")
-            instruction["elevate"] = res_shf.central-res_elv.rear
-            # If succeeded, the actuator can now be shifted.
-            if not st_aux.shift_actuator(ac_id, -ver):
-                raise RuntimeError("Error in control module")
+            instruction["elevate"] = res_shf.central
+            if not res_elv:
+                # Not enough space for the actuator.
+                # First strategy to make more space: try to incline from the
+                # rear part. This would be successful for positive step, since
+                # the structure tend to be low, and so, this motion is generaly
+                # posible.
+                if not st_aux.incline(-res_elv.rear, True):
+                    raise ValueError("Motion can not be completed")
+                instruction["incline_prev"] = -res_elv.rear
+                instruction["elevate_rear"] = True
+                # Once we have complete 
+                res_elv = st_aux.elevate(res_shf.central)
+                if not res_elv:
+                    raise ValueError("Motion can not be completed")
+            # Check if we now can elevate the structure and so, make enough
+            # space for the actuator to complete the motion.
+            res_shf = st_aux.shift_actuator(ac_id, -ver)
+            if not res_shf:
+                if not st_aux.shift_actuator(ac_id, -ver+res_shf.actuator):
+                    raise ValueError("Motion can not be completed")
+
+#                 graphics.draw(stairs, st_aux)
+                res_elv = st_aux.elevate(-res_shf.actuator)
+                if res_elv:
+                    raise ValueError("Motion can not be completed")
+                if not st_aux.shift_actuator(ac_id, +ver-res_shf.actuator):
+                    raise ValueError("Motion can not be completed")
+
+#                 graphics.draw(stairs, st_aux)
+                if not st_aux.incline(res_elv.rear, True):
+                    raise ValueError("Motion can not be completed")
+
+#                 graphics.draw(stairs, st_aux)
+                instruction["incline_prev"] += res_elv.rear
+                if not st_aux.elevate(2*res_shf.actuator):
+                    raise ValueError("Motion can not be completed")
+
+#                 graphics.draw(stairs, st_aux)
+                instruction["elevate"] += 2*res_shf.actuator         
+                res = st_aux.shift_actuator(ac_id, -ver)
+                if not res:
+                    instruction['shift'] = 0.0
+                    instruction['distance'] = 0.0
+#                     raise ValueError("Motion can not be completed")
         #######################################################################
         elif ac_id == 1:
             res_elv = st_aux.elevate(res_shf.central)

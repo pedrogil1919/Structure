@@ -10,7 +10,7 @@ This module define the functionality of the two pairs of wheels.
 
 from math import isinf, inf
 
-from control.distance_errors import merge_collision, merge_stability, StabilityErrors
+from control.distance_errors import merge_collision, StabilityErrors
 
 EDGE_MARGIN = 4.0
 

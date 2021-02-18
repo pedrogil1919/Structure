@@ -100,6 +100,17 @@ class CollisionErrors():
     def __bool__(self):
         return self.correct
     
+    def __str__(self):
+        if self.correct:
+            return "Correct"
+        return f"Error: \n \
+            Horizontal: {self.horizontal} \n \
+            Actuator: {self.actuator} \n \
+            Vertical: \n \
+            - Central: {self.central} \n \
+            - Rear actuator: {self.rear} \n \
+            - Front actuator: {self.front}"
+    
     def add_inclination_errors(self, inclination):
         """Add all inclination errors.
         
