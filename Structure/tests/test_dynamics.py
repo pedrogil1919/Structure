@@ -45,10 +45,15 @@ base_test.draw((0, 400), image, 8, 3)
 cv2.imshow("image", image)
 cv2.waitKey()
 
-command = {'distance': 300}
+command = {'distance': 200,'elevate': 10,'incline': 20}
+y = 0
 for res in sm.simulate_instruction(base_test, command):
     image[:] = 0xFF
     stair_test.draw((0, 400), image, 8, 3)
     base_test.draw((0, 400), image, 8, 3)
     cv2.imshow("image", image)
     cv2.waitKey(5)
+    print(y)
+    y+=1
+    if y == 410:
+        pass
