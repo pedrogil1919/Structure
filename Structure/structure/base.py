@@ -10,12 +10,14 @@ Module to define all the elements which composes the structure:
 
 '''
 
-from math import asin
+from math import asin, isinf
 from numpy import float32
 import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
+from control.distance_errors import merge_collision, merge_stability
+from physics.wheel_state import MAX_GAP
 
 
 class Base:
@@ -62,10 +64,10 @@ class Base:
         # TODO: Comment
         self.REAR = ActuatorPair(
                 WheelActuator(0, d, d+g-r1, r1, self, stairs),
-                WheelActuator(a, d, d+g-r2, r2, self, stairs))
+                WheelActuator(a, d, d+g-r2, r2, self, stairs), True)
         self.FRNT = ActuatorPair(
                 WheelActuator(a+b, d, d+g-r3, r3, self, stairs),
-                WheelActuator(a+b+c, d, d+g-r4, r4, self, stairs))
+                WheelActuator(a+b+c, d, d+g-r4, r4, self, stairs), False)
 
         # Size of the structure.
         self.HEIGHT = d
@@ -116,72 +118,17 @@ class Base:
         """
 
         # Check if any wheel has collided with the stairs.      
-        re_res_col, re_hor_col, re_ver_col, re_act = \
-                self.REAR.check_collision()
-        fr_res_col, fr_hor_col, fr_ver_col, fr_act = \
-                self.FRNT.check_collision()
-        # Check if any pair of wheels are not stable.
-        re_res_stb, re_dis_stb = self.REAR.check_stable()
-        fr_res_stb, fr_dis_stb = self.FRNT.check_stable()
+        re_col = self.REAR.check_collision()
+        fr_col = self.FRNT.check_collision()
+        col = merge_collision(re_col, fr_col)
         
-        # Look for collisions;
-        if re_res_col and fr_res_col:
-            # No unstabilities. Everything is OK.
-            col = {'res': True}
-        else:
-            # There is at least one collision. Find it and return the
-            # distance.
-            if re_res_col and not fr_res_col:
-                # Only the front pair has collided.
-                hor_col = fr_hor_col
-                ver_col = fr_ver_col
-                act = fr_act
-            elif not re_res_col and fr_res_col:
-                # Only the rear pair has collided.
-                hor_col = re_hor_col
-                ver_col = re_ver_col
-                act = re_act
-            else:
-                # Both pairs of wheels have collided. Returns the maximum
-                # distance of both pairs.
-                if abs(re_hor_col) > abs(fr_hor_col):
-                    hor_col = re_hor_col
-                else:
-                    hor_col = fr_hor_col
-                if abs(re_ver_col) > abs(fr_ver_col):
-                    ver_col = re_ver_col
-                else:
-                    ver_col = fr_ver_col
-                if abs(re_act) > abs(fr_act):
-                    act = re_act
-                else:
-                    act = fr_act
-                    
-            col = {'res': False, 'ver': ver_col, 'hor': hor_col, 'act': act}
-            
-        # Look for unstabilities.
-        if re_res_stb and fr_res_stb:
-            # No unstabilities. Everything is OK.
-            stb = {'res': True}
-        else:
-            # There is at least one unstability. Find it and return the
-            # distance.
-            if re_res_stb and not fr_res_stb:
-                dis_stb = fr_dis_stb
-            elif not re_res_stb and fr_res_stb:
-                dis_stb = re_dis_stb
-            else:
-                # Both pairs of wheels are unstable. Returns the largest
-                # distance of both pairs.
-                if abs(re_dis_stb) > abs(fr_dis_stb):
-                    dis_stb = re_dis_stb
-                else:
-                    # And viceversa.
-                    dis_stb = fr_dis_stb
-            stb = {'res': False, 'dis': dis_stb}
+        # Check if any pair of wheels are not stable.
+        re_stb = self.REAR.check_stable()
+        fr_stb = self.FRNT.check_stable()
+        stb = merge_stability(re_stb, fr_stb)
         
         return col, stb
-      
+        
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
         
@@ -201,37 +148,27 @@ class Base:
         # Update structure position
         self.shift += distance
         if not check:
-            return True, 0.0
+            # This option is called inside this function, so do not need to
+            # return any value as long as we take this into account bellow,
+            # where the function is called with check set to False.
+            return
         
         # From here on, check the validity of the motion.
         col, stb = self.check_position()
-        if col['res'] and stb['res']:
-            # Everything is OK.
-            return True, 0.0
         
-        if not col['res'] and stb['res']:
-            # Only collision detected.
-            # Only a collision happens.
-            dis = col['hor']
-        elif col['res'] and not stb['res']:
-            # Only unstability detected.
-            # Only a unstability happens.
-            dis = stb['dis']
-        else:
-            # Both error happens. Get the larger of them.
-            # Both collision ans unstability happens. Get the largest of both
-            # distances.
-            if distance > 0:
-                dis = min([col['hor'], stb['dis']])
-            else: 
-                dis = max([col['hor'], stb['dis']])
-                
+        col.add_stability(stb)
+        
+        if col:
+            return col
+    
         # Set the structure back to its original position.
+        # NOTE: When check is set to False, the function does not return any
+        # value, so leave the call without receiving any value.
         self.advance(-distance, False)
         # Check that everything is OK again.
-        col, stb = self.check_position()
-        if col['res'] and stb['res']:
-            return False, dis
+        col_aux, stb_aux = self.check_position()
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in advance structure")
     
     def elevate(self, distance, check=True):
@@ -253,23 +190,23 @@ class Base:
         self.FRNT.shift_actuator(True, True, distance)
         
         if not check:
-            return True, 0.0
+            # See comment in advance function.
+            return
         
         # Check if any of the actuators has reached one of its bounds.
         col, __ = self.check_position()
-        if col['res']:
+        if col:
             # Everything is OK.
-            return True, 0.0
-        
-        # In case of failure, take the distance the actuators have failed.
-        dis = col['ver']
+            return col
 
         # Leave the structure in its original position.
         self.elevate(-distance, False)
         # Check that everything is OK again.
-        col, __ = self.check_position()
-        if col['res']:
-            return False, dis
+        # NOTE: In this case, never a stability error can happen, and so, we
+        # need not collect the stability error.
+        col_aux, __ = self.check_position()
+        if col_aux:
+            return col
         raise RuntimeError("Error in elevate")
         
     def shift_actuator(self, index, distance, check=True):
@@ -296,31 +233,34 @@ class Base:
             self.FRNT.shift_actuator(False, True, distance)
         
         if not check:
-            return True, 0.0
+            return
         
         # Check if the actuator has reached one of its bounds.
         col, stb = self.check_position()
+        
         # The variable col is for possible collisions with the steps, or an
         # actuator reaching one of its bounds.
         # The variable stb is for checking that, after elevating one wheel,
         # the other wheel of the pair is still in a stable position.
-        if not stb['res']:
+        if not stb:
             # We can not shift the actuator, because the other wheel is not
             # in the ground. For this, the error distance is the whole distance
             # required, because we can not move the actuator at all.
-            dis = -distance
-        elif not col['res']:
-            dis = col['ver']
-        else:
-            return True, 0.0
-        
+            col.actuator = -distance
+            col.central = -distance
+            col.correct = False
+            
+        if col:
+            # Everything is OK.
+            return col
+
         # Leave the actuator in its original position.
         self.shift_actuator(index, -distance, False)        
         # Check that everything is OK again.
-        col,stb = self.check_position()
+        col_aux, stb_aux = self.check_position()
 
-        if col['res'] and stb['res']:
-            return False, dis
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in shift actuator.")  
       
     def incline(self, distance, 
@@ -383,39 +323,24 @@ class Base:
         self.FRNT.shift_actuator_proportional(True, True, distance)
  
         if not check:
-            return True, 0.0, 0.0
+            return
         
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
         col, stb = self.check_position()
 
-        if col['res'] and stb['res']:
-            return True, 0.0, 0.0
-        elif not col['res']:
-            # Check if there is a problem with an actuator.
-#             if col['act'] != 0:
-#                 ver = col['act']
-#             else:
-#                 ver = 0.0
-            # NOTE: When inclining the structure, a wheel collision can never
-            # happen, because the wheel do not change its height with respect
-            # to the ground. For that reason, only need to check for actuator
-            # collisions.
-            ver = col['act']
-            hor = col['hor']
-        elif not stb['res']:
-            hor = stb['dis']
-            ver = 0.0
-        else:
-            raise RuntimeError("Error in incline function")
+        col.add_stability(stb)
+        
+        if col:
+            return col
         
         # Leave the structure in its original position.
         self.incline(-distance, elevate_rear, fix_front, False)
         # Check that everything is OK again.
-        col, stb = self.check_position()
-        if col['res'] and stb['res']:
-            return False, hor, ver
+        col_aux, stb_aux = self.check_position()
+        if col_aux and stb_aux:
+            return col
         raise RuntimeError("Error in incline function")
 
     # =========================================================================
@@ -437,6 +362,13 @@ class Base:
         # Compute distances for the rear pair, and the front pair.
         re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
         fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
+        # If the front pair has reached the end of the stair, but not the rear
+        # pair.
+        if isinf(fr_hor) and fr_ver < -MAX_GAP:
+            # And also, one of the wheels is not still in the ground, take the
+            # front wheel right to the ground 
+            return fr_id+2, re_hor/2, fr_ver
+        
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
             return re_id, re_hor, re_ver
@@ -454,27 +386,47 @@ class Base:
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
-        if re_res is not None and fr_res is not None:
-            # TODO: Do this when it is possible for the simulator to shift
-            # two actuators at the same time.
-            raise NotImplementedError("Move two actuator")
-        elif re_res is not None:
-            res = {
-                'wheel': re_res[0],
-                'shift': -re_res[1]}
+#         if re_res is not None and fr_res is not None:
+#             # TODO: Do this when it is possible for the simulator to shift
+#             # two actuators at the same time.
+#             raise NotImplementedError("Move two actuator")
+        
+        if re_res is not None:
+            return re_res[0], re_res[1]
         elif fr_res is not None:
-            res = {
-                'wheel': fr_res[0] + 2,
-                'shift': -fr_res[1]}
-        else:
-            res = {
-                'distance': 20.0,
-                'incline': -self.get_inclination(),
-                'elevate': -self.get_elevation(),
-                'end': True}
-            # NOTE: Add 20 unit in horizontal so that the structure stops 20 units
-            # far away from the edge of the last step of the stair.
-        return res
+            return fr_res[0] + 2, fr_res[1]
+        return None, None
+
+#     def set_horizontal(self):
+#         """Returns the distances needed to place the structure in horizontal.
+#         
+#         """
+#         
+#         # Check if also any wheel need to be set to the ground.
+#         re_res = self.REAR.set_to_ground()
+#         fr_res = self.FRNT.set_to_ground()
+#         if re_res is not None and fr_res is not None:
+#             # TODO: Do this when it is possible for the simulator to shift
+#             # two actuators at the same time.
+#             raise NotImplementedError("Move two actuator")
+#         
+#         elif re_res is not None:
+#             res = {
+#                 'wheel': re_res[0],
+#                 'shift': -re_res[1]}
+#         elif fr_res is not None:
+#             res = {
+#                 'wheel': fr_res[0] + 2,
+#                 'shift': -fr_res[1]}
+#         else:
+#             res = {
+#                 'distance': 20.0,
+#                 'incline': -self.get_inclination(),
+#                 'elevate': -self.get_elevation(),
+#                 'end': True}
+#             # NOTE: Add 20 unit in horizontal so that the structure stops 20 units
+#             # far away from the edge of the last step of the stair.
+#         return res
 
     def get_inclination(self):
         """Returns the inclination of the structure.

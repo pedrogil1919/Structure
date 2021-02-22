@@ -108,11 +108,17 @@ class Wheel:
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
-            return wr
+            return -wr
+        elif hr >= hc and hc > hl:
+            # Upstair direction, in the last step.
+            return -wr
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             return wl
-        return 0
+        elif hr <= hc and hc < hl:
+            # Downstairs direction, in the last step.
+            return wl
+        return None
 
     def ground(self, position):
         """Check whether the wheel is lying in a horizontal place.
@@ -125,6 +131,7 @@ class Wheel:
     # =========================================================================
     # Control functions.
     # =========================================================================
+    
     def get_distances(self, position):
         """Computes distances from the wheel to the next step.
          
@@ -212,7 +219,32 @@ class Wheel:
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             res['up'] = False
-            
+            if self.state == WheelState.Air:
+                res['hr'] = hc
+                res['wr'] = -wr - MAX_GAP
+                res['wc'] = -wr + 2*r + MAX_GAP
+            elif self.state == WheelState.Contact:
+                res['hr'] = hc
+                res['wr'] = -wr - MAX_GAP
+                res['wc'] = -wr + 2*r + MAX_GAP
+            elif self.state == WheelState.Corner:
+                res['hr'] = 0.0
+                res['wr'] = -wr + r
+                res['wc'] = -wr + 2*r + MAX_GAP
+            elif self.state == WheelState.Ground:
+                res['hr'] = 0.0
+                res['wr'] = -wr + r
+                res['wc'] = -wr + 2*r + MAX_GAP
+            elif self.state == WheelState.Outer:
+                raise NotImplementedError("It should not happen")
+            elif self.state == WheelState.Over:
+                res['hr'] = hc
+                res['wr'] = -wr - MAX_GAP
+                res['wc'] = -wr + 2*r + MAX_GAP
+            elif self.state == WheelState.Unstable:
+                res['hr'] = 0.0
+                res['wr'] = -wr + r
+                res['wc'] = -wr + 2*r + MAX_GAP 
         ########################################################################
         # End:
         ########################################################################
@@ -220,7 +252,23 @@ class Wheel:
             # The wheel has reached the end of the stair. Send an infinite value
             # to warn the calling function.
             res['wr'] = inf
-            res['hr'] = hr
+            if self.state == WheelState.Air:
+                res['hr'] = hc
+            elif self.state == WheelState.Contact:
+                res['hr'] = hc
+            elif self.state == WheelState.Corner:
+                res['hr'] = hc
+            elif self.state == WheelState.Ground:
+                res['hr'] = hc
+            elif self.state == WheelState.Outer:
+                res['hr'] = hc
+            elif self.state == WheelState.Over:
+                res['hr'] = hl
+                res['wc'] = wl - MAX_GAP
+            elif self.state == WheelState.Unstable:
+                res['hr'] = 0.0
+                res['wc'] = wl + MAX_GAP
+            res['hc'] = res['hr']
 
         else:
             raise NotImplementedError("Detect when this case happens...")

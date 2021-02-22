@@ -4,6 +4,10 @@ Created on 28 ene. 2021
 @author: pedro.gil@uah.es
 
 '''
+
+"probar token"
+"otro"
+
 import sys
 
 from physics import stairs
@@ -70,7 +74,7 @@ while continue_loop:
     #  Automatic mode
     ###########################################################################
         if not switching_mode:
-            instruction = control.next_instruction(structure)
+            instruction = control.next_instruction(structure, graphics, stairs)
             print("automatic:", instruction)
         # Allow the program to generate a new instruction in the next
         # iteration

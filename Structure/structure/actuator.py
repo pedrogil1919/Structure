@@ -15,6 +15,7 @@ import cv2
 from physics.wheel_state import MAX_GAP
 from physics.wheel import Wheel
 from structure.joint import Joint
+from control.distance_errors import CollisionErrors 
 
 # Possible positions for an actuator:
 #   - UpperBound.
@@ -104,7 +105,7 @@ class WheelActuator:
         else:
             self.state = ActuatorState.Center
         
-    def shift_actuator_proportional(self, distance):
+    def shift_actuator_proportional(self, height):
         """Shift the actuator a value proportional to the position with
         respect to the whole structure.
         
@@ -118,9 +119,9 @@ class WheelActuator:
            
         """
         # Compute the actual value to move the actuator.
-        prop_distance = self.JOINT.proportional_lift(distance)
+        prop_height = self.JOINT.proportional_lift(height)
         # Move the actuator.
-        self.shift_actuator(prop_distance)
+        self.shift_actuator(prop_height)
 
     def distance_to_stable(self):
         """Compute the distance to place the wheel in a stable position
@@ -149,7 +150,7 @@ class WheelActuator:
         - If False, returns also the distance to place the actuator in a valid
             position. If the actuator error is greater than the wheel error,
             this value is the same than the previous value. This is needed for
-            incline fuction, because this function need to differenciate
+            incline function, because this function need to differenciate
             between wheel and actuator error.
         
         """
@@ -175,7 +176,7 @@ class WheelActuator:
             a_err = self.LENGTH - self.d
             v_err = min([v_err, a_err])
          
-        return check, h_err, v_err, a_err
+        return CollisionErrors(check, h_err, a_err, v_err)
 
     def ground(self):
         """Return True if its ending wheel is lying on an horizontal surface.
@@ -184,6 +185,10 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.ground(position)
 
+    # =========================================================================
+    # Control functions.
+    # =========================================================================
+    
     def get_wheel_distances(self):
         """Returns the distances of the ending wheel to the stair.
          
@@ -192,7 +197,10 @@ class WheelActuator:
         """
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.get_distances(position)
-     
+    
+    def get_inverse_lift(self, height):
+        
+        return self.JOINT.inverse_prop_lift(height)
     # =========================================================================
     # Drawing functions.
     # =========================================================================
