@@ -7,7 +7,7 @@ Module to generate the instructions to move the structure.
 
 List of instructions, along with its arguments:
 
-- distance: Horizontal shift.
+- advance: Horizontal shift.
   - float: distance. If positive, shift forwards.
 - elevate: Vertical elevation of the structure.
   - float: height: If positive, elevate; if negative, take down.
@@ -15,7 +15,7 @@ List of instructions, along with its arguments:
   - float: height: If positive, structure front elevate.
   - bool: fix_front: If true, fix the front wheel when inclining.
   - bool: elevate_rear: If true, the structure rear is shift.
-- shift: Shift an actuator.
+- height: height an actuator.
   - float: height. If positive, the wheel is moved downwards.
   - int: wheel. Index. 0: rear wheel, 1, 2: middle wheel, 3: front wheel.
 
@@ -67,13 +67,13 @@ def next_instruction(structure, graphics, stairs):
         if not st_aux.advance(hor+res_adv.horizontal):
             raise RuntimeError("Error in control module")
     # Add the distance to move to the instruction.
-    instruction = {"distance": hor+res_adv.horizontal}
+    instruction = {"advance": hor+res_adv.horizontal}
     # Simulate elevation of the actuator. Note that the vertical distance is
     # positive downwards, but the actuator position is measured in the opposite
     # direction. For that reason, we change the sign of the vertical distance.
     res_shf = st_aux.shift_actuator(ac_id, -ver)
     instruction["wheel"] = ac_id
-    instruction["shift"] = -ver
+    instruction["height"] = -ver
     if not res_shf:
         # If the actuator can not be sift, we have to make room for the
         # actuator to compete the motion. This action depends on the index
@@ -148,8 +148,8 @@ def next_instruction(structure, graphics, stairs):
                 instruction["elevate"] += 2*res_shf.actuator         
                 res = st_aux.shift_actuator(ac_id, -ver)
                 if not res:
-                    instruction['shift'] = 0.0
-                    instruction['distance'] = 0.0
+                    instruction['height'] = 0.0
+                    instruction['advance'] = 0.0
 #                     raise ValueError("Motion can not be completed")
         #######################################################################
         elif ac_id == 1:
@@ -173,7 +173,7 @@ def next_instruction(structure, graphics, stairs):
                 if res_inc.horizontal != 0.0:
                     if not st_aux.advance(res_inc.horizontal):
                         raise RuntimeError("Error in control module")
-                    instruction['distance'] += res_inc.horizontal
+                    instruction['advance'] += res_inc.horizontal
             res_inc = st_aux.incline(-res_shf.central, True)
             if not res_inc:                    
                 if not st_aux.elevate(res_inc.rear):
@@ -186,6 +186,14 @@ def next_instruction(structure, graphics, stairs):
             # If succeeded, the actuator can now be shifted.
             if not st_aux.shift_actuator(ac_id, -ver):
                 raise RuntimeError("Error in control module")            
+    # Get the shift of each actuator. This value is needed in case we have to
+    # return the actual shift of the actuator, not the shift after the
+    # elevation/inclination.
+    shift_prev = structure.get_actuators_position(ac_id)
+    shift_curr = st_aux.get_actuators_position(ac_id)
+    instruction["shift"] = shift_curr - shift_prev  
+
+
     return instruction
 
 def manual_control(key_pressed, simulator):
@@ -193,55 +201,43 @@ def manual_control(key_pressed, simulator):
     
     """
     if key_pressed == ord('4'):
-        command = {'distance': -simulator.wheel_speed}
+        command = {'advance': -simulator.wheel_speed}
     elif key_pressed == ord('6'):
-        command = {'distance': +simulator.wheel_speed}
+        command = {'advance': +simulator.wheel_speed}
     elif key_pressed == ord('2'):
         command = {'elevate': -simulator.str_dw_speed}
     elif key_pressed == ord('8'):
         command = {'elevate': +simulator.str_up_speed}
     elif key_pressed == ord('q'):
-        command = {'wheel': 0, 'shift': -simulator.actuator_speed}
+        command = {'wheel': 0, 'height': -simulator.actuator_speed}
     elif key_pressed == ord('a'):
-        command = {'wheel': 0, 'shift': +simulator.actuator_speed}
+        command = {'wheel': 0, 'height': +simulator.actuator_speed}
     elif key_pressed == ord('w'):
-        command = {'wheel': 1, 'shift': -simulator.actuator_speed}
+        command = {'wheel': 1, 'height': -simulator.actuator_speed}
     elif key_pressed == ord('s'):
-        command = {'wheel': 1, 'shift': +simulator.actuator_speed}
+        command = {'wheel': 1, 'height': +simulator.actuator_speed}
     elif key_pressed == ord('e'):
-        command = {'wheel': 2, 'shift': -simulator.actuator_speed}
+        command = {'wheel': 2, 'height': -simulator.actuator_speed}
     elif key_pressed == ord('d'):
-        command = {'wheel': 2, 'shift': +simulator.actuator_speed}
+        command = {'wheel': 2, 'height': +simulator.actuator_speed}
     elif key_pressed == ord('r'):
-        command = {'wheel': 3, 'shift': -simulator.actuator_speed}
+        command = {'wheel': 3, 'height': -simulator.actuator_speed}
     elif key_pressed == ord('f'):
-        command = {'wheel': 3, 'shift': +simulator.actuator_speed}
+        command = {'wheel': 3, 'height': +simulator.actuator_speed}
     ###########################################################################
     elif key_pressed == ord('t'):
         command = {'incline': +simulator.str_up_speed, 
-                   'elevate_rear': False, 'fix_front': False}
+                   'elevate_rear': False}
     elif key_pressed == ord('g'):
         command = {'incline': -simulator.str_dw_speed,
-                   'elevate_rear': False, 'fix_front': False}
+                   'elevate_rear': False}
     elif key_pressed == ord('y'):
         command = {'incline': +simulator.str_up_speed,
-                   'elevate_rear': False, 'fix_front': True}
+                   'elevate_rear': True}
     elif key_pressed == ord('h'):
         command = {'incline': -simulator.str_dw_speed,
-                   'elevate_rear': False, 'fix_front': True}
+                   'elevate_rear': True}
     ###########################################################################
-    elif key_pressed == ord('u'):
-        command = {'incline': +simulator.str_dw_speed,
-                   'elevate_rear': True, 'fix_front': False}
-    elif key_pressed == ord('j'):
-        command = {'incline': -simulator.str_up_speed,
-                   'elevate_rear': True, 'fix_front': False}
-    elif key_pressed == ord('i'):
-        command = {'incline': +simulator.str_dw_speed,
-                   'elevate_rear': True, 'fix_front': True}
-    elif key_pressed == ord('k'):
-        command = {'incline': -simulator.str_up_speed,
-                   'elevate_rear': True, 'fix_front': True}
     else:
         command = {}
     return command

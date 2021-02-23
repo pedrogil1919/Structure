@@ -238,7 +238,16 @@ class ActuatorPair:
             return None
         else:
             raise RuntimeError("Both wheel on the air.")
-
+        
+    def get_actuators_position(self, index):
+        """Returns the shift of both actuators.
+        
+        """
+        if index == 0:
+            return self.REAR.d
+        else:
+            return self.FRNT.d
+        
     # =========================================================================
     # Drawing functions.
     # =========================================================================

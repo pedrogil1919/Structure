@@ -38,11 +38,9 @@ class Simulator():
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step.
 
-        (for more details, see simulate_simple_step function).
-
         """
         try:
-            distance = instruction['distance']
+            distance = instruction['advance']
         except KeyError:
             pass
         else:
@@ -79,14 +77,13 @@ class Simulator():
             pass
         else:
             rear = instruction.get('elevate_rear', False)
-#             front = instruction.get('fix_front', False)
             # Incline structure
             res = structure.incline(height, rear)
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################  
         try:
-            height = instruction['shift']
+            height = instruction['height']
             wheel = instruction['wheel']
         except KeyError:
             pass
@@ -94,7 +91,7 @@ class Simulator():
             # Shift actuator.
             res = structure.shift_actuator(wheel, height)
             if not res:
-                print("Can not shift actuator. Error:", res)
+                print("Can not shift actuator:", res)
         #######################################################################  
         # Check for the end of the trajectory.
         try:
