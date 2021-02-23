@@ -171,7 +171,8 @@ class Base:
             return col
         raise RuntimeError("Error in advance structure")
     
-    def elevate(self, distance, check=True):
+    def elevate(self, distance, h1 = None, h2 = None, h3 = None, h4 = None,
+                check=True):
         """Elevate (or take down) the whole structure.
          
         Returns False if the structure can not been elevated the complete
@@ -180,14 +181,19 @@ class Base:
         Parameters:
         distance -- Vertical distance to move (positive, structure move
             upwards.
+        h1, h2, h3, h4 -- If None, shift the corresponding actuator so that the
+            wheel remains in the same position. For example, if the wheel is
+            on the ground and this value is None, after the elevation, the
+            wheel is still on the ground. If None, this actuator must be
+            shifted the distance given for that actuator.
         check -- See advance function.
                      
         """
         # Elevate the structure,
         self.elevation += distance
         # and place the actuators in the correct position.
-        self.REAR.shift_actuator(True, True, distance)
-        self.FRNT.shift_actuator(True, True, distance)
+        self.REAR.shift_actuator(h1, h2, distance)
+        self.FRNT.shift_actuator(h3, h4, distance)
         
         if not check:
             # See comment in advance function.
@@ -200,7 +206,7 @@ class Base:
             return col
 
         # Leave the structure in its original position.
-        self.elevate(-distance, False)
+        self.elevate(-distance, h1, h2, h3, h4, False)
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
@@ -224,13 +230,13 @@ class Base:
         """
         # Select the actuator to shift.
         if index == 0:
-            self.REAR.shift_actuator(True, False, distance)
+            self.REAR.shift_actuator(None, 0.0, distance)
         elif index == 1:
-            self.REAR.shift_actuator(False, True, distance)
+            self.REAR.shift_actuator(0.0, None, distance)
         elif index == 2:
-            self.FRNT.shift_actuator(True, False, distance)
+            self.FRNT.shift_actuator(None, 0.0, distance)
         elif index == 3:
-            self.FRNT.shift_actuator(False, True, distance)
+            self.FRNT.shift_actuator(0.0, None, distance)
         
         if not check:
             return
@@ -263,8 +269,9 @@ class Base:
             return col
         raise RuntimeError("Error in shift actuator.")  
       
-    def incline(self, distance, 
-                elevate_rear=False, fix_front=False, check=True):
+    def incline(self, distance, elevate_rear=False,
+                h1 = None, h2 = None, h3 = None, h4 = None, check=True):
+#         , fix_front_wheel=False):
         """Incline the base of the structure.
          
         Returns False if the structure has not completed the whole motion due
@@ -276,10 +283,7 @@ class Base:
             of the structure.
         elevate_rear -- If True, when inclining, the rear edge of the structure
             is elevated, while the front remains fixed, an vice versa.
-        fix_front -- When inclining the structure, the gaps between wheels
-            change, so that at least all wheels except one must move. If this
-            parameter is True, the fixed wheel is the four one (front wheel).
-            If False, the fixed one is the first (rear wheel).
+        h1, h2, h3, h4 -- See elevate function.
         check -- See advance function.
              
         """
@@ -293,8 +297,8 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            self.REAR.shift_actuator(True, True, -distance)
-            self.FRNT.shift_actuator(True, True, -distance)
+            self.REAR.shift_actuator(h1, h2, -distance)
+            self.FRNT.shift_actuator(h3, h4, -distance)
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.
@@ -304,23 +308,23 @@ class Base:
         # Update the angle taking into account the new height to lift.
         self.angle = asin( (h + distance) / self.WIDTH )
  
-        # If we fix the rear wheel, the structure does not move (that is, the
-        # reference frame does not move).
-        # However, if we fix the front wheel, the reference frame does move,
-        # and so, we need to compute that motion to leave the front wheel
-        # fixed.
-        x3d = 0.0
-        if fix_front:
-            # Compute the motion undergone by the front wheel.
-            __, __, x3d, __ = self.FRNT.position(0)
-            x3d -= x3
-            # And move the structure in the opposite direction.
-            self.shift -= x3d
+#        # If we fix the rear wheel, the structure does not move (that is, the
+#        # reference frame does not move).
+#        # However, if we fix the front wheel, the reference frame does move,
+#        # and so, we need to compute that motion to leave the front wheel
+#        # fixed.
+#         x3d = 0.0
+#         if fix_front:
+#             # Compute the motion undergone by the front wheel.
+#             __, __, x3d, __ = self.FRNT.position(0)
+#             x3d -= x3
+#             # And move the structure in the opposite direction.
+#             self.shift -= x3d
 
         # Elevate all the actuators (except the first one that does not move)
         # the corresponding distance to get the required inclination.
-        self.REAR.shift_actuator_proportional(False, True, distance)
-        self.FRNT.shift_actuator_proportional(True, True, distance)
+        self.REAR.shift_actuator_proportional(h1, h2, distance)
+        self.FRNT.shift_actuator_proportional(h3, h4, distance)
  
         if not check:
             return
@@ -336,7 +340,7 @@ class Base:
             return col
         
         # Leave the structure in its original position.
-        self.incline(-distance, elevate_rear, fix_front, False)
+        self.incline(-distance, elevate_rear, h1, h2, h3, h4, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()
         if col_aux and stb_aux:

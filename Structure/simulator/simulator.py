@@ -57,9 +57,9 @@ class Simulator():
             pass
         else:
             rear = instruction.get('elevate_rear', False)
-            front = instruction.get('fix_front', False)
+#             front = instruction.get('fix_front', False)
             # Incline structure
-            res = structure.incline(height, rear, front)
+            res = structure.incline(height, rear)
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################  
@@ -79,9 +79,9 @@ class Simulator():
             pass
         else:
             rear = instruction.get('elevate_rear', False)
-            front = instruction.get('fix_front', False)
+#             front = instruction.get('fix_front', False)
             # Incline structure
-            res = structure.incline(height, rear, front)
+            res = structure.incline(height, rear)
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################  

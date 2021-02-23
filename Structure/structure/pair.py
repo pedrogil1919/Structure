@@ -35,26 +35,39 @@ class ActuatorPair:
         """Shift the given actuator.
             
         Parameters:
-        - rear: If True, shift this actuator.
-        - front: If True, shift this actuator.
-        - distance: distance to move the actuator. Positive value means the
+        rear -- If None, move the rear actuator the distance given. If not
+            None, move the actuator this value.
+        front -- Same as rear, for the front actuator.
+        distance: distance to move the actuator. Positive value means the
             the wheel moves away from the structure.
         
         """
-        if rear:
+        #TODO: Add comments
+        if rear is not None:
             # Rear actuator.
+            self.REAR.shift_actuator(rear)
+        else:
             self.REAR.shift_actuator(distance)
-        if front:
+        if front is not None:
             # Front actuator.
+            self.FRNT.shift_actuator(front)
+        else:
             self.FRNT.shift_actuator(distance)
         
     def shift_actuator_proportional(self, rear, front, distance):
         """Similar to shift_actuator, but proportional.
         
+        Parameters: see shift_actuator.
+        
         """
-        if rear:
+        #TODO: Add comments
+        if rear is not None:
+            self.REAR.shift_actuator_proportional(rear)
+        else:
             self.REAR.shift_actuator_proportional(distance)
-        if front:
+        if front is not None:
+            self.FRNT.shift_actuator_proportional(front)
+        else:
             self.FRNT.shift_actuator_proportional(distance)
        
     def check_collision(self):
