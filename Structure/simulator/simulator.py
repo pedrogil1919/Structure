@@ -105,7 +105,7 @@ class Simulator():
         self.v_kM1_d = v_k_d
         return delta_xk
     
-    def simulate_instruction(self, structure, instruction):
+    def simulate_step(self, structure, instruction):
         """Complete a list of instructions in one step.
 
         (for more details, see simulate_simple_step function).
