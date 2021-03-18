@@ -208,6 +208,14 @@ class Base:
             return col
 
         # Leave the structure in its original position.
+        # For the actuator motion, change the sign of the valid actuator. Since
+        # the rest of the items are None, we have to check errors for all the
+        # items.
+        for n in range(4):
+            try:
+                wheel[n] = -wheel[n]
+            except TypeError:
+                pass
         self.elevate(-distance, wheel, False)
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
@@ -301,8 +309,17 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            self.REAR.shift_actuator(wheel[0], wheel[1], -distance)
-            self.FRNT.shift_actuator(wheel[2], wheel[3], -distance)
+            # For the actuator motion, change the sign of the valid actuator. Since
+            # the rest of the items are None, we have to check errors for all the
+            # items.
+            wheel_aux = 4*[None]
+            for n in range(4):
+                try:
+                    wheel_aux[n] = -wheel[n]
+                except TypeError:
+                    pass            
+            self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -distance)
+            self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -distance)
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.
@@ -345,6 +362,14 @@ class Base:
             return col
         
         # Leave the structure in its original position.
+        # For the actuator motion, change the sign of the valid actuator. Since
+        # the rest of the items are None, we have to check errors for all the
+        # items.
+        for n in range(4):
+            try:
+                wheel[n] = -wheel[n]
+            except TypeError:
+                pass
         self.incline(-distance, wheel, elevate_rear, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()

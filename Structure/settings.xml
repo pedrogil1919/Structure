@@ -3,7 +3,7 @@
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
 	<size a="40" b="100" c="30" d="50" g="50"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
-	<wheels r1="20" r2="20" r3="20" r4="20"/>
+	<wheels r1="15" r2="15" r3="15" r4="15"/>
 	<!--Stairs definition. Can be defined as many as needed:
 		- landing: initial landing length
 		- dimensions: steps dimension:
@@ -17,12 +17,12 @@
 		- elevate: Structure elevate/incline speed
 	-->
 	<speed wheel="2.0" actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
-		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" sample_time="0.1"/>
+		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" sample_time="0.5"/>
 
 	<stairs landing="220">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="30" d="200"/>
+		<dimensions N="6" w="80" h="20" d="200"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>

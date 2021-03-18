@@ -42,6 +42,8 @@ continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
+inst_number = 0
+
 while continue_loop:
     while manual_mode and continue_loop:
     ###########################################################################
@@ -75,12 +77,15 @@ while continue_loop:
     ###########################################################################
         if not switching_mode:
             instruction = control.next_instruction(structure, graphics, stairs)
-            print("automatic:", instruction)
+          
+            print("Inst", inst_number, ":",  instruction)
+            inst_number += 1
         # Allow the program to generate a new instruction in the next
         # iteration
         switching_mode = False
-        
-        for res in sm.simulate_instruction(structure, instruction):
+        if inst_number == 11:
+            print("error")  
+        for res in sm.simulate_step(structure, instruction):
             if not res:
                 # The simulation has finished or failed: finish the program.
                 print("Press any key to finish...")
