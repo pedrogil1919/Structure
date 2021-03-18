@@ -16,7 +16,8 @@
 		- actuator: Actuator shift speed
 		- elevate: Structure elevate/incline speed
 	-->
-	<speed wheel="5" actuator="2.0" struct_up="0.5" struct_down="1.0"/>
+	<speed wheel="2.0" actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
+		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" sample_time="0.1"/>
 
 	<stairs landing="220">
 		<!--Stair definition. Simply copy one of the following blocks
@@ -82,8 +83,8 @@
 		-->
 		<image shift="300" scale="1.0"/>
 		<framerate interval="10" pause="True"/>
-		<video directory="/home/pedro/Vídeos/WheelChair/prueba" display="True"/>
 <!--
+		<video directory="/home/pedro/Vídeos/WheelChair/prueba" display="True"/>
 -->	
 	</graphics>
 </StairsClimbing>

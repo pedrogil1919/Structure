@@ -85,10 +85,14 @@ def read_simulator(xml_file):
 
     speed = element.find('speed')
     speed_data = {
+        'sample_time': float(speed.attrib['sample_time']),
         'wheel': float(speed.attrib['wheel']),
-        'actuator': float(speed.attrib['actuator']),
-        'struct_up': float(speed.attrib['struct_up']),
-        'struct_down': float(speed.attrib['struct_down'])
+        'actuator_up': float(speed.attrib['actuator_up']),
+        'actuator_dw': float(speed.attrib['actuator_dw']),
+        'incline_up': float(speed.attrib['incline_up']),
+        'incline_dw': float(speed.attrib['incline_dw']),
+        'elevate_up': float(speed.attrib['elevate_up']),
+        'elevate_dw': float(speed.attrib['elevate_dw'])
         }
     return speed_data
 

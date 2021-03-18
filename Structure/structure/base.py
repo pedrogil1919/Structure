@@ -171,7 +171,7 @@ class Base:
             return col
         raise RuntimeError("Error in advance structure")
     
-    def elevate(self, distance, wheel, check=True):
+    def elevate(self, distance, wheel=None, check=True):
         """Elevate (or take down) the whole structure.
          
         Returns False if the structure can not been elevated the complete
@@ -189,6 +189,8 @@ class Base:
         check -- See advance function.
                      
         """
+        if wheel is None:
+            wheel = 4*[None]
         # Elevate the structure,
         self.elevation += distance
         # and place the actuators in the correct position.
@@ -269,7 +271,7 @@ class Base:
             return col
         raise RuntimeError("Error in shift actuator.")  
       
-    def incline(self, distance, wheel, elevate_rear=False, check=True):
+    def incline(self, distance, wheel=None, elevate_rear=False, check=True):
 #         , fix_front_wheel=False):
         """Incline the base of the structure.
          
@@ -286,6 +288,9 @@ class Base:
         check -- See advance function.
              
         """
+        if wheel is None:
+            wheel = 4*[None]
+
         # Current computations keep fixed the rear edge of the structure. To
         # change this and elevate the front edge instead, we simply have to
         # elevate the whole structure the same distance in the opposite way.
@@ -340,7 +345,7 @@ class Base:
             return col
         
         # Leave the structure in its original position.
-        self.incline(-distance, elevate_rear, wheel, False)
+        self.incline(-distance, wheel, elevate_rear, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()
         if col_aux and stb_aux:

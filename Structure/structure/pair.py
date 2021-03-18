@@ -62,11 +62,11 @@ class ActuatorPair:
         """
         #TODO: Add comments
         if rear is not None:
-            self.REAR.shift_actuator_proportional(rear)
+            self.REAR.shift_actuator(rear)
         else:
             self.REAR.shift_actuator_proportional(distance)
         if front is not None:
-            self.FRNT.shift_actuator_proportional(front)
+            self.FRNT.shift_actuator(front)
         else:
             self.FRNT.shift_actuator_proportional(distance)
        

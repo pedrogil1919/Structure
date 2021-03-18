@@ -51,7 +51,7 @@ def next_instruction(structure, graphics, stairs):
             else:
                 inc_key = 'incline'
             return {
-                'distance': 20.0,
+                'advance': 20.0,
                 inc_key: -inclination,
                 'elevate': -elevation,
                 'end': True}
@@ -113,7 +113,7 @@ def next_instruction(structure, graphics, stairs):
                 # rear part. This would be successful for positive step, since
                 # the structure tend to be low, and so, this motion is generaly
                 # posible.
-                if not st_aux.incline(-res_elv.rear, True):
+                if not st_aux.incline(-res_elv.rear, None, True):
                     raise ValueError("Motion can not be completed")
                 instruction["incline_prev"] = -res_elv.rear
                 instruction["elevate_rear"] = True
@@ -136,7 +136,7 @@ def next_instruction(structure, graphics, stairs):
                     raise ValueError("Motion can not be completed")
 
 #                 graphics.draw(stairs, st_aux)
-                if not st_aux.incline(res_elv.rear, True):
+                if not st_aux.incline(res_elv.rear, None, True):
                     raise ValueError("Motion can not be completed")
 
 #                 graphics.draw(stairs, st_aux)
@@ -161,7 +161,7 @@ def next_instruction(structure, graphics, stairs):
                 raise RuntimeError("Error in control module")
         #######################################################################
         elif ac_id == 0:
-            res_inc = st_aux.incline(-res_shf.central, True)
+            res_inc = st_aux.incline(-res_shf.central, None, True)
             if not res_inc:
 #                 st_aux2 = copy.deepcopy(st_aux)
 #                 st_aux2.incline(-res_shf.central, True, False, False)
@@ -174,12 +174,12 @@ def next_instruction(structure, graphics, stairs):
                     if not st_aux.advance(res_inc.horizontal):
                         raise RuntimeError("Error in control module")
                     instruction['advance'] += res_inc.horizontal
-            res_inc = st_aux.incline(-res_shf.central, True)
+            res_inc = st_aux.incline(-res_shf.central, None, True)
             if not res_inc:                    
                 if not st_aux.elevate(res_inc.rear):
                     raise ValueError("Motion can not be completed")
                 instruction["elevate"] = res_inc.rear
-                if not st_aux.incline(-res_shf.central+res_inc.rear, True):
+                if not st_aux.incline(-res_shf.central+res_inc.rear, None, True):
                     raise RuntimeError("Error in control module")              
             instruction["incline"] = -res_shf.central+res_inc.rear
             instruction["elevate_rear"] = True
