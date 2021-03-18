@@ -171,8 +171,7 @@ class Base:
             return col
         raise RuntimeError("Error in advance structure")
     
-    def elevate(self, distance, h0 = None, h1 = None, h2 = None, h3 = None,
-                check=True):
+    def elevate(self, distance, wheel, check=True):
         """Elevate (or take down) the whole structure.
          
         Returns False if the structure can not been elevated the complete
@@ -181,10 +180,11 @@ class Base:
         Parameters:
         distance -- Vertical distance to move (positive, structure move
             upwards.
-        h0, h1, h2, h3 -- If None, shift the corresponding actuator so that the
+        wheel -- List of four elements, each one can be either None of float: 
+            If None, shift the corresponding actuator so that the
             wheel remains in the same position. For example, if the wheel is
             on the ground and this value is None, after the elevation, the
-            wheel is still on the ground. If None, this actuator must be
+            wheel is still on the ground. If float, this actuator must be
             shifted the distance given for that actuator.
         check -- See advance function.
                      
@@ -192,8 +192,8 @@ class Base:
         # Elevate the structure,
         self.elevation += distance
         # and place the actuators in the correct position.
-        self.REAR.shift_actuator(h0, h1, distance)
-        self.FRNT.shift_actuator(h2, h3, distance)
+        self.REAR.shift_actuator(wheel[0], wheel[1], distance)
+        self.FRNT.shift_actuator(wheel[2], wheel[3], distance)
         
         if not check:
             # See comment in advance function.
@@ -206,7 +206,7 @@ class Base:
             return col
 
         # Leave the structure in its original position.
-        self.elevate(-distance, h0, h1, h2, h3, False)
+        self.elevate(-distance, wheel, False)
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
@@ -269,8 +269,7 @@ class Base:
             return col
         raise RuntimeError("Error in shift actuator.")  
       
-    def incline(self, distance, elevate_rear=False,
-                h0 = None, h1 = None, h2 = None, h3 = None, check=True):
+    def incline(self, distance, wheel, elevate_rear=False, check=True):
 #         , fix_front_wheel=False):
         """Incline the base of the structure.
          
@@ -281,9 +280,9 @@ class Base:
         distance -- Vertical distance to move the exterior actuators (actuators
             0 or 3). The angle can be computed from this value and the length
             of the structure.
+        wheel -- See elevate function.
         elevate_rear -- If True, when inclining, the rear edge of the structure
             is elevated, while the front remains fixed, an vice versa.
-        h0, h1, h2, h3 -- See elevate function.
         check -- See advance function.
              
         """
@@ -297,8 +296,8 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            self.REAR.shift_actuator(h0, h1, -distance)
-            self.FRNT.shift_actuator(h2, h3, -distance)
+            self.REAR.shift_actuator(wheel[0], wheel[1], -distance)
+            self.FRNT.shift_actuator(wheel[2], wheel[3], -distance)
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.
@@ -324,8 +323,8 @@ class Base:
 
         # Elevate all the actuators (except the first one that does not move)
         # the corresponding distance to get the required inclination.
-        self.REAR.shift_actuator_proportional(h0, h1, distance)
-        self.FRNT.shift_actuator_proportional(h2, h3, distance)
+        self.REAR.shift_actuator_proportional(wheel[0], wheel[1], distance)
+        self.FRNT.shift_actuator_proportional(wheel[2], wheel[3], distance)
  
         if not check:
             return
@@ -341,7 +340,7 @@ class Base:
             return col
         
         # Leave the structure in its original position.
-        self.incline(-distance, elevate_rear, h0, h1, h2, h3, False)
+        self.incline(-distance, elevate_rear, wheel, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()
         if col_aux and stb_aux:
