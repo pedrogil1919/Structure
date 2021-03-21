@@ -83,8 +83,6 @@ while continue_loop:
         # Allow the program to generate a new instruction in the next
         # iteration
         switching_mode = False
-        if inst_number == 11:
-            print("error")  
         for res in sm.simulate_step(structure, instruction):
             if not res:
                 # The simulation has finished or failed: finish the program.

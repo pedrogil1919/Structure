@@ -83,8 +83,8 @@
 		-->
 		<image shift="300" scale="1.0"/>
 		<framerate interval="10" pause="True"/>
-<!--
 		<video directory="/home/pedro/Vídeos/WheelChair/prueba" display="True"/>
+<!--
 -->	
 	</graphics>
 </StairsClimbing>

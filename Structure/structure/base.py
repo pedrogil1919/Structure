@@ -208,15 +208,11 @@ class Base:
             return col
 
         # Leave the structure in its original position.
-        # For the actuator motion, change the sign of the valid actuator. Since
-        # the rest of the items are None, we have to check errors for all the
-        # items.
-        for n in range(4):
-            try:
-                wheel[n] = -wheel[n]
-            except TypeError:
-                pass
-        self.elevate(-distance, wheel, False)
+        # For the actuator motion, we have to change also the sign of the
+        # motion. Since some of tha values are None, we have to change only
+        # the not None values.
+        wheel_aux = [-w if (w is not None) else w for w in wheel]
+        self.elevate(-distance, wheel_aux, False)
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
@@ -309,17 +305,11 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            # For the actuator motion, change the sign of the valid actuator. Since
-            # the rest of the items are None, we have to check errors for all the
-            # items.
-            wheel_aux = 4*[None]
-            for n in range(4):
-                try:
-                    wheel_aux[n] = -wheel[n]
-                except TypeError:
-                    pass            
-            self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -distance)
-            self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -distance)
+            # wheel_aux = [-w if (w is not None) else w for w in wheel]
+            # self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -distance)
+            # self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -distance)
+            self.REAR.shift_actuator(None, None, -distance)
+            self.FRNT.shift_actuator(None, None, -distance)
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.
@@ -362,15 +352,8 @@ class Base:
             return col
         
         # Leave the structure in its original position.
-        # For the actuator motion, change the sign of the valid actuator. Since
-        # the rest of the items are None, we have to check errors for all the
-        # items.
-        for n in range(4):
-            try:
-                wheel[n] = -wheel[n]
-            except TypeError:
-                pass
-        self.incline(-distance, wheel, elevate_rear, False)
+        wheel_aux = [-w if (w is not None) else w for w in wheel]
+        self.incline(-distance, wheel_aux, elevate_rear, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position()
         if col_aux and stb_aux:
@@ -463,6 +446,10 @@ class Base:
         
         """
         return self.REAR.REAR.d
+    
+    def get_speed(self):
+        return 0.0
+    
     # =========================================================================
     # Drawing functions.
     # =========================================================================
