@@ -219,6 +219,7 @@ class ActuatorPair:
                 # distance must be 0 (you can not take a wheel down if it is
                 # on the ground).
                 ver = passive['hr']
+                hor -= EDGE_MARGIN
         else:
             raise NotImplementedError("Wheel facing steps with different sign.")
         

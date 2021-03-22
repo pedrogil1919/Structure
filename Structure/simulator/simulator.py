@@ -122,12 +122,17 @@ class Simulator():
             res = structure.advance(speed_wheel)
             if not res:
                 raise RuntimeError("Can not advance structure.", str(res))
+            elevate_post = False
             res = structure.elevate(speed_elevate, actuator_elevate)
             if not res:
-                raise RuntimeError("Can not elevate structure.", str(res))
+                elevate_post = True
             res = structure.incline(speed_incline, actuator_incline, rear)
             if not res:
                 raise RuntimeError("Can not incline structure.", str(res))
+            if elevate_post:
+                res = structure.elevate(speed_elevate, actuator_elevate)
+                if not res:
+                    raise RuntimeError("Can not elevate structure.", str(res))
             yield True
 
         # Check for the end of the trajectory.

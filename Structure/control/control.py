@@ -24,8 +24,6 @@ List of instructions, along with its arguments:
 import copy
 from math import isinf
 
-# Distance margin
-# MARGIN = 2.0
 
 def next_instruction(structure, graphics, stairs):
     """Generate in an automatic fashion the next instruction for the structure.
