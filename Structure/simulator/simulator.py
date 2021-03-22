@@ -60,10 +60,9 @@ class Simulator():
         # No recuerdo por qué no lo hicimos así.
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
-        incline = instruction.get('incline', 0.0) + \
-                instruction.get('incline_prev', 0.0) 
+        incline = instruction.get('incline', 0.0) 
         shift = instruction.get('shift', 0.0)
-        wheel = instruction.get('wheel', 0)
+        wheel = instruction.get('wheel', None)
         rear = instruction.get('elevate_rear', False)
         
         # Compute the number of iterations needed to complete the instruction.
@@ -96,11 +95,6 @@ class Simulator():
         # Compute total number of iterations:
         total_iterations = ceil(total_time/self.sample_time)
         if total_iterations == 0:
-            # Check for the end of the trajectory.
-            try:
-                if instruction['end']:
-                    yield False
-            except KeyError:
                 total_iterations = 1
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
@@ -118,8 +112,11 @@ class Simulator():
 
         actuator_elevate = 4*[None]
         actuator_incline = 4*[None]
-        actuator_elevate[wheel] = speed_actuator * proportional_actuator
-        actuator_incline[wheel] = speed_actuator * (1-proportional_actuator)
+        try:
+            actuator_elevate[wheel] = speed_actuator * proportional_actuator
+            actuator_incline[wheel] = speed_actuator * (1-proportional_actuator)
+        except TypeError:
+            pass
 
         for __  in range(total_iterations):
             res = structure.advance(speed_wheel)
@@ -133,7 +130,8 @@ class Simulator():
                 raise RuntimeError("Can not incline structure.", str(res))
             yield True
 
-        yield True
+        # Check for the end of the trajectory.
+        yield not instruction.get('end', False)
 
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step.
@@ -149,18 +147,10 @@ class Simulator():
             if not res:
                 print("Can not advance structure.", res)
         #######################################################################  
-        try:
-            height = instruction['incline_prev']
-        except KeyError:
-            pass
-        else:
-            rear = instruction.get('elevate_rear', False)
-#             front = instruction.get('fix_front', False)
-            # Incline structure
-            res = structure.incline(height, None, rear)
-            if not res:
-                print("Can not incline structure:", res)
-        #######################################################################  
+        # Sometimes, the order of first elevate and then incline is
+        # not possible, and have to change order. With this instruction
+        # perform first the inclination and the the elevation.
+        elevate_post = False
         try:
             height = instruction['elevate']
         except KeyError:
@@ -169,7 +159,7 @@ class Simulator():
             # Elevate structure
             res = structure.elevate(height)
             if not res:
-                print("Can not elevate structure.", res)
+                elevate_post = True
         #######################################################################  
         try:
             height = instruction['incline']
@@ -181,7 +171,19 @@ class Simulator():
             res = structure.incline(height, None, rear)
             if not res:
                 print("Can not incline structure:", res)
+        #######################################################################
+        if elevate_post:  
+            try:
+                height = instruction['elevate']
+            except KeyError:
+                pass
+            else:
+                # Elevate structure
+                res = structure.elevate(height)
+                if not res:
+                    print("Can not elevate structure:", res)
         #######################################################################  
+
         try:
             height = instruction['height']
             wheel = instruction['wheel']

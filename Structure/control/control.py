@@ -46,13 +46,9 @@ def next_instruction(structure, graphics, stairs):
         if ac_id is None:
             inclination = structure.get_inclination()
             elevation = structure.get_elevation()
-            if inclination < 0:
-                inc_key = 'incline_prev'
-            else:
-                inc_key = 'incline'
             return {
                 'advance': 20.0,
-                inc_key: -inclination,
+                'incline': -inclination,
                 'elevate': -elevation,
                 'end': True}
         else:
@@ -115,7 +111,7 @@ def next_instruction(structure, graphics, stairs):
                 # posible.
                 if not st_aux.incline(-res_elv.rear, None, True):
                     raise ValueError("Motion can not be completed")
-                instruction["incline_prev"] = -res_elv.rear
+                instruction["incline"] = -res_elv.rear
                 instruction["elevate_rear"] = True
                 # Once we have complete 
                 res_elv = st_aux.elevate(res_shf.central)
@@ -140,7 +136,7 @@ def next_instruction(structure, graphics, stairs):
                     raise ValueError("Motion can not be completed")
 
 #                 graphics.draw(stairs, st_aux)
-                instruction["incline_prev"] += res_elv.rear
+                instruction["incline"] += res_elv.rear
                 if not st_aux.elevate(2*res_shf.actuator):
                     raise ValueError("Motion can not be completed")
 

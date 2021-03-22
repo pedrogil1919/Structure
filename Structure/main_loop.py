@@ -79,11 +79,13 @@ while continue_loop:
             instruction = control.next_instruction(structure, graphics, stairs)
           
             print("Inst", inst_number, ":",  instruction)
+            if inst_number == 48:
+                print("in")
             inst_number += 1
         # Allow the program to generate a new instruction in the next
         # iteration
         switching_mode = False
-#        for res in sm.simulate_step(structure, instruction):
+#         for res in sm.simulate_instruction(structure, instruction):
         for res in sm.simulate_step(structure, instruction):
             if not res:
                 # The simulation has finished or failed: finish the program.
