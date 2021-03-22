@@ -174,13 +174,19 @@ def next_instruction(structure, graphics, stairs):
                     if not st_aux.advance(res_inc.horizontal):
                         raise RuntimeError("Error in control module")
                     instruction['advance'] += res_inc.horizontal
-            res_inc = st_aux.incline(-res_shf.central, None, True)
-            if not res_inc:                    
-                if not st_aux.elevate(res_inc.rear):
-                    raise ValueError("Motion can not be completed")
-                instruction["elevate"] = res_inc.rear
-                if not st_aux.incline(-res_shf.central+res_inc.rear, None, True):
-                    raise RuntimeError("Error in control module")              
+                # In this point, we can ensure that there will be no problem
+                # with horizontal collisions. Try again. 
+                res_inc = st_aux.incline(-res_shf.central, None, True)
+                if not res_inc:                   
+                    # If there is still problems, in this case is because there
+                    # is no room for the actuator to move.
+                    # Try to elevate the structure the distance remaining.
+                    if not st_aux.elevate(res_inc.rear):
+                        raise ValueError("Motion can not be completed")
+                    instruction["elevate"] = res_inc.rear
+                    if not st_aux.incline(
+                            -res_shf.central+res_inc.rear, None, True):
+                        raise RuntimeError("Error in control module")              
             instruction["incline"] = -res_shf.central+res_inc.rear
             instruction["elevate_rear"] = True
             # If succeeded, the actuator can now be shifted.

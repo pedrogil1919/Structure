@@ -305,11 +305,12 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            # wheel_aux = [-w if (w is not None) else w for w in wheel]
-            # self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -distance)
-            # self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -distance)
-            self.REAR.shift_actuator(None, None, -distance)
-            self.FRNT.shift_actuator(None, None, -distance)
+            wheel_aux = [0 if (w is not None) else None for w in wheel]
+            self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -distance)
+            self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -distance)
+            
+#             self.REAR.shift_actuator(None, None, -distance)
+#             self.FRNT.shift_actuator(None, None, -distance)
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.

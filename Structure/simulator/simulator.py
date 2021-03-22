@@ -95,18 +95,13 @@ class Simulator():
             
         # Compute total number of iterations:
         total_iterations = ceil(total_time/self.sample_time)
-#         if total_iterations == 3:
-#             print("parar")
         if total_iterations == 0:
             # Check for the end of the trajectory.
             try:
                 if instruction['end']:
                     yield False
             except KeyError:
-                pass
-            yield True      
-            return True
-        
+                total_iterations = 1
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
         speed_actuator = shift / total_iterations
