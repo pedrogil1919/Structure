@@ -41,7 +41,7 @@ class Joint:
 
         """
         # Copy global variables of the structure.
-        shift = self.base.shift
+        shift = self.base.position
         elevation = self.base.elevation
         angle = self.base.angle
         # Get actual coordinates.
@@ -51,21 +51,21 @@ class Joint:
         return x, y
 
     def proportional_lift(self, height):
-        """Computes a shift when inclining the structure.
-
+        """Computes a lift when inclining the structure.
+        
         Computes the shift for an inner actuator when the outer actuator is
-        shifted the given distance when inclining the structure.
-
+        shift the given distance when inclining the structure.
+        
         Returns the required distance.
 
         """
         return height*self.x/self.base.WIDTH
 
     def inverse_prop_lift(self, height):
-        """Computes and inverse shift when inclining the structure.
+        """Computes and inverse position when inclining the structure.
 
         The function returns the height the exterior actuators need to be
-        shifted to get the current actuator shift the given height when
+        shifted to get the current actuator position the given height when
         inclining. The values returned are:
           - Height for the front actuator.
           - Height for the rear actuator.
@@ -91,7 +91,7 @@ class Joint:
 #         motion when the structure is inclined
 #         (see liftfrom_horizontal_motion.svg).
 #
-#         Returns the horizontal shift for the actuator.
+#         Returns the horizontal position for the actuator.
 #
 #         Parameters:
 #         distance -- Horizontal distance to achieve.
@@ -100,7 +100,7 @@ class Joint:
 #         """
 #         # Obtain actual coordinates for the current joint.
 #         xa, ya = self.position()
-#         x0 = xa-self.base.shift
+#         x0 = xa-self.base.position
 #         y0 = ya-self.base.elevation
 #         if front:
 #             # If the fixed wheel is the front one, we need to update the

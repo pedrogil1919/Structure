@@ -26,7 +26,7 @@ class Graphics:
             scale -- Scale in units/pixel, where units : (cm, mm, m, inc, ...).
                 If None, drawing functions computes the scale so that the whole
                 list of stairs spreads over the whole width of the image.
-                
+
         video_data: dictionary with the following keys:
             video_dir -- If a directory, save a video image sequence in this
                 directory. If the directory does not exits, it is created. If

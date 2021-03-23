@@ -51,7 +51,7 @@ class Base:
         # Current vertical position.
         self.elevation = d+g
         # Current horizontal position.
-        self.shift = 0.0
+        self.position = 0.0
         # Angle of the structure (driven by L9 actuator, see paper).
         self.angle = 0.0
         # Create array of actuators.
@@ -144,7 +144,7 @@ class Base:
 
         """
         # Update structure position
-        self.shift += distance
+        self.position += distance
         if not check:
             # This option is called inside this function, so do not need to
             # return any value as long as we take this into account bellow,
@@ -302,7 +302,7 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            # For the actuator to shift independently, in this previous step,
+            # For the actuator to position independently, in this previous step,
             # we need to fix it to the elevation of the structure, as opposed
             # of the rest, that need to be shifted so that the wheels remains
             # in the same position.
@@ -330,7 +330,7 @@ class Base:
 #             __, __, x3d, __ = self.FRNT.position(0)
 #             x3d -= x3
 #             # And move the structure in the opposite direction.
-#             self.shift -= x3d
+#             self.position -= x3d
 
         # Elevate all the actuators (except the first one that does not move)
         # the corresponding distance to get the required inclination.
@@ -410,7 +410,7 @@ class Base:
         return None, None
 
     def get_actuators_position(self, index):
-        """Return the current shift of the actuators.
+        """Return the current position of the actuators.
 
         Returns the position of a given actuator.
 
