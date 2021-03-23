@@ -1,11 +1,12 @@
-'''
+"""
 Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
 Module to read system parameters from a XML file.
 
-'''
+"""
+
 # XML support
 from xml.etree import ElementTree
 from distutils.util import strtobool

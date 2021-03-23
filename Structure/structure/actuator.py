@@ -140,7 +140,7 @@ class WheelActuator:
     def check_actuator(self):
         """Check if the actuator is in a valid position.
 
-        This function check both, if the actuator is inside is range of 
+        This function check both, if the actuator is inside is range of
         actuation, and if the wheel is in a valid position.
 
         Returns:

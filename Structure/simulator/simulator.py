@@ -14,7 +14,7 @@ class Simulator():
     """Class to simulate structure motion.
 
     """
-    
+
     def __init__(self, speed_data):
         """
         Constructor:
@@ -53,11 +53,11 @@ class Simulator():
         # No recuerdo por qué no lo hicimos así.
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
-        incline = instruction.get('incline', 0.0) 
+        incline = instruction.get('incline', 0.0)
         shift = instruction.get('shift', 0.0)
         wheel = instruction.get('wheel', None)
         rear = instruction.get('elevate_rear', False)
-        
+
         # Compute the number of iterations needed to complete the instruction.
         # Time required to complete the horizontal motion.
         total_time = abs(advance) / self.speed_wheel
@@ -76,7 +76,7 @@ class Simulator():
             elevate_time = -elevate / self.speed_elevate_dw
         if elevate_time > total_time:
             total_time = elevate_time
-            
+
         # Time required to complete the structure inclination (if any).
         if incline > 0:
             incline_time = incline / self.speed_elevate_up
@@ -84,7 +84,7 @@ class Simulator():
             incline_time = -incline / self.speed_elevate_dw
         if incline_time > total_time:
             total_time = incline_time
-            
+
         # Compute total number of iterations:
         total_iterations = ceil(total_time/self.sample_time)
         if total_iterations == 0:
@@ -94,24 +94,23 @@ class Simulator():
         speed_actuator = shift / total_iterations
         speed_elevate = elevate / total_iterations
         speed_incline = incline / total_iterations
-        
         # Compute proportional speeds for the actuator based on the amount of
         # motion when elevating and inclining.
         total_motion = abs(speed_elevate) + abs(speed_incline)
         try:
-            proportional_actuator = speed_elevate / total_motion
+            proportional_value = speed_elevate / total_motion
         except ZeroDivisionError:
-            proportional_actuator = 0.0 
+            proportional_value = 0.0
 
         actuator_elevate = 4*[None]
         actuator_incline = 4*[None]
         try:
-            actuator_elevate[wheel] = speed_actuator * proportional_actuator
-            actuator_incline[wheel] = speed_actuator * (1-proportional_actuator)
+            actuator_elevate[wheel] = speed_actuator * proportional_value
+            actuator_incline[wheel] = speed_actuator * (1-proportional_value)
         except TypeError:
             pass
 
-        for __  in range(total_iterations):
+        for __ in range(total_iterations):
             res = structure.advance(speed_wheel)
             if not res:
                 raise RuntimeError("Can not advance structure.", str(res))
@@ -144,7 +143,7 @@ class Simulator():
             res = structure.advance(distance)
             if not res:
                 print("Can not advance structure.", res)
-        #######################################################################  
+        #######################################################################
         # Sometimes, the order of first elevate and then incline is
         # not possible, and have to change order. With this instruction
         # perform first the inclination and the the elevation.
@@ -158,7 +157,7 @@ class Simulator():
             res = structure.elevate(height)
             if not res:
                 elevate_post = True
-        #######################################################################  
+        #######################################################################
         try:
             height = instruction['incline']
         except KeyError:
@@ -170,7 +169,7 @@ class Simulator():
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################
-        if elevate_post:  
+        if elevate_post:
             try:
                 height = instruction['elevate']
             except KeyError:
@@ -180,7 +179,7 @@ class Simulator():
                 res = structure.elevate(height)
                 if not res:
                     print("Can not elevate structure:", res)
-        #######################################################################  
+        #######################################################################
 
         try:
             height = instruction['height']
@@ -192,17 +191,16 @@ class Simulator():
             res = structure.shift_actuator(wheel, height)
             if not res:
                 print("Can not shift actuator:", res)
-        #######################################################################  
+        #######################################################################
         # Check for the end of the trajectory.
         try:
             if instruction['end']:
                 yield False
         except KeyError:
             pass
-        #######################################################################  
+        #######################################################################
         yield True
-        
+
 ###############################################################################
 # End of file.
-###############################################################################        
-        
+###############################################################################
