@@ -1,12 +1,10 @@
-'''
+"""
 Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-'''
+"""
 
-"probar token"
-"otro"
 
 import sys
 
@@ -14,8 +12,6 @@ from physics import stairs
 from structure import base
 from control import control
 from simulator.simulator import Simulator
-# from simulators.simulator import simulate_complete as simulate
-# from simulators.simulator import simulate_instruction as simulate
 from simulator.graphics import Graphics
 import readXML
 
@@ -46,9 +42,9 @@ inst_number = 0
 
 while continue_loop:
     while manual_mode and continue_loop:
-    ###########################################################################
-    #  Manual mode
-    ###########################################################################
+        #######################################################################
+        #  Manual mode
+        #######################################################################
         # Display image and wait for next instruction.
         continue_loop, manual_mode, key_pressed = \
             graphics.draw(stairs, structure)
@@ -64,23 +60,21 @@ while continue_loop:
     # just start automatic mode, send an empty instruction, that allow the for
     # loop to do one iteration without moving the structure.
     instruction = {}
-    # However, we need that the control module does not produce any instruction,
-    # so that the structure does not move until the user press the key. This
-    # flag prevent this module to produce any instruction. After first
-    # iteration, the flag is set to True to allow the module to generate the
-    # first instruction.
+    # However, we need that the control module does not produce any
+    # instruction, so that the structure does not move until the user press the
+    # key. This flag prevent this module to produce any instruction. After the
+    # first iteration, the flag is set to True to allow the module to generate
+    # the first instruction.
     switching_mode = True
-    
+
     while not manual_mode and continue_loop:
-    ###########################################################################
-    #  Automatic mode
-    ###########################################################################
+        #######################################################################
+        #  Automatic mode
+        #######################################################################
         if not switching_mode:
+            # Generate the next instruction.
             instruction = control.next_instruction(structure)
-          
             print("Inst", inst_number, ":",  instruction)
-            if inst_number == 48:
-                print("in")
             inst_number += 1
         # Allow the program to generate a new instruction in the next
         # iteration
@@ -96,7 +90,7 @@ while continue_loop:
                 break
             # The simulation has succeeded, so, continue loop.
             continue_loop, manual_mode, key_pressed = \
-                    graphics.draw(stairs, structure)
+                graphics.draw(stairs, structure)
             if not continue_loop:
                 # The user has pressed the Esc key to finish the program.
                 break
@@ -104,7 +98,7 @@ while continue_loop:
                 # Entering manual mode. Finish the inner while loop an continue
                 # with a new iteration of the outermost while loop.
                 break
-    ###########################################################################    
+    ###########################################################################
 print("End of program.")
 
 ###############################################################################
