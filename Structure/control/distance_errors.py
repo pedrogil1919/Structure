@@ -1,29 +1,23 @@
-'''
+"""
 Created on 15 feb. 2021
 
 @author: pedro.gil@uah.es
 
 Class to return the list of distance errors when checking the position of the
 structure.
-'''
+"""
 
 
 def greatest(v1, v2):
-    """Returns the variable with the greatest absolute value.
-        
-    """
+    """Returns the variable with the greatest absolute value."""
     return v1 if abs(v1) > abs(v2) else v2
 
 def smallest(v1, v2):
-    """Return the variable with the smallest absolute value.
-    
-    """
+    """Return the variable with the smallest absolute value."""
     return v1 if abs(v1) < abs(v2) else v2
 
 def merge_collision(res1, res2):
-    """Merge the values of two collision data.
-    
-    """
+    """Merge the values of two collision data."""
     # If both variables are True, there is no collision, so return a no
     # collision object.
     if res1 and res2:
@@ -45,9 +39,7 @@ def merge_collision(res1, res2):
             False, horizontal, actuator, central, front, rear)
 
 def merge_stability(res1, res2):
-    """Similar than merge_collision, but for stability objects.
-    
-    """
+    """Similar than merge_collision, but for stability objects."""
     if res1 and res2:
         return StabilityErrors()
     elif not res1 and res2:
@@ -69,8 +61,8 @@ class CollisionErrors():
     error (a wheel colliding with a step, an actuator reaching one of it
     bounds, etc), the distance of error must be computed and stores in this
     class.
+    
     """
-
 
     def __init__(self, correct=True, horizontal=0.0, 
                  actuator=0.0, central=0.0, front=0.0, rear=0.0):
@@ -88,6 +80,7 @@ class CollisionErrors():
           the structure in a valid position when inclining the structure (see
           (see inv_proportional_shift.svg).
         rear -- Same as front, for the rear actuator.
+        
         """
         # Save all data.
         self.correct    = correct
@@ -103,18 +96,20 @@ class CollisionErrors():
     def __str__(self):
         if self.correct:
             return "Correct"
-        return f"Error: \n \
-            Horizontal: {self.horizontal} \n \
-            Actuator: {self.actuator} \n \
-            Vertical: \n \
-            - Central: {self.central} \n \
-            - Rear actuator: {self.rear} \n \
-            - Front actuator: {self.front}"
+        return f"Error: \n" \
+            "Horizontal: %.2f\n" \
+            "Actuator: %.2f\n" \
+            "Vertical errors:\n" \
+            "- Central: %.2f\n" \
+            "- Rear actuator: %.2f\n" \
+            "- Front actuator: %.2f" % \
+            (self.horizontal, self.actuator, 
+             self.central, self.rear, self.front)
     
     def add_inclination_errors(self, inclination):
         """Add all inclination errors.
         
-        For some function, they can not compute at the same time he collision
+        For some function, they can not compute at the same time the collision
         and the inclination errors. For the calling function to be simpler,
         once the collision data is obtained, use this function to complete the
         data (in case this data need to be included, otherwise leave empty).
@@ -122,15 +117,14 @@ class CollisionErrors():
         Parameters:
         inclination -- Tupla, with the elements:
           - 0: front inclination error.
-          - 1: rear inclination error.        
+          - 1: rear inclination error.  
+                
         """
         self.front = inclination[0]
         self.rear  = inclination[1]
     
     def add_stability(self, error):
-        """Same as add_inclination_errors, but for stability data.
-        
-        """
+        """Same as add_inclination_errors, but for stability data."""
         # Only when statibility error is False
         if self and not error:
             self.horizontal = error.horizontal
@@ -143,7 +137,9 @@ class CollisionErrors():
 ###############################################################################
 
 class StabilityErrors():
-    """Class to store stability error (see CollisionErrors class for more info).
+    """Class to store stability errors 
+    
+    See CollisionErrors class for more info.
     
     """
     
@@ -151,8 +147,8 @@ class StabilityErrors():
         """Constructor:
         
         Parameters:
-        front -- Error distance for the front wheel. If there is no error in the
-          front wheel, set the variable to None.
+        front -- Error distance for the front wheel. If there is no error in
+          the front wheel, set the variable to None.
         rear -- Error distance for the rear wheel. Same than front for None.
         
         """
@@ -184,3 +180,6 @@ class StabilityErrors():
     def __bool__(self):
         return self.correct
     
+###############################################################################
+# End of file.
+###############################################################################

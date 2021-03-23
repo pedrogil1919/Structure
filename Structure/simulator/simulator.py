@@ -1,23 +1,20 @@
-'''
-Created on 28 ene. 2021
-
-@author: pedro
-'''
-
-'''
+"""
 Created on 5 jun. 2020
 
 @author: pedro
 
 Step by step simulator of structure motion.
 
-'''
+"""
+
 from math import ceil
+
 
 class Simulator():
     """Class to simulate structure motion.
 
     """
+    
     def __init__(self, speed_data):
         """
         Constructor:
@@ -43,19 +40,15 @@ class Simulator():
         self.sample_time = speed_data['sample_time']
 
     def compute_step(self, speed, sample_time):
-        """Compute the distance traveled in one iteration
-        
+        """Compute the distance traveled in one iteration."""
+
         # TODO: add here all the dynamics of the system
-        
-        """
+
         distance = speed * sample_time
         return distance
 
     def simulate_step(self, structure, instruction):
-        """Complete a list of instructions in one step.
-
-        """
-        
+        """Complete a list of instructions in one step."""
         # FIX: La primera instrucción es nula. Por eso es necesario hacer esto.
         # No recuerdo por qué no lo hicimos así.
         advance = instruction.get('advance', 0.0)

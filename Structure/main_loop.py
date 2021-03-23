@@ -76,7 +76,7 @@ while continue_loop:
     #  Automatic mode
     ###########################################################################
         if not switching_mode:
-            instruction = control.next_instruction(structure, graphics, stairs)
+            instruction = control.next_instruction(structure)
           
             print("Inst", inst_number, ":",  instruction)
             if inst_number == 48:

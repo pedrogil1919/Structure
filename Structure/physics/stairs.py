@@ -1,11 +1,11 @@
-'''
+"""
 Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
 Module to define all the physical interaction between the structure and the
 exterior elements, such as the stair.
-'''
+"""
 
 from numpy import float32
 import cv2
@@ -18,14 +18,16 @@ from physics.wheel_state import WheelState, MAX_GAP
 
 
 class Stair:
-    '''
-    Class to define the complete set of steps, and detect collisions with the
-    wheels.
+    """Class to define the complete set of steps
 
-    '''
-    def __init__(self, stairs, landing=0):
-        """
-        Constructor: Generate the coordinates of the set of steps.
+    The class define a stair from a list of steps, and also implement the
+    phisical interactions with the wheels (wheel collisions and unstabilities).
+
+    """
+
+    def __init__(self, stairs, landing=0.0):
+        """Constructor: Generate the coordinates of the set of steps.
+
         See stair_definition_up.svg y stair_definition_down.svg.
         Run draw_stairs.py.
 
@@ -74,9 +76,9 @@ class Stair:
         See figure find_step.svg for more details.
 
         Returns the coordinates for:
-        - height of the step where the wheel lies (yc)
-        - horizontal size of this step (xl, xr)
-        - height of the previous and next steps (yl, yr)
+          - height of the step where the wheel lies (yc)
+          - horizontal size of this step (xl, xr)
+          - height of the previous and next steps (yl, yr)
 
         Parameters:
         p -- Coordinates (x,y) of the center of the wheel.
@@ -121,18 +123,18 @@ class Stair:
         """Check a possible collision of a wheel with the stairs.
 
         Returns:
-        - If the wheel is inside the stair (collision), returns Inside
+          - If the wheel is inside the stair (collision), returns Inside
             and the distances to be applied to the wheel center to correct
             such collision.
-        - If the wheel is in a correct position, return its state with respect
-            to the stair (see WheelState), and None for the other two values.
+          - If the wheel is in a correct position, return its state with
+            respect to the stair (see WheelState), and None for the other two
+            values.
 
         Parameters:
         p -- Coordinates of the center of the wheel.
         r -- Wheel radius.
 
         """
-
         hc, hl, hr, wl, wr = self.get_distances(p, r)
         # First part. Ensure that there is no collision, but if so, return
         # distances to allow the calling function to correct it.
@@ -249,9 +251,9 @@ class Stair:
         """ Find all the useful distances between the stair and a wheel.
 
         Returns the following values (see get_distances.svg):
-        - hc, hl, hr: Vertical distances from the bottom of the wheel with
+          - hc, hl, hr: Vertical distances from the bottom of the wheel with
             respect to the actual, left and right steps.
-        - wl, wr: Horizontal distances from the left (right) edge of the
+          - wl, wr: Horizontal distances from the left (right) edge of the
             wheel to the left (right) step.
 
         Signs are taken such that a negative value means the wheel is outside
@@ -298,15 +300,14 @@ class Stair:
     # =========================================================================
     # Drawing functions.
     # =========================================================================
-    
+
     GROUND_COLOR = (0x00, 0x00, 0x00)
     LINE_SIZE = 2
     CORNER_SIZE = 8
     CORNER_COLOR = (0x00, 0x00, 0xFF)
-    
+
     def draw(self, origin, image, scale, shift):
-        """Draw the stair.
-        """
+        """Draw the stair."""
         cx1 = float32(scale*origin[0])
         cy1 = float32(scale*origin[1])
         for p in self.STAIR:
@@ -318,7 +319,7 @@ class Stair:
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             # Draw a point in the step corner.
             cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
-                       self.CORNER_COLOR, -1, cv2.LINE_AA, shift) 
+                       self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
             # Draw steps with different colors.
             # from random import randint
             # color=(randint(0, 0x100), randint(0, 0x100), randint(0, 0x100))
@@ -328,11 +329,11 @@ class Stair:
             #    cv2.LINE_AA, self.S)
             cx1 = cx2
             cy1 = cy2
-            
+
         # Draw the last point of the stair.
         cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
                    self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
-        
+
 ###############################################################################
 # End of file.
 ###############################################################################
