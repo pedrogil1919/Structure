@@ -52,6 +52,8 @@ class Base:
         self.elevation = d+g
         # Current horizontal position.
         self.position = 0.0
+        # Previous position, to get control of its speed.
+        self.prev_pos = 0.0
         # Angle of the structure (driven by L9 actuator, see paper).
         self.angle = 0.0
         # Create array of actuators.
@@ -68,7 +70,7 @@ class Base:
         # Size of the structure.
         self.HEIGHT = d
         # Total width of the structure.
-        Base.WIDTH = a+b+c
+        self.WIDTH = a+b+c
 
     ###########################################################################
     # MOTION FUNCTION
@@ -143,6 +145,8 @@ class Base:
           the own function.
 
         """
+        # Get previous position for speed computation.
+        previous_pos = self.position
         # Update structure position
         self.position += distance
         if not check:
@@ -155,7 +159,7 @@ class Base:
         col, stb = self.check_position()
 
         col.add_stability(stb)
-
+        self.prev_pos = previous_pos
         if col:
             return col
 
@@ -302,10 +306,10 @@ class Base:
             # since it can happen that, even in an invalid position at this
             # step, the actuator can return back to a valid position after
             # the inclination.
-            # For the actuator to position independently, in this previous step,
-            # we need to fix it to the elevation of the structure, as opposed
-            # of the rest, that need to be shifted so that the wheels remains
-            # in the same position.
+            # For the actuator to position independently, in this previous
+            # step, we need to fix it to the elevation of the structure, as
+            # opposed of the rest, that need to be shifted so that the wheels
+            # remains in the same position.
             wheel_aux = [0 if (w is not None) else None for w in wheel]
             self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -height)
             self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -height)
@@ -368,9 +372,14 @@ class Base:
           - The index of the wheel to shift, that is, the wheel that is closest
             to its corresponding step:
               - 0: Rearmost wheel.
+              - 1:
+              - 2:
               - 3: Frontmost wheel.
           - The horizontal distance to move.
           - The vertical height for the wheel to shift.
+          - The index of the wheel, in the other pair, that is closest to its
+            corresponding step.
+          - The vertical height for this second wheel.
 
         See stair.set_distances function, and getDistances.svg.
         """
@@ -382,16 +391,16 @@ class Base:
         if isinf(fr_hor) and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground.
-            return fr_id+2, re_hor/2, fr_ver
+            return fr_id+2, re_hor/2, fr_ver, 0, 0.0
 
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
-            return re_id, re_hor, re_ver
+            return re_id, re_hor, re_ver, fr_id+2, fr_ver
         else:
             # NOTE: The index of wheel are numbered from 0. Since the rear
             # wheel is the third wheel of the structure, we have to add 2 to
             # the index returned for the pair.
-            return fr_id + 2, fr_hor, fr_ver
+            return fr_id+2, fr_hor, fr_ver, re_id, re_ver
 
     def set_horizontal(self):
         """Returns the distances needed to set the structure horizontal."""
@@ -445,7 +454,7 @@ class Base:
         return self.REAR.REAR.d
 
     def get_speed(self):
-        return 0.0
+        return self.position - self.prev_pos
 
     def get_acceleration(self):
         return 0.0

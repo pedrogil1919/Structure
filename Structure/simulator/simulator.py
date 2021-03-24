@@ -54,18 +54,29 @@ class Simulator():
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
+        rear = instruction.get('elevate_rear', False)
         shift = instruction.get('shift', 0.0)
         wheel = instruction.get('wheel', None)
-        rear = instruction.get('elevate_rear', False)
+        wh_aux = instruction.get('wheel_aux', None)
+        sh_aux = instruction.get('shift_aux', 0.0)
 
         # Compute the number of iterations needed to complete the instruction.
         # Time required to complete the horizontal motion.
         total_time = abs(advance) / self.speed_wheel
+
         # Time required to complete the actuator shift (if any).
+        # Main actuator.
         if shift > 0:
             shift_time = shift / self.speed_actuator_dw
         else:
             shift_time = -shift / self.speed_actuator_up
+        if shift_time > total_time:
+            total_time = shift_time
+        # Second actuator.
+        if sh_aux > 0:
+            shift_time = sh_aux / self.speed_actuator_dw
+        else:
+            shift_time = -sh_aux / self.speed_actuator_up
         if shift_time > total_time:
             total_time = shift_time
 
@@ -94,6 +105,7 @@ class Simulator():
         speed_actuator = shift / total_iterations
         speed_elevate = elevate / total_iterations
         speed_incline = incline / total_iterations
+        speed_ac_aux = sh_aux / total_iterations
         # Compute proportional speeds for the actuator based on the amount of
         # motion when elevating and inclining.
         total_motion = abs(speed_elevate) + abs(speed_incline)
@@ -102,12 +114,23 @@ class Simulator():
         except ZeroDivisionError:
             proportional_value = 0.0
 
+        # Build the list with all the elements equal to none but the wheel
+        # that must move with the structure.
         actuator_elevate = 4*[None]
         actuator_incline = 4*[None]
         try:
             actuator_elevate[wheel] = speed_actuator * proportional_value
             actuator_incline[wheel] = speed_actuator * (1-proportional_value)
         except TypeError:
+            # In case there is no wheel to move, the exception raises, so that
+            # all tne elements in the list are note, which is what we need.
+            pass
+        try:
+            actuator_elevate[wh_aux] = speed_ac_aux * proportional_value
+            actuator_incline[wh_aux] = speed_ac_aux * (1-proportional_value)
+        except TypeError:
+            # In case there is no wheel to move, the exception raises, so that
+            # all tne elements in the list are note, which is what we need.
             pass
 
         for __ in range(total_iterations):

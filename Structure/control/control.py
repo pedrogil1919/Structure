@@ -37,7 +37,7 @@ def next_instruction(structure):
 
     """
     # Get the distances each wheel is with respect to its closest step.
-    ac_id, hor, ver = structure.get_wheels_distances()
+    wheel, hor, ver, wheel_aux, ver_aux = structure.get_wheels_distances()
     # A value equal to inf is returned when the wheel reaches the end of the
     # stair. here, we check whether we have already reached the end of the
     # structure, and so, we have to finish the program.
@@ -45,8 +45,8 @@ def next_instruction(structure):
         # Before finish the program, set the structure to its initial position
         # that is, all the wheels in the ground, and all the actuator to this
         # lower position.
-        ac_id, ver = structure.set_horizontal()
-        if ac_id is None:
+        wheel, ver = structure.set_horizontal()
+        if wheel is None:
             # This happens when all the wheels are already on the ground. In
             # this case, the only instruction left is to take all the actuators
             # to its lower posision, so that the structure is horizontal and in
@@ -78,18 +78,25 @@ def next_instruction(structure):
     # Add the distance to move to the instruction. In general, the second term
     # of the sum will be 0.
     instruction = {"advance": hor+res_adv.horizontal}
+
+    # If the distance to the stair is greater than the structure lehgt, first
+    # advance the structure to that distance without any other motion.
+    if hor > structure.WIDTH:
+        instruction["advance"] -= structure.WIDTH
+        return instruction
+
     # Simulate elevation of the actuator. Note that the vertical distance is
     # positive downwards, but the actuator position is measured in the opposite
     # direction. For that reason, we change the sign of the vertical distance.
-    res_shf = st_aux.shift_actuator(ac_id, -ver)
-    instruction["wheel"] = ac_id
+    res_shf = st_aux.shift_actuator(wheel, -ver)
+    instruction["wheel"] = wheel
     instruction["height"] = -ver
     if not res_shf:
         # If the actuator can not be sift, we have to make room for the
         # actuator to compete the motion. This action depends on the index
         # of the actuator. Continue reading the code:
         #######################################################################
-        if ac_id == 3:
+        if wheel == 3:
             # Front actuator. In this case, the algorithm incline the
             # structure.
             # TODO: Check when inclining the structure and a collision raises.
@@ -108,10 +115,10 @@ def next_instruction(structure):
                     raise RuntimeError("Error in control module")
             instruction['incline'] -= res_inc.rear
             # If succeeded, the actuator can now be shifted.
-            if not st_aux.shift_actuator(ac_id, -ver):
+            if not st_aux.shift_actuator(wheel, -ver):
                 raise RuntimeError("Error in control module")
         #######################################################################
-        elif ac_id == 2:
+        elif wheel == 2:
             # Second actuator.
             # Try to elevate the structure, to test if there is enough room
             # for the actuator to complete the motion.
@@ -135,9 +142,9 @@ def next_instruction(structure):
             # However, it is still possible that we have not enough space. So,
             # check if we now can elevate the structure and so, make enough
             # space for the actuator to complete the motion.
-            res_shf = st_aux.shift_actuator(ac_id, -ver)
+            res_shf = st_aux.shift_actuator(wheel, -ver)
             if not res_shf:
-                if not st_aux.shift_actuator(ac_id, -ver+res_shf.actuator):
+                if not st_aux.shift_actuator(wheel, -ver+res_shf.actuator):
                     raise ValueError("Motion can not be completed")
                 # Still not enough space. This happens when the actuator that
                 # block the motion is a central one. In this case, we have not
@@ -148,7 +155,7 @@ def next_instruction(structure):
                 res_elv = st_aux.elevate(-res_shf.actuator)
                 if res_elv:
                     raise ValueError("Motion can not be completed")
-                if not st_aux.shift_actuator(ac_id, +ver-res_shf.actuator):
+                if not st_aux.shift_actuator(wheel, +ver-res_shf.actuator):
                     raise ValueError("Motion can not be completed")
                 if not st_aux.incline(res_elv.rear, None, True):
                     raise ValueError("Motion can not be completed")
@@ -156,7 +163,7 @@ def next_instruction(structure):
                 if not st_aux.elevate(2*res_shf.actuator):
                     raise ValueError("Motion can not be completed")
                 instruction["elevate"] += 2*res_shf.actuator
-                res = st_aux.shift_actuator(ac_id, -ver)
+                res = st_aux.shift_actuator(wheel, -ver)
                 if not res:
                     # If not possible, generate an instruction to only elevate
                     # and incline the structure,m and expect that in the next
@@ -165,7 +172,7 @@ def next_instruction(structure):
                     instruction['advance'] = 0.0
 
         #######################################################################
-        elif ac_id == 1:
+        elif wheel == 1:
             # For actuator 1, the proccess is similar than for actuator 2, but
             # since it generates less problems, this code has not been
             # developed as it should yet.
@@ -173,10 +180,10 @@ def next_instruction(structure):
 
             instruction["elevate"] = res_shf.central-res_elv.rear
             # If succeeded, the actuator can now be shifted.
-            if not st_aux.shift_actuator(ac_id, -ver):
+            if not st_aux.shift_actuator(wheel, -ver):
                 raise RuntimeError("Error in control module")
         #######################################################################
-        elif ac_id == 0:
+        elif wheel == 0:
             res_inc = st_aux.incline(-res_shf.central, None, True)
             if not res_inc:
                 # If the inclination fails, one less likely cause is that,
@@ -203,14 +210,34 @@ def next_instruction(structure):
             instruction["incline"] = -res_shf.central+res_inc.rear
             instruction["elevate_rear"] = True
             # If succeeded, the actuator can now be shifted.
-            if not st_aux.shift_actuator(ac_id, -ver):
+            if not st_aux.shift_actuator(wheel, -ver):
                 raise RuntimeError("Error in control module")
     # Get the shift of each actuator. This value is needed in case we have to
     # return the actual shift of the actuator, not the shift after the
     # elevation/inclination.
-    shift_prev = structure.get_actuators_position(ac_id)
-    shift_curr = st_aux.get_actuators_position(ac_id)
-    instruction["shift"] = shift_curr - shift_prev
+    # This value con be computed from the diference in shift for the actuator
+    # at the current position minus the same shift in the initial position.
+    instruction["shift"] = \
+        st_aux.get_actuators_position(wheel) - \
+        structure.get_actuators_position(wheel)
+
+    # Check whether we can also shift another wheel in the other pair.
+    instruction["wheel_aux"] = wheel_aux
+    # Check if the actuator can complete the whole motion.
+    res_aux = st_aux.shift_actuator(wheel_aux, -ver_aux)
+    if not res_aux:
+        # If not, check if it can complete the whole motion minus the distance
+        # of error (this motion should work always).
+        if st_aux.shift_actuator(wheel_aux, -ver_aux+res_aux.actuator):
+            instruction["shift_aux"] = \
+                st_aux.get_actuators_position(wheel_aux) - \
+                structure.get_actuators_position(wheel_aux)
+        else:
+            del instruction["wheel_aux"]
+    else:
+        instruction["shift_aux"] = \
+            st_aux.get_actuators_position(wheel_aux) - \
+            structure.get_actuators_position(wheel_aux)
 
     return instruction
 

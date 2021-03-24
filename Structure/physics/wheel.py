@@ -205,11 +205,11 @@ class Wheel:
                 res['hr'] = hr + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Outer:
-                res['hr'] = hr
+                res['hr'] = 0.0
                 res['hc'] = hc
                 res['wr'] = -wr + r + MAX_GAP
             elif self.state == WheelState.Over:
-                res['hr'] = hr
+                res['hr'] = 0.0
                 res['wr'] = -wr + r + MAX_GAP
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
