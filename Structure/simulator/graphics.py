@@ -102,6 +102,8 @@ class Graphics:
         stairs.draw(self.origin, self.image, aa_scale, self.shift)
         # Draw the structure.
         structure.draw(self.origin, self.image, aa_scale, self.shift)
+#         structure.draw_wheel_trajectory(
+#             self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
         cv2.putText(self.image, str(self.counter),
                     (20, self.image.shape[0]-30), 1, 5, 0x00, 4)

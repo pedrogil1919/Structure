@@ -391,7 +391,7 @@ class Base:
         if isinf(fr_hor) and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground.
-            return fr_id+2, re_hor/2, fr_ver, 0, 0.0
+            return fr_id+2, re_hor/2, fr_ver, re_id, re_ver
 
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
@@ -467,8 +467,7 @@ class Base:
     BASE_WIDTH = 6
 
     def draw(self, origin, image, scale, shift):
-        """Draw complete wheelchair.
-        """
+        """Draw complete wheelchair."""
         x1, y1, __, __ = self.REAR.position(0)
         __, __, x2, y2 = self.FRNT.position(0)
 
@@ -486,6 +485,13 @@ class Base:
 
         self.REAR.draw(origin, image, scale, shift)
         self.FRNT.draw(origin, image, scale, shift)
+
+    def draw_wheel_trajectory(self, origin, image, scale, shift, index):
+        """Draw the trajectory of the center of the wheel."""
+        if index == 0 or index == 1:
+            self.REAR.draw_trajectory(origin, image, scale, shift, index)
+        if index == 2 or index == 3:
+            self.REAR.draw_trajectory(origin, image, scale, shift, index - 2)
 
 ###############################################################################
 # End of file.

@@ -110,7 +110,7 @@ class Simulator():
         # motion when elevating and inclining.
         total_motion = abs(speed_elevate) + abs(speed_incline)
         try:
-            proportional_value = speed_elevate / total_motion
+            proportional_value = abs(speed_elevate) / total_motion
         except ZeroDivisionError:
             proportional_value = 0.0
 

@@ -251,6 +251,15 @@ class WheelActuator:
             cv2.circle(image, (px, cy1), int(4*scale), self.LIMIT_COLOR, -1,
                        cv2.LINE_AA, shift)
 
+    def draw_trajectory(self, origin, image, scale, shift):
+        """Draw the position of the center of the wheel."""
+        center = self.JOINT.position(self.HEIGHT+self.d)
+        x = numpy.float32(scale*(origin[0]+center[0]))
+        y = numpy.float32(scale*(origin[1]-center[1]))
+
+        cv2.circle(image, (x, y), int(2*scale), 
+                   (0x00, 0xFF, 0x00), -1, cv2.LINE_AA, shift)
+
 ###############################################################################
 # End of file.
 ###############################################################################

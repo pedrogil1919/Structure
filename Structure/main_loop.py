@@ -73,6 +73,8 @@ while continue_loop:
         #######################################################################
         if not switching_mode:
             # Generate the next instruction.
+            if inst_number == 35:
+                print("35")
             instruction = control.next_instruction(structure)
             print("Inst", inst_number, ":",  instruction)
             inst_number += 1

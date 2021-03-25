@@ -302,6 +302,12 @@ class ActuatorPair:
         self.FRNT.draw(origin, image, scale, shift)
         self.REAR.draw(origin, image, scale, shift)
 
+    def draw_trajectory(self, origin, image, scale, shift, index):
+        if index == 0:
+            self.REAR.draw_trajectory(origin, image, scale, shift)
+        else:
+            self.FRNT.draw_trajectory(origin, image, scale, shift)
+
 ###############################################################################
 # End of file.
 ###############################################################################
