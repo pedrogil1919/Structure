@@ -318,8 +318,8 @@ class Stair:
             cv2.line(image, (cx2, cy1), (cx2, cy2), self.GROUND_COLOR,
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             # Draw a point in the step corner.
-            cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
-                       self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
+            # cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
+            #            self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
             # Draw steps with different colors.
             # from random import randint
             # color=(randint(0, 0x100), randint(0, 0x100), randint(0, 0x100))
@@ -331,8 +331,8 @@ class Stair:
             cy1 = cy2
 
         # Draw the last point of the stair.
-        cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
-                   self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
+        # cv2.circle(image, (cx1, cy1), self.CORNER_SIZE*shift,
+        #           self.CORNER_COLOR, -1, cv2.LINE_AA, shift)
 
 ###############################################################################
 # End of file.
