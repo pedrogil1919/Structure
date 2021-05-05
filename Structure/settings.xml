@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <StairsClimbing>
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
-	<size a="40" b="100" c="40" d="50" g="50"/>
+	<size a="30" b="60" c="30" d="50" g="50"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
-	<wheels r1="15" r2="15" r3="15" r4="15"/>
+	<wheels r1="11" r2="11" r3="11" r4="11"/>
 	<!--Stairs definition. Can be defined as many as needed:
 		- landing: initial landing length
 		- dimensions: steps dimension:
@@ -19,10 +19,10 @@
 	<speed wheel="2.0" actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
 		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" sample_time="1.0"/>
 
-	<stairs landing="300">
+	<stairs landing="200">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="30" d="200"/>
+		<dimensions N="6" w="80" h="-30" d="300"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>
@@ -72,7 +72,7 @@
 			True, the program can be finished by pressing the Esc Key.
 			If False, program can not be finished manually.
 	-->
-		<resolution height="550" width="1200"/> <!--HD-->
+		<resolution height="540" width="1000"/> <!--HD-->
 		<!--
 		standard resolutions:
 		Full HD: 	height="1080" width="1920"
@@ -83,7 +83,7 @@
 		-->
 		<image shift="300" scale="1.0"/>
 		<framerate interval="10" pause="True"/>
-		<video directory="/home/pedro/Vídeos/WheelChair/prueba" display="True"/>
+		<video directory="/home/pedro/Vídeos/WheelChair/ComparationUp/con" display="True"/>
 <!--
 -->	
 	</graphics>

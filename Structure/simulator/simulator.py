@@ -47,17 +47,14 @@ class Simulator():
         distance = speed * sample_time
         return distance
 
-    def simulate_step(self, structure, instruction):
-        """Complete a list of instructions in one step."""
-        # FIX: La primera instrucción es nula. Por eso es necesario hacer esto.
-        # No recuerdo por qué no lo hicimos así.
+    def compute_iterations(self, instruction):
+        """Complete the munber of iteration to complete an instruction."""
+
+        # Get the distances to move from the instruction.
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
-        rear = instruction.get('elevate_rear', False)
         shift = instruction.get('shift', 0.0)
-        wheel = instruction.get('wheel', None)
-        wh_aux = instruction.get('wheel_aux', None)
         sh_aux = instruction.get('shift_aux', 0.0)
 
         # Compute the number of iterations needed to complete the instruction.
@@ -72,7 +69,7 @@ class Simulator():
             shift_time = -shift / self.speed_actuator_up
         if shift_time > total_time:
             total_time = shift_time
-        # Second actuator.
+        # The same for the second actuator.
         if sh_aux > 0:
             shift_time = sh_aux / self.speed_actuator_dw
         else:
@@ -98,8 +95,21 @@ class Simulator():
 
         # Compute total number of iterations:
         total_iterations = ceil(total_time/self.sample_time)
-        if total_iterations == 0:
-                total_iterations = 1
+        return total_iterations
+
+    def simulate_step(self, structure, instruction):
+        """Simulate one instruction step by step."""
+
+        advance = instruction.get('advance', 0.0)
+        elevate = instruction.get('elevate', 0.0)
+        incline = instruction.get('incline', 0.0)
+        rear = instruction.get('elevate_rear', False)
+        shift = instruction.get('shift', 0.0)
+        wheel = instruction.get('wheel', None)
+        wh_aux = instruction.get('wheel_aux', None)
+        sh_aux = instruction.get('shift_aux', 0.0)
+
+        total_iterations = self.compute_iterations(instruction)
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
         speed_actuator = shift / total_iterations
@@ -133,7 +143,11 @@ class Simulator():
             # all tne elements in the list are note, which is what we need.
             pass
 
-        for __ in range(total_iterations):
+        # NOTE: If we implement a for loop, at the end of each instruction the
+        # generator is called twice, causing the simulator to perform one
+        # iteration without moving.
+        # for __ in range(total_iterations):
+        while True:
             res = structure.advance(speed_wheel)
             if not res:
                 raise RuntimeError("Can not advance structure.", str(res))
@@ -148,9 +162,14 @@ class Simulator():
                 res = structure.elevate(speed_elevate, actuator_elevate)
                 if not res:
                     raise RuntimeError("Can not elevate structure.", str(res))
+            total_iterations -= 1
+            # Check for the end of the instruction.
+            if total_iterations == 0:
+                break
             yield True
 
-        # Check for the end of the trajectory.
+        # Check for the end of the trajectory. Return false when is the last
+        # instruction. This is marked with the key end in the dictionary.
         yield not instruction.get('end', False)
 
     def simulate_instruction(self, structure, instruction):

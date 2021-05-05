@@ -192,28 +192,28 @@ class Wheel:
             # See figures in get_distances foloder:
             if self.state == WheelState.Air:
                 res['hc'] = hc
-                res['hr'] = hr + MAX_GAP
+                res['hr'] = hr # + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Contact:
                 res['hc'] = hc
-                res['hr'] = hr + MAX_GAP
+                res['hr'] = hr # + MAX_GAP
                 res['wr'] = 0.0
             elif self.state == WheelState.Corner:
-                res['hr'] = hr + MAX_GAP
+                res['hr'] = hr # + MAX_GAP
                 res['wr'] = 0.0
             elif self.state == WheelState.Ground:
-                res['hr'] = hr + MAX_GAP
+                res['hr'] = hr # + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Outer:
                 res['hr'] = 0.0
                 res['hc'] = hc
-                res['wr'] = -wr + r + MAX_GAP
+                res['wr'] = -wr + r # + MAX_GAP
             elif self.state == WheelState.Over:
                 res['hr'] = 0.0
-                res['wr'] = -wr + r + MAX_GAP
+                res['wr'] = -wr + r # + MAX_GAP
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
-                res['wr'] = -wr + r + MAX_GAP
+                res['wr'] = -wr + r # + MAX_GAP
         #######################################################################
         # Downstairs:
         #######################################################################
@@ -223,30 +223,30 @@ class Wheel:
             res['up'] = False
             if self.state == WheelState.Air:
                 res['hr'] = hc
-                res['wr'] = -wr - MAX_GAP
-                res['wc'] = -wr + 2*r + MAX_GAP
+                res['wr'] = -wr # - MAX_GAP
+                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Contact:
                 res['hr'] = hc
-                res['wr'] = -wr - MAX_GAP
-                res['wc'] = -wr + 2*r + MAX_GAP
+                res['wr'] = -wr # - MAX_GAP
+                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Corner:
                 res['hr'] = 0.0
                 res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r + MAX_GAP
+                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Ground:
                 res['hr'] = 0.0
                 res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r + MAX_GAP
+                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Outer:
                 raise NotImplementedError("It should not happen")
             elif self.state == WheelState.Over:
                 res['hr'] = hc
-                res['wr'] = -wr - MAX_GAP
-                res['wc'] = -wr + 2*r + MAX_GAP
+                res['wr'] = -wr # - MAX_GAP
+                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
                 res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r + MAX_GAP 
+                res['wc'] = -wr + 2*r # + MAX_GAP 
         #######################################################################
         # End:
         #######################################################################
@@ -266,10 +266,10 @@ class Wheel:
                 res['hr'] = hc
             elif self.state == WheelState.Over:
                 res['hr'] = hl
-                res['wc'] = wl - MAX_GAP
+                res['wc'] = wl # - MAX_GAP
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
-                res['wc'] = wl + MAX_GAP
+                res['wc'] = wl # + MAX_GAP
             res['hc'] = res['hr']
 
         else:

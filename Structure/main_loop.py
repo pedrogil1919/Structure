@@ -39,7 +39,6 @@ continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
 # the user press the Esc key (see graphics module).
 # Main loop
 inst_number = 0
-
 while continue_loop:
     while manual_mode and continue_loop:
         #######################################################################
@@ -59,28 +58,36 @@ while continue_loop:
     # user the chance to switch again to manual mode without doing nothing, or
     # just start automatic mode, send an empty instruction, that allow the for
     # loop to do one iteration without moving the structure.
-    instruction = {}
+    # instruction = {}
     # However, we need that the control module does not produce any
     # instruction, so that the structure does not move until the user press the
     # key. This flag prevent this module to produce any instruction. After the
     # first iteration, the flag is set to True to allow the module to generate
     # the first instruction.
-    switching_mode = True
+    # switching_mode = True
 
     while not manual_mode and continue_loop:
         #######################################################################
         #  Automatic mode
         #######################################################################
-        if not switching_mode:
-            # Generate the next instruction.
-            if inst_number == 35:
-                print("35")
-            instruction = control.next_instruction(structure)
-            print("Inst", inst_number, ":",  instruction)
-            inst_number += 1
+        # if not switching_mode:
+        # Generate the next instruction.
+        instruction, str_aux = control.next_instruction(structure)
+        # NOTE: The last instruction returns the future state of the structure
+        # when the instruction were completed. This state would be the same
+        # as the one the structure finish after the instruction simulation that
+        # follows. However, due to rounding errors, this could be a little
+        # different, and can change the next instruction, and in some times
+        # take one more or one less iteration to complete than if we do not
+        # simulate. for that reason, to make with or without simulation do the
+        # same instructions, we capture here the state at the end of the
+        # instruction, and after the simulation (see end of the next for loop)
+        # substitute the simulated structure for this one.
+        print("Inst", inst_number, ":",  instruction)
+        inst_number += 1
         # Allow the program to generate a new instruction in the next
         # iteration
-        switching_mode = False
+        # switching_mode = False
 #         for res in sm.simulate_instruction(structure, instruction):
         for res in sm.simulate_step(structure, instruction):
             if not res:
@@ -99,7 +106,17 @@ while continue_loop:
             if manual_mode:
                 # Entering manual mode. Finish the inner while loop an continue
                 # with a new iteration of the outermost while loop.
+                # NOTE: At the end of the for loop, we substitute the current
+                # structure by the one returned by the control module. However,
+                # if we change mode before the instruction is finished, we
+                # have to undo this step. This can easily be done changing
+                # the last structure by the current one, so that when the
+                # structure is substituted, it is substituted by the same.
+                str_aux = structure
                 break
+        # Substitute the simulated structure by the one returned by the 
+        # control module.
+        structure = str_aux
     ###########################################################################
 print("End of program.")
 
