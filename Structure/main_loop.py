@@ -5,7 +5,6 @@ Created on 28 ene. 2021
 
 """
 
-
 import sys
 
 from physics import stairs

@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <StairsClimbing>
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
-	<size a="30" b="60" c="30" d="50" g="50"/>
+	<size a="30" b="60" c="30" d="50" g="30"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
-	<wheels r1="11" r2="11" r3="11" r4="11"/>
+	<wheels r1="10" r2="10" r3="10" r4="10"/>
 	<!--Stairs definition. Can be defined as many as needed:
 		- landing: initial landing length
 		- dimensions: steps dimension:
@@ -22,7 +22,7 @@
 	<stairs landing="200">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="-30" d="300"/>
+		<dimensions N="2" w="80" h="-30" d="300"/>
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
 		<dimensions N="3" w="80" h="-30" d="200"/>
@@ -80,8 +80,9 @@
 		-->
 		<!--
 		<image shift="400"/>
+		<image shift="300"/>
 		-->
-		<image shift="300" scale="1.0"/>
+		<image shift="0" scale="1.0"/>
 		<framerate interval="10" pause="True"/>
 		<video directory="/home/pedro/Vídeos/WheelChair/ComparationUp/con" display="True"/>
 <!--

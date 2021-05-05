@@ -292,10 +292,13 @@ class Stair:
         return hc, hl, hr, wl, wr
 
     def length(self):
-        """Returns the total length of the list of the stairs.
-
-        """
+        """Returns the total length of the list of the stairs. """
         return self.STAIR[-1][0]
+
+    def height(self):
+        """Returns the total height (positive or negative) of the list of the
+        stairs. """
+        return self.STAIR[-1][1]
 
     # =========================================================================
     # Drawing functions.

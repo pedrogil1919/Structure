@@ -124,7 +124,7 @@ def read_graphics(xml_file):
     try:
         shift = int(image.attrib['shift'])
     except (AttributeError, KeyError):
-        shift = size[0]/2
+        shift = 0
     try:
         scale = float(image.attrib['scale'])
     except (AttributeError, KeyError):

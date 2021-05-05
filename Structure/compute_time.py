@@ -48,3 +48,4 @@ if __name__ == "__main__":
     speed_data = readXML.read_simulator(settings_name)
     total = compute_time(structure_size, wheels_radius, stairs, speed_data)
     print("Total:", total)
+    

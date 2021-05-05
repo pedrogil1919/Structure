@@ -50,7 +50,7 @@ class Graphics:
         self.shift = 3      # Number of fractional bits.
         self.scale = image_data['scale']
         # Save image parameters.
-        self.origin = (0, image_data['shift'] / self.scale)
+        self.origin = image_data['shift']
         # Display image on screen after each iteration.
         self.display = video_data['display']
         if self.display:
@@ -92,16 +92,16 @@ class Graphics:
         """
         # Clear the image to white.
         self.image[:] = 0xFF
-        # Antialiased scale (see OpenCV draw documentation).
         if self.scale is None:
-            scale = self.image.shape[1] / stairs.length()
-        else:
-            scale = self.scale
-        aa_scale = scale * (1 << self.shift)
+            self.scale = self.image.shape[1] / stairs.length()
+        # Antialiased scale (see OpenCV draw documentation).
+        aa_scale = self.scale * (1 << self.shift)
+        origin = self.origin + \
+            (self.image.shape[0]+structure.HEIGHT+stairs.height())/2
         # Draw the stairs.
-        stairs.draw(self.origin, self.image, aa_scale, self.shift)
+        stairs.draw((0, origin), self.image, aa_scale, self.shift)
         # Draw the structure.
-        structure.draw(self.origin, self.image, aa_scale, self.shift)
+        structure.draw((0, origin), self.image, aa_scale, self.shift)
 #         structure.draw_wheel_trajectory(
 #             self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
