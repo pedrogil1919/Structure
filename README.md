@@ -44,10 +44,10 @@ At any time, you can switch to manual mode by pressing Tab Key (in some occasion
 - 4: Move structure to the left.
 - q, (w, e, r): Shift actuator 1, (2, 3, 4) upwards.
 - a, (s, d, f): Shift actuator 1, (2, 3, 4) downwards.
-- t, (g): Incline the structure a postive, (negative) angle, raising the front actuator, and fixing the rear wheel.
-- y, (h): Incline the structure a postive, (negative) angle, raising the front actuator, and fixing the front wheel.
-- u, (j): Incline the structure a postive, (negative) angle, raising the rear actuator, and fixing the rear wheel.
-- i, (k): Incline the structure a postive, (negative) angle, raising the rear actuator, and fixing the front wheel.
+- t, (g): Incline the structure a postive, (negative) angle, raising the front actuator.
+- y, (h): Incline the structure a postive, (negative) angle, raising the rear actuator.
+
+Note that when inclining the structure, the distances betweeen wheels changes, and so, all of them (but one) will move. In this case, the structure always fix the rear one, since this is the driving wheel.
 
 Pressing Tab Key again switch back to automatic mode. In this case, the program always returns in step by step mode. You can press Space key to switch to continuos mode.
 
