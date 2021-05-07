@@ -192,14 +192,14 @@ class Wheel:
             # See figures in get_distances foloder:
             if self.state == WheelState.Air:
                 res['hc'] = hc
-                res['hr'] = hr # + MAX_GAP
+                res['hr'] = 0.0 # + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Contact:
                 res['hc'] = hc
                 res['hr'] = hr # + MAX_GAP
                 res['wr'] = 0.0
             elif self.state == WheelState.Corner:
-                res['hr'] = hr # + MAX_GAP
+                res['h '] = hr # + MAX_GAP
                 res['wr'] = 0.0
             elif self.state == WheelState.Ground:
                 res['hr'] = hr # + MAX_GAP
@@ -214,6 +214,8 @@ class Wheel:
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
                 res['wr'] = -wr + r # + MAX_GAP
+            print("Datos", res['hr'])
+
         #######################################################################
         # Downstairs:
         #######################################################################
