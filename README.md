@@ -4,14 +4,15 @@
 
 These videos shows the operation of the structure when crossing different types of stairs:
 
-- [Simple upstairs](https://youtu.be/5JVE5Z-6W90)
-- [Simple downstairs](https://youtu.be/L5EnwhP_i_0)
-- [Doble upstairs](https://youtu.be/xWDOuWn6PaY)
-- [Doble downstairs](https://youtu.be/J9GNdBwLiBI)
-- [Up down](https://youtu.be/VLIcXlqMZjc)
-- [Down up](https://youtu.be/QYRTae0HUY0)
-- [Obstacles](https://youtu.be/dOSk67Nq8ec)
-- [Different steps](https://youtu.be/A3KZjVMgG6M)
+- [Simple upstairs](https://youtu.be/XAzPVlrQ6gY)
+- [Simple downstairs](https://youtu.be/72yBq5Ix9-g )
+
+- [Doble upstairs](not available)
+- [Doble downstairs](not available)
+- [Up down](not available)
+- [Down up](not available)
+- [Obstacles](not available)
+- [Different steps](not available)
 
 ## Installation:
 
