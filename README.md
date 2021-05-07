@@ -2,7 +2,7 @@
 
 ## Examples:
 
-These videos shows the operation of the structure when crossing different types of stairs:
+These videos show the operation of the structure when crossing different types of stairs:
 
 - [Simple upstairs](https://youtu.be/XAzPVlrQ6gY)
 - [Simple downstairs](https://youtu.be/72yBq5Ix9-g )
