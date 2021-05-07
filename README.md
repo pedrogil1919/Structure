@@ -34,7 +34,7 @@ The wheelchair structure dimensions and stairs size can be configured with a xml
 $ python3 main_loop.py /path/to/file/settings.xml
 ```
 
-When running the code, the program starts in automatic mode. In automatic mode, the program generates the instructions to cross the stairs, and run its way to the end of it. If the tag <graphics/framerate/pause> is set to False, the program will execute in a continuos fashion. If set to True, the program will perform one step by pressing the Enter Key. You can always switch between continuos and step by step modes by pressing Space key. Pressing Escape at any time will finish the program.
+When running the code, the program starts in automatic mode. In automatic mode, the program generates the instructions to cross the stairs, and run its way to the end of it. If the tag <graphics-framerate-pause/> is set to False, the program will execute in a continuos fashion. If set to True, the program will perform one step by pressing the Enter Key. You can always switch between continuos and step by step modes by pressing Space key. Pressing Escape at any time will finish the program.
 
 
 At any time, you can switch to manual mode by pressing Tab Key (in some occasions, you need to press Tab Key twice). When in manual mode a red rim surrounding the frame of the image will be displayed. In this mode, you can move the structure manually, by pressing one of the following keys:
@@ -51,7 +51,7 @@ Note that when inclining the structure, the distances betweeen wheels changes, a
 
 Pressing Tab Key again switch back to automatic mode. In this case, the program always returns in step by step mode. You can press Space key to switch to continuos mode.
 
-If the xml file includes the tag video, a image sequence will be created in the directory given. You can postprocess this squence with a video editor to create a video (mpeg, avi, ...) file.
+If the xml file includes the tag <video/>, a image sequence will be created in the directory given. You can postprocess this squence with a video editor to create a video (mpeg, avi, ...) file.
 
 ## Documentation:
 
