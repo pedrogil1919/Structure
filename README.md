@@ -6,13 +6,13 @@ These videos shows the operation of the structure when crossing different types 
 
 - [Simple upstairs](https://youtu.be/XAzPVlrQ6gY)
 - [Simple downstairs](https://youtu.be/72yBq5Ix9-g )
-
+- [Different steps upstairs](https://youtu.be/O828TaO5bA8)
+- [Different steps downstairs](https://youtu.be/62jNMsvH16s)
 - [Doble upstairs](not available)
 - [Doble downstairs](not available)
 - [Up down](not available)
 - [Down up](not available)
 - [Obstacles](not available)
-- [Different steps](not available)
 
 ## Installation:
 
