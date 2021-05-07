@@ -57,32 +57,12 @@ while continue_loop:
     # user the chance to switch again to manual mode without doing nothing, or
     # just start automatic mode, send an empty instruction, that allow the for
     # loop to do one iteration without moving the structure.
-    # instruction = {}
-    # However, we need that the control module does not produce any
-    # instruction, so that the structure does not move until the user press the
-    # key. This flag prevent this module to produce any instruction. After the
-    # first iteration, the flag is set to True to allow the module to generate
-    # the first instruction.
-    # switching_mode = True
-
+    instruction = {}
+    str_aux = structure
     while not manual_mode and continue_loop:
         #######################################################################
         #  Automatic mode
         #######################################################################
-        # if not switching_mode:
-        # Generate the next instruction.
-        instruction, str_aux = control.next_instruction(structure)
-        # NOTE: The last instruction returns the future state of the structure
-        # when the instruction were completed. This state would be the same
-        # as the one the structure finish after the instruction simulation that
-        # follows. However, due to rounding errors, this could be a little
-        # different, and can change the next instruction, and in some times
-        # take one more or one less iteration to complete than if we do not
-        # simulate. for that reason, to make with or without simulation do the
-        # same instructions, we capture here the state at the end of the
-        # instruction, and after the simulation (see end of the next for loop)
-        # substitute the simulated structure for this one.
-        print("Inst", inst_number, ":",  instruction)
         inst_number += 1
         # Allow the program to generate a new instruction in the next
         # iteration
@@ -113,9 +93,22 @@ while continue_loop:
                 # structure is substituted, it is substituted by the same.
                 str_aux = structure
                 break
-        # Substitute the simulated structure by the one returned by the 
+        # Substitute the simulated structure by the one returned by the
         # control module.
         structure = str_aux
+        # Generate the next instruction.
+        instruction, str_aux = control.next_instruction(structure)
+        # NOTE: The last instruction returns the future state of the structure
+        # when the instruction were completed. This state would be the same
+        # as the one the structure finish after the instruction simulation that
+        # follows. However, due to rounding errors, this could be a little
+        # different, and can change the next instruction, and in some times
+        # take one more or one less iteration to complete than if we do not
+        # simulate. for that reason, to make with or without simulation do the
+        # same instructions, we capture here the state at the end of the
+        # instruction, and after the simulation (see end of the next for loop)
+        # substitute the simulated structure for this one.
+        print("Inst", inst_number, ":",  instruction)
     ###########################################################################
 print("End of program.")
 

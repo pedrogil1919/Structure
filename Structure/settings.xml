@@ -52,8 +52,8 @@
 	</stairs>
 	<graphics>
 	<!--Graphical resources configuration:
-		- resolution: image width and height
-		- shift: Vertical shift with respect to the image top.
+		- resolution: image width and height (required)
+		- shift: Vertical shift with respect to the image center.
 		- scale: Scale, in units/pixels (where units: cm, mm, inch, etc).
 			If not given, scale is computed so that the whole stairs
 			length spread over the width of the image.
@@ -71,21 +71,23 @@
 			video is recorded) display always is True. If display is
 			True, the program can be finished by pressing the Esc Key.
 			If False, program can not be finished manually.
+		- composition: Generate also the composited video, that is the
+			image of the structure plus the position of the actuators.
 	-->
-		<resolution height="540" width="1000"/> <!--HD-->
+		<resolution height="540" width="960"></resolution> 
 		<!--
 		standard resolutions:
 		Full HD: 	height="1080" width="1920"
+		Full HD / 2: 	height= "540" width= "960"
 		HD: 		height= "720" width="1280"		
 		-->
 		<!--
-		<image shift="400"/>
-		<image shift="300"/>
-		-->
 		<image shift="0" scale="1.0"/>
-		<framerate interval="10" pause="True"/>
-		<video directory="/home/pedro/Vídeos/WheelChair/ComparationUp/con" display="True"/>
+		-->
+		<framerate interval="5" pause="False"/>
+		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True" composition="comp"/>
 <!--
+
 -->	
 	</graphics>
 </StairsClimbing>

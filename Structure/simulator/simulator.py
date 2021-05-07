@@ -95,6 +95,8 @@ class Simulator():
 
         # Compute total number of iterations:
         total_iterations = ceil(total_time/self.sample_time)
+        if total_iterations == 0:
+            total_iterations += 1
         return total_iterations
 
     def simulate_step(self, structure, instruction):

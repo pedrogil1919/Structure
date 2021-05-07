@@ -113,13 +113,12 @@ def read_graphics(xml_file):
 
     graphics = element.find('graphics')
     ###########################################################################
-    try:
-        resolution = graphics.find('resolution')
-        size = (
-            int(resolution.attrib['height']),
-            int(resolution.attrib['width']))
-    except (AttributeError, KeyError):
-        size = (720, 1280)
+    resolution = graphics.find('resolution')
+    if resolution is None:
+        raise KeyError("Tag resolution not found in file %s" % xml_file)
+    size = (
+        int(resolution.attrib['height']),
+        int(resolution.attrib['width']))
     image = graphics.find('image')
     try:
         shift = int(image.attrib['shift'])
@@ -134,22 +133,33 @@ def read_graphics(xml_file):
         'shift': shift,
         'scale': scale}
     ###########################################################################
+    # Set display to True. In case video_dir does not exist, display remains
+    # to True, as it is the behaviour described in the xml.
     display = True
+    video = graphics.find('video')
     try:
-        video = graphics.find('video')
         video_dir = video.attrib['directory']
         display = bool(strtobool(video.attrib['display']))
     except (AttributeError, KeyError):
         video_dir = None
     try:
-        rate = graphics.find('framerate')
+        comp_dir = video.attrib['composition']
+    except (AttributeError, KeyError):
+        comp_dir = None
+
+    rate = graphics.find('framerate')
+    try:
         interval = float(rate.attrib['interval'])
-        pause = bool(strtobool(rate.attrib['pause']))
     except (AttributeError, KeyError):
         interval = 5.0
+    try:
+        pause = bool(strtobool(rate.attrib['pause']))
+    except (AttributeError, KeyError):
+        pause = True
 
     video_data = {
         'video_dir': video_dir,
+        'composition': comp_dir,
         'display': display,
         'interval': interval,
         'pause': pause}
