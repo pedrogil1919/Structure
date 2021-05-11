@@ -25,6 +25,26 @@ List of instructions, along with its arguments:
 import copy
 from math import isinf
 
+from structure import base
+from simulator import simulator
+
+
+def compute_time(size, wheels, stairs, speed_data):
+    """Return the time required to complete the stairs."""
+
+    # Build the elements.
+    str_aux = base.Base(size, wheels, stairs)
+    sim_aux = simulator.Simulator(speed_data)
+    total_time = 0
+    # Make a loop until the structure reaches the end of the stair.
+    while True:
+        instruction, str_aux = next_instruction(str_aux)
+        total_time += sim_aux.compute_iterations(instruction)
+        if instruction.get('end', False):
+            break
+    # Return the total number of iteration needed.
+    return total_time
+
 
 def next_instruction(structure):
     """Generate in an automatic fashion the next instruction for the structure.
