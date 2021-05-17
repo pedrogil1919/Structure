@@ -149,8 +149,16 @@ def next_instruction(structure):
                     raise RuntimeError("Error in control module")
             instruction['incline'] -= res_inc.rear
             # If succeeded, the actuator can now be shifted.
-            if not st_aux.shift_actuator(wheel, -ver):
-                raise RuntimeError("Error in control module")
+            res_shf = st_aux.shift_actuator(wheel, -ver)
+            # Except if after the inclination the front has moved eough to
+            # collide with the step. In this case, move the structure the
+            # value returned, and try if it works.
+            if not res_shf:
+                if not st_aux.advance(res_shf.horizontal):
+                    raise RuntimeError("Error in control module")
+                instruction['advance'] += res_shf.horizontal
+                if not st_aux.shift_actuator(wheel, -ver):
+                    raise RuntimeError("Error in control module")
         #######################################################################
         elif wheel == 2:
             # Second actuator.
@@ -223,7 +231,7 @@ def next_instruction(structure):
                 # If the inclination fails, one less likely cause is that,
                 # when inclining, one of the wheel other than then rear one,
                 # can collide. In this case, correct this distance, and try
-                # agina.
+                # again.
                 if res_inc.horizontal != 0.0:
                     if not st_aux.advance(res_inc.horizontal):
                         raise RuntimeError("Error in control module")

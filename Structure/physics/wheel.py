@@ -12,7 +12,7 @@ import numpy
 import cv2
 from math import inf
 
-from physics.wheel_state import WheelState, MAX_GAP
+from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN
 
 # =============================================================================
 # Wheel definition:
@@ -130,7 +130,7 @@ class Wheel:
     # =========================================================================
     # Control functions.
     # =========================================================================
-    
+
     def get_distances(self, position):
         """Computes distances from the wheel to the next step.
 
@@ -141,29 +141,27 @@ class Wheel:
           - hr: Vertical distance from the bottom of the wheel to the top of
             the next step. If the wheel is on an unstable position, it is the
             distance to the step just beneath the wheel (not to the step just
-            beneath the center of the wheel, since this step is the previous
-            one).
+            beneath the center of the wheel, since this step can not be
+            reached in the current position).
           - hc: Vertical distance from the bottom of the wheel to the ground,
             when the wheel is in a not unstable position nor in the ground.
-            If not, the key does not exist.
+            If not, the key does not exist. Only for positive steps.
           - wr: Horizontal distance from the wheel to the next step. If the
             step is positive and the wheel is below the next step, is the
             distance from the right edge of the wheel to the edge of the
             step. If the wheel is above the next step, is the distance to
             place the wheel on a stable position in the next step.
-            If it is a negative step and the wheel is not on the ground, is
-            the distance to place the center of the wheel just in the outer
-            corner of the step. If it is on the ground, is the distance to
-            place the left edge of the wheel further from the current step
-            (so that if we take the wheel down, the wheel will be placed on
-            the ground in a stable position in the next step). To ensure that
-            the wheel get the state Air instead of Unstable, a small value
-            (MAX_GAP) is added to the distance to be returned.
-          - wc: Only for negative steps and when the wheel is on the ground,
-            this is the value to place the wheel just in the outer corner of
-            the step. This is an alternative distance for when the other wheel
-            of the pair is not in the ground, so that moving this wheel to
-            this position ensures that never both wheel will be on air.
+            If it is a negative step, is the distance to place the left edge of
+            the wheel further from the current step (so that if we take the
+            wheel down, the wheel will be placed on the ground in a stable
+            position in the next step).
+          - wc: Only for negative steps, this is the value to place the wheel
+            just in the outer corner of the step minus a horizontal margin.
+            This is an alternative distance for when the other wheel of the
+            pair is not in the ground, so that moving this wheel to this
+            position ensures that never both wheel will be on air at the same
+            time. Obviously, the control module must take the other wheel
+            down to the ground before this wheel get out of the step.
 
         Parameters:
         position -- Coordinates of the center of the wheel (remember that the
@@ -189,32 +187,29 @@ class Wheel:
             res['up'] = True
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
-            # See figures in get_distances foloder:
+            # See figures in get_distances folder.
+            # TODO: (update figures 14/05/20):
+            # The value for hr is always the same.
+            res['hr'] = hr + VER_MARGIN
+            # But the values for hc and wr depend on the position to the wheel
+            # with respect to the steps.
             if self.state == WheelState.Air:
                 res['hc'] = hc
-                res['hr'] = 0.0 # + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Contact:
                 res['hc'] = hc
-                res['hr'] = hr # + MAX_GAP
-                res['wr'] = 0.0
+                res['wr'] = -wr
             elif self.state == WheelState.Corner:
-                res['h '] = hr # + MAX_GAP
-                res['wr'] = 0.0
+                res['wr'] = -wr
             elif self.state == WheelState.Ground:
-                res['hr'] = hr # + MAX_GAP
                 res['wr'] = -wr
             elif self.state == WheelState.Outer:
-                res['hr'] = 0.0
                 res['hc'] = hc
-                res['wr'] = -wr + r # + MAX_GAP
+                res['wr'] = -wr + r + HOR_MARGIN
             elif self.state == WheelState.Over:
-                res['hr'] = 0.0
-                res['wr'] = -wr + r # + MAX_GAP
+                res['wr'] = -wr + r + HOR_MARGIN
             elif self.state == WheelState.Unstable:
-                res['hr'] = 0.0
-                res['wr'] = -wr + r # + MAX_GAP
-            print("Datos", res['hr'])
+                res['wr'] = -wr + r + HOR_MARGIN
 
         #######################################################################
         # Downstairs:
@@ -222,33 +217,37 @@ class Wheel:
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             # See figures in get_distances foloder:
+            # In this case, the horizontal distances are the same for all the
+            # cases.
             res['up'] = False
+
+            res['wc'] = -wr + 2*r + HOR_MARGIN
+            res['wr'] = -wr - HOR_MARGIN
+            if res['wr'] < 0:
+                # However, if wr is negative, it is better to return 0, since
+                # the opposite can make the structure bo backwards, which is
+                # worse than returning 0.
+                res['wr'] = 0
+
+            # The vertical distance is always the distance to place the wheel
+            # on the ground, except if the wheel is in the middle of the step
+            # in which case, the distance is the distance to the previous
+            # step.
             if self.state == WheelState.Air:
                 res['hr'] = hc
-                res['wr'] = -wr # - MAX_GAP
-                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Contact:
                 res['hr'] = hc
-                res['wr'] = -wr # - MAX_GAP
-                res['wc'] = -wr + 2*r # + MAX_GAP
             elif self.state == WheelState.Corner:
-                res['hr'] = 0.0
-                res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r # + MAX_GAP
-            elif self.state == WheelState.Ground:
-                res['hr'] = 0.0
-                res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r # + MAX_GAP
-            elif self.state == WheelState.Outer:
-                raise NotImplementedError("It should not happen")
-            elif self.state == WheelState.Over:
                 res['hr'] = hc
-                res['wr'] = -wr # - MAX_GAP
-                res['wc'] = -wr + 2*r # + MAX_GAP
+            elif self.state == WheelState.Ground:
+                res['hr'] = hc
+            elif self.state == WheelState.Over:
+                res['hr'] = 0.0
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
-                res['wr'] = -wr + r
-                res['wc'] = -wr + 2*r # + MAX_GAP 
+            elif self.state == WheelState.Outer:
+                raise NotImplementedError("It should not happen")
+
         #######################################################################
         # End:
         #######################################################################
