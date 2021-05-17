@@ -15,7 +15,7 @@ from control.distance_errors import merge_collision, StabilityErrors
 # When computing the distance for a wheel to move, sometimes we need to give a
 # small margin to prevent the wheel to collide with the stair. This is the
 # meaning of this margin.
-EDGE_MARGIN = 4.0
+# EDGE_MARGIN = 4.0
 
 
 class ActuatorPair:
@@ -162,7 +162,7 @@ class ActuatorPair:
             else:
                 fr_res['up'] = re_res['up']
                 try:
-                    fr_res['wr'] = fr_res['wc']
+                    fr_res['wc'] = fr_res['wr']
                 except KeyError:
                     pass
 
@@ -209,28 +209,31 @@ class ActuatorPair:
                 index = (index + 1) % 2
                 # The passive wheel is on the ground, so that we need not take
                 # care of this wheel.
-            if ver > 0:
+                # NOTE: Removed (13/05/21). This functionality has been 
+                # moved to wheel.get_wheel_distances function.
+#             if ver > 0:
                 # If the vertical distance is positive, its means that we are
                 # facing a positive step. In this case, add a small margin to
                 # the height to lift the actuator so that the wheel does not
                 # collide with the step.
-                ver += EDGE_MARGIN
-            else:
+#                 ver += EDGE_MARGIN
+#             else:
                 # If we are facing a positive step but the vertical motion is
                 # negative, it means that we are taking the wheel down once
                 # the wheel is already over the step. In this case, add a small
                 # margin to the horizontal motion so that the wheel lands
                 # further than the edge of the step.
-                hor += EDGE_MARGIN
+#                 hor += EDGE_MARGIN
         elif not re_res['up'] and not fr_res['up']:
             # Facing a negative step.
             if passive['st']:
-                # If the passive wheel is on the ground, check if the active
-                # wheel can be moved pass the edge of the step.
-                try:
-                    hor = active['wc'] + EDGE_MARGIN
-                except KeyError:
-                    pass
+                hor = active['wc']
+#                 # If the passive wheel is on the ground, check if the active
+#                 # wheel can be moved pass the edge of the step.
+#                 try:
+#                     hor = active['wc']
+#                 except KeyError:
+#                     pass
             else:
                 # Else, if the passive wheel is not on the ground, but the
                 # active wheel does, use this instruction to take the passive
@@ -243,7 +246,7 @@ class ActuatorPair:
                 # distance must be 0 (you can not take a wheel down if it is
                 # on the ground).
                 ver = passive['hr']
-                hor -= EDGE_MARGIN
+#                 hor -= EDGE_MARGIN
         else:
             raise NotImplementedError(
                 "Wheel facing steps with different sign.")

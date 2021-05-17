@@ -32,9 +32,15 @@ class WheelState(Enum):
     Uncheked = 9
 
 
-MAX_GAP = 0.05
 # Maximum gap allowed to consider an object touching the ground or the steps
 # See maxGap.svg figure.
+MAX_GAP = 0.05
+
+# When computing the distance for a wheel to move, sometimes we need to give a
+# small margin to prevent the wheel to collide with the stair. This is the
+# meaning of these margins.
+HOR_MARGIN = 2.0
+VER_MARGIN = 2.0
 
 ###############################################################################
 # End of file.
