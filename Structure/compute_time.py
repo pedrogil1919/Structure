@@ -7,7 +7,7 @@ Module to compute the time required to complete a stair, without simulations.
 
 '''
 
-from control import control
+from control.control import ComputeTime
 
 # Imports needed for the testing block.
 import sys
@@ -27,5 +27,6 @@ stairs = stairs.Stair(stairs_list, landing)
 structure_size, wheels_radius = readXML.read_structure(settings_name)
 # Read simulator data.
 speed_data = readXML.read_simulator(settings_name)
-total = control.compute_time(structure_size, wheels_radius, stairs, speed_data)
+compute_time = ComputeTime(wheels_radius, stairs, speed_data)
+total = compute_time.compute(structure_size)
 print("Total:", total)

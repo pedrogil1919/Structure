@@ -29,21 +29,29 @@ from structure import base
 from simulator import simulator
 
 
-def compute_time(size, wheels, stairs, speed_data):
-    """Return the time required to complete the stairs."""
+class ComputeTime:
 
-    # Build the elements.
-    str_aux = base.Base(size, wheels, stairs)
-    sim_aux = simulator.Simulator(speed_data)
-    total_time = 0
-    # Make a loop until the structure reaches the end of the stair.
-    while True:
-        instruction, str_aux = next_instruction(str_aux)
-        total_time += sim_aux.compute_iterations(instruction)
-        if instruction.get('end', False):
-            break
-    # Return the total number of iteration needed.
-    return total_time
+    def __init__(self, wheels, stairs, speed_data):
+
+        self.stairs = stairs
+        self.sim = simulator.Simulator(speed_data)
+        self.wheels = wheels
+
+    def compute(self, size):
+        """Return the time required to complete the stairs."""
+
+        # Build the elements.
+        str_aux = base.Base(size, self.wheels, self.stairs)
+
+        total_time = 0
+        # Make a loop until the structure reaches the end of the stair.
+        while True:
+            instruction, str_aux = next_instruction(str_aux)
+            total_time += self.sim.compute_iterations(instruction)
+            if instruction.get('end', False):
+                break
+        # Return the total number of iterations needed.
+        return total_time
 
 
 def next_instruction(structure):
