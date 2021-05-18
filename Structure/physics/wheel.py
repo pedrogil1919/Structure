@@ -217,11 +217,8 @@ class Wheel:
         elif hr < hc and hc <= hl:
             # Downstairs direction.
             # See figures in get_distances foloder:
-            # In this case, the horizontal distances are the same for all the
-            # cases.
             res['up'] = False
 
-            res['wc'] = -wr + 2*r + HOR_MARGIN
             res['wr'] = -wr - HOR_MARGIN
             if res['wr'] < 0:
                 # However, if wr is negative, it is better to return 0, since
@@ -233,18 +230,30 @@ class Wheel:
             # on the ground, except if the wheel is in the middle of the step
             # in which case, the distance is the distance to the previous
             # step.
+            # For the horizontal distance, this is always the distance to
+            # place de wheel some margin further than the edge of the step,
+            # so that the wheel can be taken down to the ground.
             if self.state == WheelState.Air:
                 res['hr'] = hc
+                res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Contact:
                 res['hr'] = hc
+                res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Corner:
                 res['hr'] = hc
+                res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Ground:
                 res['hr'] = hc
+                res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Over:
                 res['hr'] = 0.0
+                # Note that if the wheel is over the step, we have to take the
+                # distance with respect to the rear edge of the wheel, since
+                # the front edge of the wheel points to the next step.
+                res['wc'] = wl + HOR_MARGIN
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
+                res['wc'] = wl + HOR_MARGIN
             elif self.state == WheelState.Outer:
                 raise NotImplementedError("It should not happen")
 
