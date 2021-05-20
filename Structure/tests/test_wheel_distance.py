@@ -5,8 +5,8 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Test wheel state functions with GUI. Use arrow keys to move the wheel and check
-the correct color (state) of the wheel:
+Test the function distance.
+Use arrow keys to move the wheel:
 - 8: up
 - 2: down
 - 4: left
@@ -24,13 +24,11 @@ from physics import stairs, wheel
 # Define a list of stairs in different directions.
 landing = 100.0
 stair_list = [
-    {'N': 2, 'd': 60.0, 'w': 40.0, 'h': +25.0},
-    {'N': 3, 'd': 40.0, 'w': 30.0, 'h': -20.0},
-    {'N': 2, 'd': 60.0, 'w': 40.0, 'h': +25.0}
+    {'N': 4, 'd': 60.0, 'w': 40.0, 'h': -25.0}
     ]
 # Define wheel.
 radius = 15.0
-origin = (0, 250)
+origin = (0, 160)
 position = [15.0, 15.0]
 scale = 16
 shift = 3
@@ -43,9 +41,21 @@ image = numpy.full((600, 1000, 3), 0xFF, numpy.uint8)
 while True:
     # Move the wheel, and get (in that case) the distance needed to correct the
     # position to place the wheel in a valid position (w, h).
-    res, w, h = wheel_test.check_wheel(position)
+    res = wheel_test.get_distances(position)
     stairs_test.draw(origin, image, scale, shift)
     wheel_test.draw(origin, image, position, scale, shift)
+    pos1 = (position[0] + res['wr'], position[1] + res['hr'])
+    wheel_test.draw(origin, image, pos1, scale, shift)
+    try:
+        pos2 = (position[0], position[1] + res['hc'])
+        wheel_test.draw(origin, image, pos2, scale, shift)
+    except KeyError:
+        pass
+    try:
+        pos3 = (position[0] + res['wc'], position[1] + res['hr'])
+        wheel_test.draw(origin, image, pos3, scale, shift)
+    except KeyError:
+        pass
     cv2.imshow("Res", image)
     c = cv2.waitKey() & 0x7F
     # Finish program.
@@ -63,13 +73,8 @@ while True:
     elif c == ord('4'):
         # Right
         position[0] -= 1
-    elif c == ord('5'):
-        # Place the wheel in a safe position.
-        if not res:
-            position[0] += w
-            position[1] += h
     image[:] = 0xFF
-
+    
 ###############################################################################
 # End of file.
 ###############################################################################    

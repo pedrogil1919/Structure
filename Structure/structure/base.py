@@ -393,6 +393,19 @@ class Base:
             # front wheel right to the ground.
             return fr_id+2, re_hor/2, fr_ver, re_id, re_ver
 
+        # Just for the beginning of stair, it is better not to lift the second
+        # wheel when upstairs. If we do nothing else, the second wheel
+        # certainly will lift, which is not the desired behabiour. For that
+        # reason, only when a wheel is not close enough to the stair, this
+        # will not be lift. The reference is half of the width of the
+        # structure.
+        if re_hor > self.WIDTH / 2:
+            re_ver = 0.0
+            re_hor -= self.WIDTH / 2
+        if fr_hor > self.WIDTH / 2:
+            fr_ver = 0.0
+            fr_hor -= self.WIDTH / 2
+
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
             return re_id, re_hor, re_ver, fr_id+2, fr_ver

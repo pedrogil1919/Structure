@@ -219,7 +219,7 @@ class Wheel:
             # See figures in get_distances foloder:
             res['up'] = False
 
-            res['wr'] = -wr - HOR_MARGIN
+            res['wr'] = -wr + r - HOR_MARGIN
             if res['wr'] < 0:
                 # However, if wr is negative, it is better to return 0, since
                 # the opposite can make the structure bo backwards, which is
@@ -246,13 +246,13 @@ class Wheel:
                 res['hr'] = hc
                 res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Over:
-                res['hr'] = 0.0
+                res['hr'] = hl
                 # Note that if the wheel is over the step, we have to take the
                 # distance with respect to the rear edge of the wheel, since
                 # the front edge of the wheel points to the next step.
                 res['wc'] = wl + HOR_MARGIN
             elif self.state == WheelState.Unstable:
-                res['hr'] = 0.0
+                res['hr'] = hl
                 res['wc'] = wl + HOR_MARGIN
             elif self.state == WheelState.Outer:
                 raise NotImplementedError("It should not happen")
@@ -276,10 +276,10 @@ class Wheel:
                 res['hr'] = hc
             elif self.state == WheelState.Over:
                 res['hr'] = hl
-                res['wc'] = wl # - MAX_GAP
+                res['wc'] = wl
             elif self.state == WheelState.Unstable:
                 res['hr'] = 0.0
-                res['wc'] = wl # + MAX_GAP
+                res['wc'] = wl
             res['hc'] = res['hr']
 
         else:

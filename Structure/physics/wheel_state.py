@@ -39,8 +39,8 @@ MAX_GAP = 0.05
 # When computing the distance for a wheel to move, sometimes we need to give a
 # small margin to prevent the wheel to collide with the stair. This is the
 # meaning of these margins.
-HOR_MARGIN = 2.0
-VER_MARGIN = 2.0
+HOR_MARGIN = 4.0
+VER_MARGIN = 8.0
 
 ###############################################################################
 # End of file.

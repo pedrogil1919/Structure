@@ -60,6 +60,7 @@ while continue_loop:
     instruction = {}
     str_aux = structure
     while not manual_mode and continue_loop:
+        print("Inst", inst_number, ":",  instruction)
         #######################################################################
         #  Automatic mode
         #######################################################################
@@ -108,7 +109,6 @@ while continue_loop:
         # same instructions, we capture here the state at the end of the
         # instruction, and after the simulation (see end of the next for loop)
         # substitute the simulated structure for this one.
-        print("Inst", inst_number, ":",  instruction)
     ###########################################################################
 print("End of program.")
 

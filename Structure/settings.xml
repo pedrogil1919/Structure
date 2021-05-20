@@ -19,10 +19,10 @@
 	<speed wheel="2.0" actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
 		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" sample_time="1.0"/>
 
-	<stairs landing="150">
+	<stairs landing="250">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="6" w="80" h="-20" d="100"/>
+		<dimensions N="6" w="60" h="35" d="100"/>
 		<!--Up - down stairs
 		<dimensions N="1" w="60" h="-15" d="0"/>
 		<dimensions N="1" w="50" h="-20" d="0"/>
@@ -91,8 +91,8 @@
 		<image shift="0" scale="1.0"/>
 		-->
 		<framerate interval="5" pause="True"/>
-<!--
 		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True"/>
+<!--
 		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True" composition="comp"/>
 -->	
 	</graphics>
