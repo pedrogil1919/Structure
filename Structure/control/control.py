@@ -30,7 +30,8 @@ from simulator import simulator
 
 
 class ComputeTime:
-
+    # TODO: Move to another file, and add comments.
+    # This function is for Diego.
     def __init__(self, wheels, stairs, speed_data):
 
         self.stairs = stairs
@@ -54,11 +55,86 @@ class ComputeTime:
         return total_time
 
 
+def finish_stair(structure):
+    """Generate the last instruction before finish the program
+    
+    Before finish the program, set the structure to its initial position
+    that is, all the wheels in the ground, and all the actuator to this
+    lower position.
+    
+    Returns the instruction to finish the program. This instruction includes
+    the key 'end' that informs the simulator that the structure has reached
+    the end of the stair.
+    """
+
+    instruction = {}
+    # Create a deep copy of the structure, to simulate all the motions computed
+    # without modifying the actual structure.
+    st_aux = copy.deepcopy(structure)
+
+    # Check if all the wheel arte on the ground.
+    re, fr = st_aux.set_horizontal()
+    # In case any wheel is not on the ground, also generate the instruction to
+    # take the wheel to the ground.
+    if re[0] is not None:
+        # Check it for the rear pair, and take the wheel to the ground.
+        res_shf = st_aux.shift_actuator(re[0], -re[1])
+        if not res_shf:
+            raise RuntimeError
+    if fr[0] is not None:
+        # And do the same for the fornt pair.
+        res_shf = st_aux.shift_actuator(fr[0] + 2, -fr[1])
+        if not res_shf:
+            raise RuntimeError
+
+    elevation = st_aux.get_elevation()
+    # Get the current inclination and elevation of the structure.
+    inclination = st_aux.get_inclination()
+    # And set the structure to the initial position by moving it in the
+    # opposite direction.
+    # First for the inclination.
+    res_inc = st_aux.incline(-inclination)
+    if not res_inc:
+        if not st_aux.advance(res_inc.horizontal):
+            raise RuntimeError
+        if not st_aux.incline(res_inc.horizontal):
+            raise RuntimeError
+    # And now for the elvation. Note that these instruction must be executed
+    # after the wheels have been taken to the ground, in the other case, the
+    # motion would not be possible.
+    res_elv = st_aux.elevate(-elevation)
+    if not res_elv:
+        raise RuntimeError
+    
+    # Generate the complete instruction.
+    instruction["incline"] = -inclination
+    instruction["elevate"] = -elevation
+    # Generate the instructions for the wheels. Note that we have to use both
+    # the wheel and wheel_aux keys, although in this special case, both have
+    # the same meaning, but this is not important in this case.
+    if re[0] is not None:
+        instruction["wheel"] = re[0]
+        instruction["height"] = fr[0]
+        instruction["shift"] = \
+            st_aux.get_actuators_position(re[0]) - \
+            structure.get_actuators_position(re[0])
+    if fr[0] is not None:
+        instruction["wheel_aux"] = fr[0] + 2
+        instruction["shift_aux"] = \
+            st_aux.get_actuators_position(fr[0] + 2) - \
+            structure.get_actuators_position(fr[0] + 2)
+    # TODO: It is possible that one of the two motion for the wheels can not
+    # be completed. Correct this.
+    # Add the end key to inform the simulator that we are done.
+    instruction["end"] = True
+    return instruction, st_aux
+
+
 def next_instruction(structure):
     """Generate in an automatic fashion the next instruction for the structure.
 
     The function gets the distances from each wheel of the structure to the
-    stair (wich is stores in the own structure), and generate the list of
+    stair (which is stores in the own structure), and generate the list of
     instructions to perform the next step.
 
     Returns a dictionary with the instructions to perform.
@@ -67,54 +143,15 @@ def next_instruction(structure):
     # Get the distances each wheel is with respect to its closest step.
     wheel, hor, ver, wheel_aux, ver_aux = structure.get_wheels_distances()
 
-    # Create a deep copy of the structure, to simulate all the motions computed
-    # without modifying the actual structure.
-    st_aux = copy.deepcopy(structure)
-
     # A value equal to inf is returned when the wheel reaches the end of the
-    # stair. here, we check whether we have already reached the end of the
+    # stair. Here, we check whether we have already reached the end of the
     # structure, and so, we have to finish the program.
     if isinf(hor):
-        # Before finish the program, set the structure to its initial position
-        # that is, all the wheels in the ground, and all the actuator to this
-        # lower position.
-        wheel, ver = structure.set_horizontal()
-        if wheel is None:
-            # This happens when all the wheels are already on the ground. In
-            # this case, the only instruction left is to take all the actuators
-            # to its lower posision, so that the structure is horizontal and in
-            # its lowest position.
-            # Also, advance the structure 20 units to take it far apart from
-            # the last step.
-            inclination = structure.get_inclination()
-            elevation = structure.get_elevation()
-            res_inc = st_aux.incline(inclination)
-            if not res_inc:
-                if not st_aux.advance(res_inc.horizontal):
-                    raise RuntimeError
-                if not st_aux.incline(res_inc.horizontal):
-                    raise RuntimeError
-            res_elv = st_aux.incline(elevation)
-            return {
-                'incline': -inclination,
-                'elevate': -elevation,
-                'end': True}, st_aux
-        else:
-            # In this case, first take the wheel down to the ground, and in the
-            # next iteration complete the finish step.
-            hor = 0.0
+        return finish_stair(structure)
 
     # Create a deep copy of the structure, to simulate all the motions computed
     # without modifying the actual structure.
     st_aux = copy.deepcopy(structure)
-
-    # If the distance to the stair is greater than the structure lehgt, first
-    # advance the structure to that distance without any other motion.
-    if hor > structure.WIDTH:
-        instruction = {"advance": hor-structure.WIDTH}
-        if not st_aux.advance(hor-structure.WIDTH):
-            raise RuntimeError
-        return instruction, st_aux
 
     # Simulate the horizontal shift, to check that it is correct.
     res_adv = st_aux.advance(hor)

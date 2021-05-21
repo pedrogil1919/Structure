@@ -395,7 +395,7 @@ class Base:
 
         # Just for the beginning of stair, it is better not to lift the second
         # wheel when upstairs. If we do nothing else, the second wheel
-        # certainly will lift, which is not the desired behabiour. For that
+        # certainly will lift, which is not the desired behabior. For that
         # reason, only when a wheel is not close enough to the stair, this
         # will not be lift. The reference is half of the width of the
         # structure.
@@ -416,20 +416,26 @@ class Base:
             return fr_id+2, fr_hor, fr_ver, re_id, re_ver
 
     def set_horizontal(self):
-        """Returns the distances needed to set the structure horizontal."""
+        """Returns the index of the wheel ."""
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
-#         if re_res is not None and fr_res is not None:
-#             # TODO: Do this when it is possible for the simulator to shift
-#             # two actuators at the same time.
-#             raise NotImplementedError("Move two actuator")
 
-        if re_res is not None:
-            return re_res[0], re_res[1]
-        elif fr_res is not None:
-            return fr_res[0] + 2, fr_res[1]
-        return None, None
+        return re_res, fr_res
+# #         if re_res is not None and fr_res is not None:
+# #             # TODO: Do this when it is possible for the simulator to shift
+# #             # two actuators at the same time.
+# #             raise NotImplementedError("Move two actuator")
+#         if re_res is not None:
+#             return re_res[0]
+#         elif fr_res is not None:
+#             return fr_res[0] + 2
+#         return None
+#         if re_res is not None:
+#             return re_res[0], re_res[1]
+#         elif fr_res is not None:
+#             return fr_res[0] + 2, fr_res[1]
+#         return None, None
 
     def get_actuators_position(self, index):
         """Return the current position of the actuators.

@@ -150,7 +150,7 @@ class ActuatorPair:
 
     def get_wheel_distances(self):
         """Get distances from wheels to stairs for the control module."""
-        # Get distances for both wheel of the pair.
+        # Get distances for both wheels of the pair.
         re_res = self.REAR.get_wheel_distances()
         fr_res = self.FRNT.get_wheel_distances()
         # Test if the structure is reaching the end of the stair.
@@ -158,8 +158,13 @@ class ActuatorPair:
             # The front wheel has reached the end of the stair.
             if isinf(re_res['wr']):
                 # The rear wheel has also reached the end of the stair.
+                # NOTE: Check if must be absolute value in the comparison
+                # below.
                 return 0, inf, min([fr_res['hr'], re_res['hr']])
             else:
+                # Only the front wheel has reached the end of the stair. Set
+                # the value up to the same than the rear wheel, because then
+                # value is not set by the wheel function.
                 fr_res['up'] = re_res['up']
                 try:
                     fr_res['wc'] = fr_res['wr']
