@@ -393,23 +393,27 @@ class Base:
             # front wheel right to the ground.
             return fr_id+2, re_hor/2, fr_ver, re_id, re_ver
 
-        # Just for the beginning of stair, it is better not to lift the second
-        # wheel when upstairs. If we do nothing else, the second wheel
-        # certainly will lift, which is not the desired behabior. For that
-        # reason, only when a wheel is not close enough to the stair, this
-        # will not be lift. The reference is half of the width of the
-        # structure.
-        if re_hor > self.WIDTH / 2:
-            re_ver = 0.0
-            re_hor -= self.WIDTH / 2
-        if fr_hor > self.WIDTH / 2:
-            fr_ver = 0.0
-            fr_hor -= self.WIDTH / 2
-
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
+            # Just for the beginning of stair, it is better not to lift the
+            # second wheel when upstairs. If we do nothing else, the second
+            # wheel certainly will lift, which is not the desired behabior. For
+            # that reason, only when a wheel is not close enough to the stair,
+            # this will not be lift. The reference is half of the width of the
+            # structure.
+            if fr_hor > self.WIDTH / 2:
+                fr_ver = 0.0
+            # When the structure is far apart from the stair, it is better to
+            # advance horizontaly until the structure is close enough. This is
+            # done with this code.
+            if re_hor > self.WIDTH / 2:
+                re_ver = 0.0
+                re_hor -= self.WIDTH / 2
             return re_id, re_hor, re_ver, fr_id+2, fr_ver
         else:
+            # Same comment that above.
+            if re_hor > self.WIDTH / 2:
+                re_ver = 0.0
             # NOTE: The index of wheel are numbered from 0. Since the rear
             # wheel is the third wheel of the structure, we have to add 2 to
             # the index returned for the pair.
