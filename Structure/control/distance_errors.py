@@ -12,9 +12,11 @@ def greatest(v1, v2):
     """Returns the variable with the greatest absolute value."""
     return v1 if abs(v1) > abs(v2) else v2
 
+
 def smallest(v1, v2):
     """Return the variable with the smallest absolute value."""
     return v1 if abs(v1) < abs(v2) else v2
+
 
 def merge_collision(res1, res2):
     """Merge the values of two collision data."""
@@ -31,12 +33,13 @@ def merge_collision(res1, res2):
     else:
         # If both are false, for each member of the class, choose the greater.
         horizontal = greatest(res1.horizontal, res2.horizontal)
-        actuator   = greatest(res1.actuator,   res2.actuator)
-        central    = greatest(res1.central,    res2.central)
-        front      = greatest(res1.front,      res2.front)
-        rear       = greatest(res1.rear,       res2.rear)
+        actuator = greatest(res1.actuator, res2.actuator)
+        central = greatest(res1.central, res2.central)
+        front = greatest(res1.front, res2.front)
+        rear = greatest(res1.rear, res2.rear)
         return CollisionErrors(
             False, horizontal, actuator, central, front, rear)
+
 
 def merge_stability(res1, res2):
     """Similar than merge_collision, but for stability objects."""
@@ -53,21 +56,20 @@ def merge_stability(res1, res2):
 ###############################################################################
 ###############################################################################
 
-                
+
 class CollisionErrors():
     """Class to store all the possible distance errors when checking position.
-    
+
     After each motion, the structure position must be checked. If there is any
     error (a wheel colliding with a step, an actuator reaching one of it
     bounds, etc), the distance of error must be computed and stores in this
     class.
-    
-    """
 
-    def __init__(self, correct=True, horizontal=0.0, 
+    """
+    def __init__(self, correct=True, horizontal=0.0,
                  actuator=0.0, central=0.0, front=0.0, rear=0.0):
         """Constructor
-        
+
         Parameters:
         horizontal -- Horizontal distance needed for the wheel which is inside
           a step to place it outside the step, or distance needed to place the
@@ -80,19 +82,19 @@ class CollisionErrors():
           the structure in a valid position when inclining the structure (see
           (see inv_proportional_shift.svg).
         rear -- Same as front, for the rear actuator.
-        
+
         """
         # Save all data.
-        self.correct    = correct
+        self.correct = correct
         self.horizontal = horizontal
-        self.actuator   = actuator
-        self.central    = central
-        self. front     = front
-        self.rear       = rear
-        
+        self.actuator = actuator
+        self.central = central
+        self. front = front
+        self.rear = rear
+
     def __bool__(self):
         return self.correct
-    
+
     def __str__(self):
         if self.correct:
             return "Correct"
@@ -103,26 +105,26 @@ class CollisionErrors():
             "- Central: %.2f\n" \
             "- Rear actuator: %.2f\n" \
             "- Front actuator: %.2f" % \
-            (self.horizontal, self.actuator, 
+            (self.horizontal, self.actuator,
              self.central, self.rear, self.front)
-    
+
     def add_inclination_errors(self, inclination):
         """Add all inclination errors.
-        
+
         For some function, they can not compute at the same time the collision
         and the inclination errors. For the calling function to be simpler,
         once the collision data is obtained, use this function to complete the
         data (in case this data need to be included, otherwise leave empty).
-        
+
         Parameters:
         inclination -- Tupla, with the elements:
           - 0: front inclination error.
-          - 1: rear inclination error.  
-                
+          - 1: rear inclination error.
+
         """
         self.front = inclination[0]
-        self.rear  = inclination[1]
-    
+        self.rear = inclination[1]
+
     def add_stability(self, error):
         """Same as add_inclination_errors, but for stability data."""
         # Only when statibility error is False
@@ -131,26 +133,25 @@ class CollisionErrors():
             self.correct = False
         elif not self and not error:
             self.horizontal = greatest(self.horizontal, error.horizontal)
-        
+
 
 ###############################################################################
 ###############################################################################
 
 class StabilityErrors():
-    """Class to store stability errors 
-    
+    """Class to store stability errors
+
     See CollisionErrors class for more info.
-    
+
     """
-    
     def __init__(self, correct=True, front=None, rear=None):
         """Constructor:
-        
+
         Parameters:
         front -- Error distance for the front wheel. If there is no error in
           the front wheel, set the variable to None.
         rear -- Error distance for the rear wheel. Same than front for None.
-        
+
         """
         if correct:
             self.correct = True
@@ -179,7 +180,7 @@ class StabilityErrors():
 
     def __bool__(self):
         return self.correct
-    
+
 ###############################################################################
 # End of file.
 ###############################################################################
