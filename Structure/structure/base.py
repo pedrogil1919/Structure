@@ -71,8 +71,9 @@ class Base:
         self.FRNT = ActuatorPair(
             WheelActuator(a+b, d, d+g-r3, r3, m, self, stairs),
             WheelActuator(a+b+c, d, d+g-r4, r4, m, self, stairs), False)
-
         # Size of the structure.
+        self.LENGTH = d+g
+        # Size of the actuators.
         self.HEIGHT = d
         # Total width of the structure.
         self.WIDTH = a+b+c
@@ -484,7 +485,7 @@ class Base:
     def get_elevation(self):
         """Returns the elevation of the structure."""
         # The elevation of the structure is the same as the position of the
-        # rear actuator.
+        # rear joint.
         return self.REAR.REAR.d
 
     def get_speed(self):

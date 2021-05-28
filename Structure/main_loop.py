@@ -43,7 +43,7 @@ inst_number = 0
 # user the chance to switch again to manual mode without doing nothing, or
 # just start automatic mode, send an empty instruction, that allow the for
 # loop to do one iteration without moving the structure.
-instruction = {"elevate": 0}
+instruction = {"elevate": 46}
 
 
 while continue_loop:

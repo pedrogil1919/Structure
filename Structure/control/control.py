@@ -54,6 +54,7 @@ class ComputeTime:
         # Return the total number of iterations needed.
         return total_time
 
+
 def last_instruction(structure):
     """Generate the last instruction before finish the program
 
@@ -71,19 +72,30 @@ def last_instruction(structure):
     # In case any wheel is not on the ground, also generate the instruction to
     # take the wheel down to the ground.
     if fr[0] is not None:
-        return compute_instruction(structure, fr[0], 0.0, fr[1])
+        structure.shift_actuator(fr[0]+2, -fr[1], check=False)
+#         structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     if re[0] is not None:
-        return compute_instruction(structure, re[0], 0.0, re[1])
+        structure.shift_actuator(re[0], -re[1], check=False)
+#         structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # Get the current inclination of the structure
     # and the current elevation.
     incline = -structure.get_inclination()
     elevate = -structure.get_elevation()
-    structure.incline(incline, elevate_rear=True)
+    structure.incline(incline, check=False)
+#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    structure.elevate(elevate, check=False)
+#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    col, stb = structure.check_position()
+    if not col or not stb:
+        raise RuntimeError
     instruction = {
         "incline": incline,
         "elevate": elevate,
+        "wheel": re[0],
+        "height": re[1],
         "end": True}
     return instruction
+
 
 def last_instruction2(structure):
     """Generate the last instruction before finish the program
@@ -416,8 +428,8 @@ def next_instruction(structure):
     # This value con be computed from the diference in shift for the actuator
     # at the current position minus the same shift in the initial position.
     instruction["shift"] = \
-        st_aux.get_actuators_position(wheel) - \
-        structure.get_actuators_position(wheel)
+        st_aux.get_actuators_position(instruction["wheel"]) - \
+        structure.get_actuators_position(instruction["wheel"])
 #     instruction["shift_aux"] = \
 #         st_aux.get_actuators_position(wheel_aux) - \
 #         structure.get_actuators_position(wheel_aux)
