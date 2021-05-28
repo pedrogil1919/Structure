@@ -23,7 +23,7 @@ from physics.wheel_state import MAX_GAP
 class Base:
     """Class to the define the whole structure."""
 
-    def __init__(self, size, wheels, stairs):
+    def __init__(self, size, wheels, stairs, graphics=None):
         """Constructor:
 
         Parameters:
@@ -34,13 +34,18 @@ class Base:
         wheels -- Dictionary with the radius of wheels:
           - r1, r2, r3, r4: Wheels radius (can be different).
         stairs -- Physics structure for the stairs.
+        graphics -- Debug option. If given, can be used in any point to draw
+            the current state of the structure.
 
         """
+        self.GRAPHICS = graphics
+        self.STAIRS = stairs
         # Main distances of the structure.
         a = size['a']
         b = size['b']
         c = size['c']
         d = size['d']
+        m = size['m']
         # NOTE: The distance g has nothing to do with the control module. It is
         # just for representation purposes.
         g = size['g']
@@ -61,11 +66,11 @@ class Base:
         # structure (d), plus the gap between the floor and the lower base of
         # the structure (g), minus the wheel radius (r).
         self.REAR = ActuatorPair(
-                WheelActuator(0, d, d+g-r1, r1, self, stairs),
-                WheelActuator(a, d, d+g-r2, r2, self, stairs), True)
+            WheelActuator(0, d, d+g-r1, r1, m, self, stairs),
+            WheelActuator(a, d, d+g-r2, r2, m, self, stairs), True)
         self.FRNT = ActuatorPair(
-                WheelActuator(a+b, d, d+g-r3, r3, self, stairs),
-                WheelActuator(a+b+c, d, d+g-r4, r4, self, stairs), False)
+            WheelActuator(a+b, d, d+g-r3, r3, m, self, stairs),
+            WheelActuator(a+b+c, d, d+g-r4, r4, m, self, stairs), False)
 
         # Size of the structure.
         self.HEIGHT = d
@@ -85,7 +90,7 @@ class Base:
     # distance will be the required distance plus the distance returned by the
     # function.
 
-    def check_position(self):
+    def check_position(self, margin=False):
         """General function to check the validity of the current position.
 
         After any structure motion, the position of the structure MUST be
@@ -116,10 +121,13 @@ class Base:
                 that the one of the wheel pair is place back to a stable
                 position.
 
+        Parameters:
+        margin -- See WheelActuator.check_actuator function.
+
         """
         # Check if any wheel has collided with the stairs.
-        re_col = self.REAR.check_collision()
-        fr_col = self.FRNT.check_collision()
+        re_col = self.REAR.check_collision(margin)
+        fr_col = self.FRNT.check_collision(margin)
         col = merge_collision(re_col, fr_col)
 
         # Check if any pair of wheels are not stable.
@@ -173,7 +181,7 @@ class Base:
             return col
         raise RuntimeError("Error in advance structure")
 
-    def elevate(self, height, wheel=None, check=True):
+    def elevate(self, height, wheel=None, check=True, margin=True):
         """Elevate (or take down) the whole structure.
 
         Returns False if the structure can not been elevated the complete
@@ -190,6 +198,8 @@ class Base:
             shifted the distance given for that actuator.
         check -- See advance function.
 
+        margin -- See check_position function.
+
         """
         if wheel is None:
             wheel = 4*[None]
@@ -204,7 +214,7 @@ class Base:
             return
 
         # Check if any of the actuators has reached one of its bounds.
-        col, __ = self.check_position()
+        col, __ = self.check_position(margin)
         if col:
             # Everything is OK.
             return col
@@ -218,12 +228,12 @@ class Base:
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
-        col_aux, __ = self.check_position()
+        col_aux, __ = self.check_position(margin)
         if col_aux:
             return col
         raise RuntimeError("Error in elevate")
 
-    def shift_actuator(self, index, height, check=True):
+    def shift_actuator(self, index, height, check=True, margin=True):
         """Shift one actuator independently.
 
         Returns False if the actuator can not be moved the complete distance
@@ -250,7 +260,7 @@ class Base:
             return
 
         # Check if the actuator has reached one of its bounds.
-        col, stb = self.check_position()
+        col, stb = self.check_position(margin)
 
         # The variable col is for possible collisions with the steps, or an
         # actuator reaching one of its bounds.
@@ -271,13 +281,14 @@ class Base:
         # Leave the actuator in its original position.
         self.shift_actuator(index, -height, False)
         # Check that everything is OK again.
-        col_aux, stb_aux = self.check_position()
+        col_aux, stb_aux = self.check_position(margin)
 
         if col_aux and stb_aux:
             return col
         raise RuntimeError("Error in shift actuator.")
 
-    def incline(self, height, wheel=None, elevate_rear=False, check=True):
+    def incline(self, height, wheel=None,
+                elevate_rear=False, check=True, margin=True):
         """Incline the base of the structure.
 
         Returns False if the structure has not completed the whole motion due
@@ -347,7 +358,7 @@ class Base:
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
-        col, stb = self.check_position()
+        col, stb = self.check_position(margin)
         col.add_stability(stb)
 
         if col:
@@ -357,7 +368,7 @@ class Base:
         wheel_aux = [-w if (w is not None) else w for w in wheel]
         self.incline(-height, wheel_aux, elevate_rear, False)
         # Check that everything is OK again.
-        col_aux, stb_aux = self.check_position()
+        col_aux, stb_aux = self.check_position(margin)
         if col_aux and stb_aux:
             return col
         raise RuntimeError("Error in incline function")

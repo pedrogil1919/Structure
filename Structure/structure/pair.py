@@ -85,9 +85,12 @@ class ActuatorPair:
         else:
             self.FRNT.shift_actuator_proportional(height)
 
-    def check_collision(self):
+    def check_collision(self, margin):
         """Check if any of the wheels (or both) are in a forbidden position.
 
+        Parameters:
+        margin -- See WheelActuator.check_actuator function.
+        
         Returns:
           - False if any of the wheels have collided, True otherwise.
           - If True, returns the distance the pair need to be moved to place
@@ -96,8 +99,8 @@ class ActuatorPair:
 
         """
         # Check for possible wheel collisions.
-        fr_res = self.FRNT.check_actuator()
-        re_res = self.REAR.check_actuator()
+        fr_res = self.FRNT.check_actuator(margin)
+        re_res = self.REAR.check_actuator(margin)
 
         # Merge both data. See merge_collision function for details.
         res = merge_collision(fr_res, re_res)

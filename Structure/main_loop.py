@@ -20,24 +20,32 @@ try:
 except Exception:
     settings_name = "settings.xml"
 
+# Read graphical variables.
+image_data, video_data = readXML.read_graphics(settings_name)
+graphics = Graphics(image_data, video_data)
 # Read stairs data and create physical stairs object.
 stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius, stairs)
+structure = base.Base(structure_size, wheels_radius, stairs, graphics)
+# Draw initial state of the structure.
+continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
+
 # Read simulator data.
 speed_data = readXML.read_simulator(settings_name)
 sm = Simulator(speed_data)
-# Read graphical variables.
-image_data, video_data = readXML.read_graphics(settings_name)
-graphics = Graphics(image_data, video_data)
-continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
-
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
 inst_number = 0
+# To allow the program to enter the for loop at least once to give the
+# user the chance to switch again to manual mode without doing nothing, or
+# just start automatic mode, send an empty instruction, that allow the for
+# loop to do one iteration without moving the structure.
+instruction = {"elevate": 0}
+
+
 while continue_loop:
     while manual_mode and continue_loop:
         #######################################################################
@@ -53,11 +61,6 @@ while continue_loop:
     ###########################################################################
     # Exiting manual mode and entering automatic mode.
 
-    # To allow the program to enter the for loop at least once to give the
-    # user the chance to switch again to manual mode without doing nothing, or
-    # just start automatic mode, send an empty instruction, that allow the for
-    # loop to do one iteration without moving the structure.
-    instruction = {}
     str_aux = structure
     while not manual_mode and continue_loop:
         print("Inst", inst_number, ":",  instruction)

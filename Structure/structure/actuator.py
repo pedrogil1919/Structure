@@ -20,10 +20,12 @@ from control.distance_errors import CollisionErrors
 
 class ActuatorState(Enum):
     ExitUpperBound = 1
-    UpperBound = 2
-    Center = 3
-    LowerBound = 4
-    ExitLowerBound = 5
+    MarginUpperBound = 2
+    UpperBound = 3
+    Center = 4
+    LowerBound = 5
+    MarginLowerBound = 6
+    ExitLowerBound = 7
 # Possible positions for an actuator:
 #   - UpperBound.
 #   - LowerBound.
@@ -42,7 +44,7 @@ class WheelActuator:
 
     """
 
-    def __init__(self, position, length, height, radius, base, stairs):
+    def __init__(self, position, length, height, radius, margin, base, stairs):
         """Constructor:
 
         Parameters:
@@ -51,6 +53,7 @@ class WheelActuator:
         length -- Valid range of the actuator.
         height -- Total height (from the top to the center of the wheel).
         radius --Radius of the ending wheel.
+        margin -- See check_actuator function.
         base -- Main structure base that holds the actuator.
         stairs -- Physics structure to check collisions between a wheel and a
           step.
@@ -62,6 +65,8 @@ class WheelActuator:
         self.LENGTH = length
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
+        # Allowed margin out of the actuator bounds.
+        self.MARGIN = margin
         # Create a joint to join it to the main base.
         self.JOINT = Joint(base, position)
         # and create the ending wheel.
@@ -92,14 +97,20 @@ class WheelActuator:
         # Calling function MUST check the position, using check_actuator
         # function.
         self.d += distance
-        if self.d < -MAX_GAP:
+        if self.d < -self.MARGIN:
             # The actuator get out of the lower bound (not valid).
             self.state = ActuatorState.ExitLowerBound
-        elif self.d > self.LENGTH + MAX_GAP:
-            # The actuator reached the upper bound (not valid).
-            self.state = ActuatorState.ExitUpperBound
+        elif self.d < -MAX_GAP:
+            # The actuator is inside the allowed margin.
+            self.state = ActuatorState.MarginLowerBound
         elif self.d < MAX_GAP:
             self.state = ActuatorState.LowerBound
+        elif self.d > self.LENGTH + self.MARGIN:
+            # The actuator reached the upper bound (not valid).
+            self.state = ActuatorState.ExitUpperBound
+        elif self.d > self.LENGTH + MAX_GAP:
+            # The actuator is inside the allowed margin.
+            self.state = ActuatorState.ExitUpperBound
         elif self.d > self.LENGTH - MAX_GAP:
             self.state = ActuatorState.UpperBound
         else:
@@ -137,11 +148,17 @@ class WheelActuator:
         # And return the required distance.
         return self.WHEEL.distance_to_stable(position)
 
-    def check_actuator(self):
+    def check_actuator(self, margin):
         """Check if the actuator is in a valid position.
 
         This function check both, if the actuator is inside is range of
         actuation, and if the wheel is in a valid position.
+
+        Parameters:
+        margin -- The actuator includes a small margin in both sides. If this
+            parameter is True, when checking the position of the structure,
+            it is allowed for the actuator to invade this margin without
+            raising an error.
 
         Returns:
           - True if everything is in a valid position. False otherwise.
@@ -166,12 +183,15 @@ class WheelActuator:
         v_err = -v_err
         # Check if the actuator has reached one of its bounds.
         a_err = 0.0
-        if self.state == ActuatorState.ExitLowerBound:
+
+        if self.state == ActuatorState.ExitLowerBound or \
+                (not margin and self.state == ActuatorState.MarginLowerBound):
             # The actuator has gone out of its lower bound.
             check = False
             a_err = -self.d
             v_err = a_err
-        elif self.state == ActuatorState.ExitUpperBound:
+        elif self.state == ActuatorState.ExitUpperBound or \
+                (not margin and self.state == ActuatorState.MarginUpperBound):
             # The actuator has gone out if its upper bound. In this case, we
             # have to check also if the wheel is in a valid position with
             # respect to the stair, and get the maximum of both.
@@ -212,7 +232,8 @@ class WheelActuator:
     # Actuator colors and widths.
     HOUSING_COLOR = (0xB3, 0xB3, 0xB3)
     ACT_COLOR = (0x00, 0x00, 0x00)
-    LIMIT_COLOR = (0x00, 0x00, 0xFF)
+    LIMIT_COLOR = (0xFF, 0x00, 0x00)
+    MARGIN_COLOR = (0x00, 0x00, 0xFF)
     ACT_MIDWIDTH = 4
     HOUSING_MIDWIDTH = 10
 
@@ -246,9 +267,15 @@ class WheelActuator:
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
-        if self.state != ActuatorState.Center:
+        if self.state == ActuatorState.UpperBound or \
+                self.state == ActuatorState.LowerBound:
             px = numpy.float32(scale*(origin[0]+hx0))
             cv2.circle(image, (px, cy1), int(4*scale), self.LIMIT_COLOR, -1,
+                       cv2.LINE_AA, shift)
+        elif self.state == ActuatorState.MarginUpperBound or \
+                self.state == ActuatorState.MarginLowerBound:
+            px = numpy.float32(scale*(origin[0]+hx0))
+            cv2.circle(image, (px, cy1), int(4*scale), self.MARGIN_COLOR, -1,
                        cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):

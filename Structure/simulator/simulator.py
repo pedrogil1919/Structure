@@ -105,7 +105,6 @@ class Simulator():
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
-        rear = instruction.get('elevate_rear', False)
         shift = instruction.get('shift', 0.0)
         wheel = instruction.get('wheel', None)
         wh_aux = instruction.get('wheel_aux', None)
@@ -150,26 +149,25 @@ class Simulator():
         # iteration without moving.
         # for __ in range(total_iterations):
         while True:
-            res = structure.advance(speed_wheel)
-            if not res:
-                raise RuntimeError("Can not advance structure.", str(res))
-            elevate_post = False
-            res = structure.elevate(speed_elevate, actuator_elevate)
-            if not res:
-                elevate_post = True
-            res = structure.incline(speed_incline, actuator_incline, rear)
-            if not res:
-                raise RuntimeError("Can not incline structure.", str(res))
-            if elevate_post:
-                res = structure.elevate(speed_elevate, actuator_elevate)
-                if not res:
-                    raise RuntimeError("Can not elevate structure.", str(res))
+            # perform the three types of motion included in the instruction.
+            # NOTE: for discrete motions, it is possible that between
+            # motions the structure can reach one of its limits, but after
+            # the three motions have been performed, the structure must return
+            # to a valid position. For this reason, we do not check the
+            # validity of the position until the three motions have been
+            # performed.
+            structure.advance(speed_wheel, check=False)
+            structure.incline(speed_incline, actuator_incline, check=False)
+            structure.elevate(speed_elevate, actuator_elevate, check=False)
+            # Is here when we must check the validity of the position.
+            col, stb = structure.check_position(False)
+            if not col or not stb:
+                raise RuntimeError("Can not move structure.")
             total_iterations -= 1
             # Check for the end of the instruction.
             if total_iterations == 0:
                 break
             yield True
-
         # Check for the end of the trajectory. Return false when is the last
         # instruction. This is marked with the key end in the dictionary.
         yield not instruction.get('end', False)
