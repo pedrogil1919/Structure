@@ -54,8 +54,8 @@ class Simulator():
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
-        shift = instruction.get('shift', 0.0)
-        sh_aux = instruction.get('shift_aux', 0.0)
+        shift = instruction.get('main', {}).get('shift', 0.0)
+        sh_aux = instruction.get('second', {}).get('shift', 0.0)
 
         # Compute the number of iterations needed to complete the instruction.
         # Time required to complete the horizontal motion.
@@ -105,10 +105,10 @@ class Simulator():
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
-        shift = instruction.get('shift', 0.0)
-        wheel = instruction.get('wheel', None)
-        wh_aux = instruction.get('wheel_aux', None)
-        sh_aux = instruction.get('shift_aux', 0.0)
+        wheel = instruction.get('main', {}).get('wheel', None)
+        shift = instruction.get('main', {}).get('shift', 0.0)
+        wh_aux = instruction.get('second', {}).get('wheel', None)
+        sh_aux = instruction.get('second', {}).get('shift', 0.0)
 
         total_iterations = self.compute_iterations(instruction)
         # Compute actual speeds based on the more restrictive one.

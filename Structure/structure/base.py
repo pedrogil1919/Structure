@@ -10,7 +10,7 @@ Module to define all the elements which composes the structure:
 
 """
 
-from math import asin, isinf
+from math import asin, isinf, sqrt, copysign
 from numpy import float32
 import cv2
 
@@ -403,7 +403,7 @@ class Base:
         if isinf(fr_hor) and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground.
-            return fr_id+2, re_hor/2, fr_ver, re_id, re_ver
+            return fr_id+2, re_hor/2, fr_ver, re_id, re_hor, re_ver
 
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
@@ -411,47 +411,33 @@ class Base:
             # second wheel when upstairs. If we do nothing else, the second
             # wheel certainly will lift, which is not the desired behabior. For
             # that reason, only when a wheel is not close enough to the stair,
-            # this will not be lift. The reference is half of the width of the
-            # structure.
-            if fr_hor > self.WIDTH / 2:
+            # this will not be lift. The reference is a quarter of the width of
+            # the structure.
+            if fr_hor > self.WIDTH / 4:
                 fr_ver = 0.0
             # When the structure is far apart from the stair, it is better to
             # advance horizontaly until the structure is close enough. This is
             # done with this code.
-            if re_hor > self.WIDTH / 2:
+            if re_hor > self.WIDTH / 4:
                 re_ver = 0.0
-                re_hor -= self.WIDTH / 2
-            return re_id, re_hor, re_ver, fr_id+2, fr_ver
+                re_hor -= self.WIDTH / 4
+            return re_id, re_hor, re_ver, fr_id+2, fr_hor, fr_ver
         else:
             # Same comment that above.
-            if re_hor > self.WIDTH / 2:
+            if re_hor > self.WIDTH / 4:
                 re_ver = 0.0
             # NOTE: The index of wheel are numbered from 0. Since the rear
             # wheel is the third wheel of the structure, we have to add 2 to
             # the index returned for the pair.
-            return fr_id+2, fr_hor, fr_ver, re_id, re_ver
+            return fr_id+2, fr_hor, fr_ver, re_id, re_hor, re_ver
 
     def set_horizontal(self):
-        """Returns the index of the wheel ."""
+        """Returns the distance to place each wheel on the ground ."""
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
 
         return re_res, fr_res
-# #         if re_res is not None and fr_res is not None:
-# #             # TODO: Do this when it is possible for the simulator to shift
-# #             # two actuators at the same time.
-# #             raise NotImplementedError("Move two actuator")
-#         if re_res is not None:
-#             return re_res[0]
-#         elif fr_res is not None:
-#             return fr_res[0] + 2
-#         return None
-#         if re_res is not None:
-#             return re_res[0], re_res[1]
-#         elif fr_res is not None:
-#             return fr_res[0] + 2, fr_res[1]
-#         return None, None
 
     def get_actuators_position(self, index):
         """Return the current position of the actuators.
@@ -481,6 +467,42 @@ class Base:
         __, y0, __, __ = self.REAR.position(0)
         __, __, __, y3 = self.FRNT.position(0)
         return y3-y0
+
+    def get_inclination_central_wheels(self, wheel1, wheel2):
+        """Get the inclination between wheel 1 and wheel 2.
+
+        This is a ad-hoc function for the control algorithm, to compute the
+        inclination of the structure when the collinding wheels are the
+        central ones. In this case, the functions from the pair module does
+        not work.
+
+        Returns the inclination of the structure.
+
+        Parameters:
+        wheel1 -- Additional shift of wheel 1.
+        wheel2 -- Additional shift of wheel 2.
+
+        """
+        # Get current posisions for the central joints.
+        __, __, x1, y1 = self.REAR.position(0)
+        x2, y2, __, __ = self.FRNT.position(0)
+        # Get increments in horizontal and vertical coordinates.
+        x = x2 - x1
+        y = y2 - y1
+        # And the increment in the actuators heights.
+        w = wheel2 - wheel1
+        # Compute the final inclination from the central actuators. This
+        # expression is get from the pithagoras theorem.
+        m = (y + w) / sqrt(x**2-w**2-2*w*y)
+        # And interpolate with respect to the whole structure. This one is get
+        # from basic trigonometry.
+        inclination = sqrt(self.WIDTH**2/(1+1/m**2))
+        # Last expresion ellimate the sign of the height. To get the sign
+        # again, we copy the sign of the slope m.
+        inclination = copysign(inclination, m)
+        # The final inclination is the new inclination minus the current one.
+        inclination -= self.get_inclination()
+        return inclination
 
     def get_elevation(self):
         """Returns the elevation of the structure."""

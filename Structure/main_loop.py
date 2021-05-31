@@ -43,7 +43,7 @@ inst_number = 0
 # user the chance to switch again to manual mode without doing nothing, or
 # just start automatic mode, send an empty instruction, that allow the for
 # loop to do one iteration without moving the structure.
-instruction = {"elevate": 46}
+instruction = {"elevate": }
 
 
 while continue_loop:
@@ -100,18 +100,20 @@ while continue_loop:
         # Substitute the simulated structure by the one returned by the
         # control module.
         structure = str_aux
-        # Generate the next instruction.
-        instruction, str_aux = control.next_instruction(structure)
-        # NOTE: The last instruction returns the future state of the structure
-        # when the instruction were completed. This state would be the same
-        # as the one the structure finish after the instruction simulation that
-        # follows. However, due to rounding errors, this could be a little
-        # different, and can change the next instruction, and in some times
-        # take one more or one less iteration to complete than if we do not
-        # simulate. for that reason, to make with or without simulation do the
-        # same instructions, we capture here the state at the end of the
-        # instruction, and after the simulation (see end of the next for loop)
-        # substitute the simulated structure for this one.
+        
+        if continue_loop:
+            # Generate the next instruction.
+            instruction, str_aux = control.next_instruction(structure)
+            # NOTE: The last instruction returns the future state of the structure
+            # when the instruction were completed. This state would be the same
+            # as the one the structure finish after the instruction simulation that
+            # follows. However, due to rounding errors, this could be a little
+            # different, and can change the next instruction, and in some times
+            # take one more or one less iteration to complete than if we do not
+            # simulate. for that reason, to make with or without simulation do the
+            # same instructions, we capture here the state at the end of the
+            # instruction, and after the simulation (see end of the next for loop)
+            # substitute the simulated structure for this one.
     ###########################################################################
 print("End of program.")
 
