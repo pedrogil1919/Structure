@@ -28,7 +28,7 @@ stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius, stairs, graphics)
+structure = base.Base(structure_size, wheels_radius, stairs) #, graphics)
 # Draw initial state of the structure.
 continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
 
@@ -43,7 +43,7 @@ inst_number = 0
 # user the chance to switch again to manual mode without doing nothing, or
 # just start automatic mode, send an empty instruction, that allow the for
 # loop to do one iteration without moving the structure.
-instruction = {"elevate": }
+instruction = {"elevate": 0}
 
 
 while continue_loop:
@@ -100,7 +100,7 @@ while continue_loop:
         # Substitute the simulated structure by the one returned by the
         # control module.
         structure = str_aux
-        
+
         if continue_loop:
             # Generate the next instruction.
             instruction, str_aux = control.next_instruction(structure)

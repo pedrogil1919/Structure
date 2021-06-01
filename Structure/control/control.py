@@ -421,10 +421,11 @@ def next_instruction(structure):
         # to the horizontal distance this wheel must move compared with the
         # horizontal distance for the main wheel. This ensure that the motion
         # for the second actuator is more regular.
-        try:
-            v_total = v_aux*hor/h_aux
-        except ZeroDivisionError:
-            v_total = v_aux
+        # To prevent for a zero division, add a small amount to both horizontal
+        # distances. To make it invariant to system scale, add a value
+        # proportional to the size of the structure.
+        k = structure.WIDTH/1000
+        v_total = v_aux*(hor+k)/(h_aux+k)
         inst_aux, act_aux = compute_instruction(st_aux, w_aux, 0.0, v_total)
         # Just if the second wheel need an additional motion for the
         # structure, add this motion to the original one needed by the main
@@ -458,15 +459,15 @@ def next_instruction(structure):
     # at the current position minus the same shift in the initial position.
     try:
         actuator["shift"] = \
-            st_aux.get_actuators_position(actuator["wheel"]) - \
-            structure.get_actuators_position(actuator["wheel"])
+            st_aux.get_actuator_position(actuator["wheel"]) - \
+            structure.get_actuator_position(actuator["wheel"])
         instruction["main"] = actuator
     except KeyError:
         pass
     try:
         act_aux["shift"] = \
-            st_aux.get_actuators_position(act_aux["wheel"]) - \
-            structure.get_actuators_position(act_aux["wheel"])
+            st_aux.get_actuator_position(act_aux["wheel"]) - \
+            structure.get_actuator_position(act_aux["wheel"])
         instruction["second"] = act_aux
     except KeyError:
         pass

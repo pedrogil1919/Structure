@@ -230,30 +230,37 @@ class Wheel:
             # on the ground, except if the wheel is in the middle of the step
             # in which case, the distance is the distance to the previous
             # step.
+            res['hr'] = hc
             # For the horizontal distance, this is always the distance to
             # place de wheel some margin further than the edge of the step,
             # so that the wheel can be taken down to the ground.
             if self.state == WheelState.Air:
-                res['hr'] = hc
                 res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Contact:
-                res['hr'] = hc
                 res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Corner:
-                res['hr'] = hc
                 res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Ground:
-                res['hr'] = hc
                 res['wc'] = -wr + 2*r + HOR_MARGIN
             elif self.state == WheelState.Over:
+                # If the wheel is in the middle of the corner of the step, we
+                # can not take the wheel down to the ground, so the vertical
+                # distance must be the distance to the previous step (the step
+                # over which is the wheel currently placed).
                 res['hr'] = hl
                 # Note that if the wheel is over the step, we have to take the
                 # distance with respect to the rear edge of the wheel, since
                 # the front edge of the wheel points to the next step.
                 res['wc'] = wl + HOR_MARGIN
+                # Furthermore, the distance wr must be also the distance to
+                # get out of the step, since we can not take the wheel down to
+                # the ground.
+                res['wr'] = wl + HOR_MARGIN
             elif self.state == WheelState.Unstable:
                 res['hr'] = hl
+                # Same as state Over.
                 res['wc'] = wl + HOR_MARGIN
+                res['wr'] = wl + HOR_MARGIN
             elif self.state == WheelState.Outer:
                 raise NotImplementedError("It should not happen")
 

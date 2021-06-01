@@ -287,7 +287,7 @@ class ActuatorPair:
         else:
             raise RuntimeError("Both wheel on the air.")
 
-    def get_actuators_position(self, index):
+    def get_actuator_position(self, index):
         """Returns the shift of an actuator.
 
         Parameters:

@@ -438,26 +438,26 @@ class Base:
         fr_res = self.FRNT.set_to_ground()
 
         return re_res, fr_res
-
-    def get_actuators_position(self, index):
+ 
+    def get_actuator_position(self, index):
         """Return the current position of the actuators.
-
+ 
         Returns the position of a given actuator.
-
+ 
         Parameters:
         index -- Index of the actuator.
           - 0: Rearmost actuator.
           - 3: Frontnost actuator.
-
+ 
         """
         if index == 0:
-            return self.REAR.get_actuators_position(0)
+            return self.REAR.get_actuator_position(0)
         elif index == 1:
-            return self.REAR.get_actuators_position(1)
+            return self.REAR.get_actuator_position(1)
         elif index == 2:
-            return self.FRNT.get_actuators_position(0)
+            return self.FRNT.get_actuator_position(0)
         elif index == 3:
-            return self.FRNT.get_actuators_position(1)
+            return self.FRNT.get_actuator_position(1)
         raise RuntimeError
 
     def get_inclination(self):
@@ -516,6 +516,17 @@ class Base:
     def get_acceleration(self):
         return 0.0
 
+    def actuator_positions(self):
+        """Returns all the actuator current positions """
+        pos = [
+            self.get_actuator_position(0),
+            self.get_actuator_position(1),
+            self.get_actuator_position(2),
+            self.get_actuator_position(3),
+            self.get_speed(),
+            self.get_inclination()
+            ]
+        return pos
     # =========================================================================
     # Drawing functions.
     # =========================================================================
