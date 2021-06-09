@@ -134,20 +134,6 @@ def read_graphics(xml_file):
         'shift': shift,
         'scale': scale}
     ###########################################################################
-    # Set display to True. In case video_dir does not exist, display remains
-    # to True, as it is the behaviour described in the xml.
-    display = True
-    video = graphics.find('video')
-    try:
-        video_dir = video.attrib['directory']
-        display = bool(strtobool(video.attrib['display']))
-    except (AttributeError, KeyError):
-        video_dir = None
-    try:
-        comp_dir = video.attrib['composition']
-    except (AttributeError, KeyError):
-        comp_dir = None
-
     rate = graphics.find('framerate')
     try:
         interval = float(rate.attrib['interval'])
@@ -158,12 +144,49 @@ def read_graphics(xml_file):
     except (AttributeError, KeyError):
         pause = True
 
+    ###########################################################################
+    # Set display to True. In case video_dir does not exist, display remains
+    # to True, as it is the behaviour described in the xml.
+    display = True
+    video = graphics.find('video')
+    try:
+        video_dir = video.attrib['directory']
+        display = bool(strtobool(video.attrib['display']))
+    except (AttributeError, KeyError):
+        video_dir = None
+
+    ###########################################################################
+    composition = video.find('composition')
+    try:
+        comp_dir = composition.attrib['directory']
+        try:
+            buffer_size = int(composition.attrib['buffer_size'])
+        except (AttributeError, KeyError):
+            buffer_size = 256
+        try:
+            units = composition.attrib['units']
+        except (AttributeError, KeyError):
+            units = ""
+        try:
+            margin = float(composition.attrib['margin'])
+        except (AttributeError, KeyError):
+            margin = 5.0
+    except (AttributeError, KeyError):
+        comp_dir = None
+        buffer_size = 0
+        units = ""
+        margin = 0.0
+
     video_data = {
         'video_dir': video_dir,
-        'composition': comp_dir,
+        'buffer_size': buffer_size,
         'display': display,
         'interval': interval,
-        'pause': pause}
+        'pause': pause,
+        'composition': comp_dir,
+        'buffer_size': buffer_size,
+        'units': units,
+        'margin': margin}
 
     return image_data, video_data
 

@@ -11,7 +11,9 @@ Module to define all the elements which composes the structure:
 """
 
 from math import asin, isinf, sqrt, copysign
-from numpy import float32
+#NOTE: Sometimes opencv changes the data type for drawing function. So it is
+# better to import the correct data type this way.
+from numpy import int as cv_datatype
 import cv2
 
 from structure.actuator import WheelActuator
@@ -155,7 +157,7 @@ class Base:
 
         """
         # Get previous position for speed computation.
-        previous_pos = self.position
+        self.prev_pos = self.position
         # Update structure position
         self.position += distance
         if not check:
@@ -168,7 +170,6 @@ class Base:
         col, stb = self.check_position()
 
         col.add_stability(stb)
-        self.prev_pos = previous_pos
         if col:
             return col
 
@@ -438,17 +439,17 @@ class Base:
         fr_res = self.FRNT.set_to_ground()
 
         return re_res, fr_res
- 
+
     def get_actuator_position(self, index):
         """Return the current position of the actuators.
- 
+
         Returns the position of a given actuator.
- 
+
         Parameters:
         index -- Index of the actuator.
           - 0: Rearmost actuator.
           - 3: Frontnost actuator.
- 
+
         """
         if index == 0:
             return self.REAR.get_actuator_position(0)
@@ -523,8 +524,8 @@ class Base:
             self.get_actuator_position(1),
             self.get_actuator_position(2),
             self.get_actuator_position(3),
-            self.get_speed(),
-            self.get_inclination()
+            self.get_inclination(),
+            self.get_speed()
             ]
         return pos
     # =========================================================================
@@ -539,15 +540,15 @@ class Base:
         x1, y1, __, __ = self.REAR.position(0)
         __, __, x2, y2 = self.FRNT.position(0)
 
-        cx1 = float32(scale*(origin[0]+x1))
-        cy1 = float32(scale*(origin[1]-y1))
-        cx2 = float32(scale*(origin[0]+x2))
-        cy2 = float32(scale*(origin[1]-y2))
+        cx1 = cv_datatype(scale*(origin[0]+x1))
+        cy1 = cv_datatype(scale*(origin[1]-y1))
+        cx2 = cv_datatype(scale*(origin[0]+x2))
+        cy2 = cv_datatype(scale*(origin[1]-y2))
         cv2.line(image, (cx1, cy1), (cx2, cy2), self.BASE_COLOR,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
-        dy1 = float32(scale*(origin[1]-y1+self.HEIGHT))
-        dy2 = float32(scale*(origin[1]-y2+self.HEIGHT))
+        dy1 = cv_datatype(scale*(origin[1]-y1+self.HEIGHT))
+        dy2 = cv_datatype(scale*(origin[1]-y2+self.HEIGHT))
         cv2.line(image, (cx1, dy1), (cx2, dy2), self.BASE_COLOR,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 

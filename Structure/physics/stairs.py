@@ -7,7 +7,7 @@ Module to define all the physical interaction between the structure and the
 exterior elements, such as the stair.
 """
 
-from numpy import float32
+from numpy import int as cv_datatype
 import cv2
 
 from physics.wheel_state import WheelState, MAX_GAP
@@ -311,11 +311,11 @@ class Stair:
 
     def draw(self, origin, image, scale, shift):
         """Draw the stair."""
-        cx1 = float32(scale*origin[0])
-        cy1 = float32(scale*origin[1])
+        cx1 = cv_datatype(scale*origin[0])
+        cy1 = cv_datatype(scale*origin[1])
         for p in self.STAIR:
-            cx2 = float32(scale*(origin[0]+p[0]))
-            cy2 = float32(scale*(origin[1]-p[1]))
+            cx2 = cv_datatype(scale*(origin[0]+p[0]))
+            cy2 = cv_datatype(scale*(origin[1]-p[1]))
             cv2.line(image, (cx1, cy1), (cx2, cy1), self.GROUND_COLOR,
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             cv2.line(image, (cx2, cy1), (cx2, cy2), self.GROUND_COLOR,

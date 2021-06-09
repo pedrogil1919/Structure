@@ -20,21 +20,26 @@ try:
 except Exception:
     settings_name = "settings.xml"
 
-# Read graphical variables.
-image_data, video_data = readXML.read_graphics(settings_name)
-graphics = Graphics(image_data, video_data)
 # Read stairs data and create physical stairs object.
 stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius, stairs) #, graphics)
-# Draw initial state of the structure.
-continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
+structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
 speed_data = readXML.read_simulator(settings_name)
 sm = Simulator(speed_data)
+
+# Read graphical variables.
+image_data, video_data = readXML.read_graphics(settings_name)
+axis = {
+    "height": structure_size["d"],
+    "max_speed": 1.2*speed_data["wheel"]}
+graphics = Graphics(image_data, video_data, axis)
+# Draw initial state of the structure.
+continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
+
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
@@ -104,16 +109,19 @@ while continue_loop:
         if continue_loop:
             # Generate the next instruction.
             instruction, str_aux = control.next_instruction(structure)
-            # NOTE: The last instruction returns the future state of the structure
-            # when the instruction were completed. This state would be the same
-            # as the one the structure finish after the instruction simulation that
-            # follows. However, due to rounding errors, this could be a little
+            # NOTE: The last instruction returns the future state of the
+            # structure when the instruction were completed. This state would
+            # be the same than the structure would have after the instruction
+            # simulation that follows.
+            #
+            # However, due to rounding errors, this could be a little
             # different, and can change the next instruction, and in some times
             # take one more or one less iteration to complete than if we do not
-            # simulate. for that reason, to make with or without simulation do the
-            # same instructions, we capture here the state at the end of the
-            # instruction, and after the simulation (see end of the next for loop)
-            # substitute the simulated structure for this one.
+            # simulate. for that reason, to make with or without simulation do
+            # the same instructions, we capture here the state at the end of
+            # the instruction, and after the simulation (see end of the
+            # previous for loop) substitute the simulated structure for this
+            # one.
     ###########################################################################
 print("End of program.")
 

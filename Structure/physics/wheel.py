@@ -8,6 +8,7 @@ implements the physical interactions with the stairs: collisions and contacts.
 
 """
 
+from numpy import int as cv_datatype
 import numpy
 import cv2
 from math import inf
@@ -310,8 +311,8 @@ class Wheel:
     LINE_WIDTH = 4
 
     def draw(self, origin, image, position, scale, shift):
-        cx = numpy.float32(scale*(origin[0]+position[0]))
-        cy = numpy.float32(scale*(origin[1]-position[1]))
+        cx = cv_datatype(scale*(origin[0]+position[0]))
+        cy = cv_datatype(scale*(origin[1]-position[1]))
         cr = numpy.int(scale*self.RADIUS)
         if self.state == WheelState.Ground:
             color = self.GROUND_COLOR

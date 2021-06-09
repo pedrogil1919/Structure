@@ -9,7 +9,7 @@ Definition of the actuator connecting the wheel to the main base.
 
 from enum import Enum
 
-import numpy
+from numpy import int as cv_datatype
 import cv2
 
 from physics.wheel_state import MAX_GAP
@@ -252,37 +252,37 @@ class WheelActuator:
         self.WHEEL.draw(origin, image, (hx0, hy3), scale, shift)
 
         # Draw actuator housing:
-        cx1 = numpy.float32(scale*(origin[0]+hx0-self.HOUSING_MIDWIDTH))
-        cy1 = numpy.float32(scale*(origin[1]-hy0))
-        cx2 = numpy.float32(scale*(hx0+origin[0]+self.HOUSING_MIDWIDTH))
-        cy2 = numpy.float32(scale*(origin[1]-hy1))
+        cx1 = cv_datatype(scale*(origin[0]+hx0-self.HOUSING_MIDWIDTH))
+        cy1 = cv_datatype(scale*(origin[1]-hy0))
+        cx2 = cv_datatype(scale*(hx0+origin[0]+self.HOUSING_MIDWIDTH))
+        cy2 = cv_datatype(scale*(origin[1]-hy1))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.HOUSING_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
 
         # Draw actuator bar:
-        cx1 = numpy.float32(scale*(origin[0]+hx0-self.ACT_MIDWIDTH))
-        cy1 = numpy.float32(scale*(origin[1]-hy2))
-        cx2 = numpy.float32(scale*(hx0+origin[0]+self.ACT_MIDWIDTH))
-        cy2 = numpy.float32(scale*(origin[1]-hy3))
+        cx1 = cv_datatype(scale*(origin[0]+hx0-self.ACT_MIDWIDTH))
+        cy1 = cv_datatype(scale*(origin[1]-hy2))
+        cx2 = cv_datatype(scale*(hx0+origin[0]+self.ACT_MIDWIDTH))
+        cy2 = cv_datatype(scale*(origin[1]-hy3))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
         if self.state == ActuatorState.UpperBound or \
                 self.state == ActuatorState.LowerBound:
-            px = numpy.float32(scale*(origin[0]+hx0))
+            px = cv_datatype(scale*(origin[0]+hx0))
             cv2.circle(image, (px, cy1), int(4*scale), self.LIMIT_COLOR, -1,
                        cv2.LINE_AA, shift)
         elif self.state == ActuatorState.MarginUpperBound or \
                 self.state == ActuatorState.MarginLowerBound:
-            px = numpy.float32(scale*(origin[0]+hx0))
+            px = cv_datatype(scale*(origin[0]+hx0))
             cv2.circle(image, (px, cy1), int(4*scale), self.MARGIN_COLOR, -1,
                        cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):
         """Draw the position of the center of the wheel."""
         center = self.JOINT.position(self.HEIGHT+self.d)
-        x = numpy.float32(scale*(origin[0]+center[0]))
-        y = numpy.float32(scale*(origin[1]-center[1]))
+        x = cv_datatype(scale*(origin[0]+center[0]))
+        y = cv_datatype(scale*(origin[1]-center[1]))
 
         cv2.circle(image, (x, y), int(2*scale), 
                    (0x00, 0xFF, 0x00), -1, cv2.LINE_AA, shift)

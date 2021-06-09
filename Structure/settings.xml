@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <StairsClimbing>
 	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
-	<size a="30" b="80" c="30" d="50" m="1" g="30"/>
+	<size a="30" b="30" c="30" d="50" m="1" g="30"/>
 	<!--Wheel radius, in the same units than structure dimensions-->
 	<wheels r1="10" r2="10" r3="10" r4="10"/>
 	<!--Stairs definition. Can be defined as many as needed:
@@ -22,12 +22,12 @@
 	<stairs landing="150">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="3" w="60" h="-30" d="100"/>
+		<dimensions N="3" w="60" h="30" d="100"/>
 		<!--Up - down stairs
-		<dimensions N="1" w="60" h="-15" d="0"/>
-		<dimensions N="1" w="50" h="-20" d="0"/>
-		<dimensions N="1" w="80" h="-30" d="0"/>
-		<dimensions N="1" w="40" h="-10" d="100"/>
+		<dimensions N="1" w="60" h="15" d="0"/>
+		<dimensions N="1" w="50" h="20" d="0"/>
+		<dimensions N="1" w="80" h="30"  d="0"/>
+		<dimensions N="1" w="40" h="10" d="100"/>
 		-->
 		<!--Up - down stairs
 		<dimensions N="3" w="80" h="+30" d="200"/>
@@ -91,9 +91,11 @@
 		<image shift="0" scale="1.0"/>
 		-->
 		<framerate interval="5" pause="True"/>
-		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True"/>
+		<video directory="/home/pedrogil/Vídeos/WheelChair/borrar" display="False">
+			<composition directory="comp" buffer_size="400" units="cm" margin="10"/>
+		</video>
 <!--
-		<video directory="/home/pedro/Vídeos/WheelChair/borrar" display="True" composition="comp"/>
+		<video directory="/home/pedrogil/Vídeos/WheelChair/borrar" display="True"></video>
 -->	
 	</graphics>
 </StairsClimbing>
