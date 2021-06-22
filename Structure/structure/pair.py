@@ -205,33 +205,45 @@ class ActuatorPair:
                 # ground, it is not possible that the passive wheel is in an
                 # unstable position. If this happened, it will be impossible
                 # to cross the stair.
-                # Compute the total height to shift between both actuators.
-                ver_total = abs(active['hr']) + abs(passive['hc'])
-                # Divide the horizontal distance to advance proportional to
-                # both heights.
-                k = abs(passive['hc']) / ver_total
-                hor = k * active['wr']
-                # Now, take the passive actuator to the ground.
-                ver = passive['hc']
-                # Change the wheel to move.
-                index = (index + 1) % 2
-                # The passive wheel is on the ground, so that we need not take
-                # care of this wheel.
-                # NOTE: Removed (13/05/21). This functionality has been 
-                # moved to wheel.get_wheel_distances function.
-#             if ver > 0:
-                # If the vertical distance is positive, its means that we are
-                # facing a positive step. In this case, add a small margin to
-                # the height to lift the actuator so that the wheel does not
-                # collide with the step.
-#                 ver += EDGE_MARGIN
-#             else:
-                # If we are facing a positive step but the vertical motion is
-                # negative, it means that we are taking the wheel down once
-                # the wheel is already over the step. In this case, add a small
-                # margin to the horizontal motion so that the wheel lands
-                # further than the edge of the step.
-#                 hor += EDGE_MARGIN
+                try:
+                    # Compute the total height to shift between both actuators.
+                    ver_total = abs(active['hr']) + abs(passive['hc'])
+                except KeyError:
+                    # However, if the key 'hc' does not exist in the passive
+                    # wheel, that means that this wheel can not be taken to the
+                    # ground. This is likely to happen because both wheel does
+                    # not enter in the step, and in this case, the stair can
+                    # not be climbed. However, we can try to move the structure
+                    # to the edge of the stair and see if it can work.
+                    hor = passive['wr']
+                    ver = 0.0
+                else:
+                    # Divide the horizontal distance to advance proportional to
+                    # both heights.
+                    k = abs(passive['hc']) / ver_total
+                    hor = k * active['wr']
+                    # Now, take the passive actuator to the ground.
+                    ver = passive['hc']
+                    # Change the wheel to move.
+                    index = (index + 1) % 2
+                    # The passive wheel is on the ground, so that we need not
+                    # take care of this wheel.
+                    # NOTE: Removed (13/05/21). This functionality has been 
+                    # moved to wheel.get_wheel_distances function.
+                    # if ver > 0:
+                        # If the vertical distance is positive, its means that
+                        # we are facing a positive step. In this case, add a
+                        # small margin to the height to lift the actuator so
+                        # that the wheel does not collide with the step.
+                    #     ver += EDGE_MARGIN
+                    # else:
+                        # If we are facing a positive step but the vertical
+                        # motion is negative, it means that we are taking the
+                        # wheel down once the wheel is already over the step.
+                        # In this case, add a small margin to the horizontal
+                        # motion so that the wheel lands further than the edge
+                        # of the step.
+                        # hor += EDGE_MARGIN
         elif not re_res['up'] and not fr_res['up']:
             # Facing a negative step.
             if passive['st']:
