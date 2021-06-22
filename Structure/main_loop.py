@@ -106,7 +106,7 @@ while continue_loop:
         # control module.
         structure = str_aux
 
-        if continue_loop:
+        if continue_loop and not manual_mode:
             # Generate the next instruction.
             instruction, str_aux = control.next_instruction(structure)
             # NOTE: The last instruction returns the future state of the
