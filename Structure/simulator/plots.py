@@ -5,11 +5,10 @@ Created on 31 may. 2021
 
 '''
 
-import matplotlib.pyplot as plt
-
 import io
 import numpy
 import cv2
+import matplotlib.pyplot as plt
 
 
 class Plots():
