@@ -156,8 +156,8 @@ def read_graphics(xml_file):
         video_dir = None
 
     ###########################################################################
-    composition = video.find('composition')
     try:
+        composition = video.find('composition')
         comp_dir = composition.attrib['directory']
         try:
             buffer_size = int(composition.attrib['buffer_size'])
