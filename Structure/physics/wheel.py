@@ -206,7 +206,11 @@ class Wheel:
                 res['wr'] = -wr
             elif self.state == WheelState.Outer:
                 res['hc'] = hc
-                res['wr'] = -wr + r + HOR_MARGIN
+                # In outer state, return the distance to place the wheel in a
+                # over position. This ensures that in the next iteration, the
+                # state will be the Over state, and so, the wheel moves to the
+                # correct position.
+                res['wr'] = -wr + r / 2
             elif self.state == WheelState.Over:
                 res['wr'] = -wr + r + HOR_MARGIN
             elif self.state == WheelState.Unstable:
