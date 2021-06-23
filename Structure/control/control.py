@@ -377,6 +377,8 @@ def compute_instruction(structure, wheel, hor, ver):
         # correcting the error distance detected. In general, the second term
         # of the sum will be 0.
         instruction["advance"] += res_adv.horizontal
+        if instruction["advance"] == 0.0:
+            raise RuntimeError
         if not structure.advance(instruction["advance"]):
             raise RuntimeError
     # Check that the actuator can now be shifted the required height.
