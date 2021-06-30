@@ -23,39 +23,6 @@ List of instructions, along with its arguments:
 import copy
 from math import isinf
 
-from structure import base
-from simulator import simulator
-
-
-class ComputeTime:
-    # TODO: Move to another file, and add comments.
-    # This class is for Diego.
-    def __init__(self, wheels, stairs, speed_data):
-
-        self.stairs = stairs
-        self.sim = simulator.Simulator(speed_data)
-        self.wheels = wheels
-
-    def compute(self, size):
-        """Return the time required to complete the stairs."""
-
-        # Build the elements.
-        str_aux = base.Base(size, self.wheels, self.stairs)
-
-        total_time = 0
-        # Make a loop until the structure reaches the end of the stair.
-        while True:
-            instruction, str_aux = next_instruction(str_aux)
-            total_time += self.sim.compute_iterations(instruction)
-            if instruction.get('end', False):
-                break
-        # Return the total number of iterations needed.
-        return total_time
-
-
-###############################################################################
-###############################################################################
-###############################################################################
 
 def last_instruction(structure):
     """Generate the last instruction before finishing the program
