@@ -102,7 +102,7 @@ def make_room_wheel3(structure, height):
     # second actuator. Try to elevate the structure.
     res_elv = structure.elevate(height, margin=False)
     if res_elv:
-        raise RuntimeError
+        return 0, height
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # In this case, the parameter rear indicates the height to incline the
     # structure from the rear to allow the inclination to complete.

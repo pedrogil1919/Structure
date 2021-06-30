@@ -79,6 +79,8 @@ class Base:
         self.HEIGHT = d
         # Total width of the structure.
         self.WIDTH = a+b+c
+        # Maximum inclination angle.
+        self.MAX_INCLINE = 15.0
 
     ###########################################################################
     # MOTION FUNCTION
@@ -133,6 +135,14 @@ class Base:
         fr_col = self.FRNT.check_collision(margin)
         col = merge_collision(re_col, fr_col)
 
+        __, y0 = self.REAR.REAR.JOINT.position(0)
+        __, y3 = self.FRNT.FRNT.JOINT.position(0)
+        if y0-y3 > self.MAX_INCLINE+MAX_GAP:
+            inclination_error = y0-y3-self.MAX_INCLINE
+            col.add_inclination_limit(inclination_error)
+        elif y3-y0 > self.MAX_INCLINE+MAX_GAP:
+            inclination_error = y0-y3+self.MAX_INCLINE
+            col.add_inclination_limit(inclination_error)
         # Check if any pair of wheels are not stable.
         re_stb = self.REAR.check_stable()
         fr_stb = self.FRNT.check_stable()

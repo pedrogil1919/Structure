@@ -40,7 +40,6 @@ def merge_collision(res1, res2):
         return CollisionErrors(
             False, horizontal, actuator, central, front, rear)
 
-
 def merge_stability(res1, res2):
     """Similar than merge_collision, but for stability objects."""
     if res1 and res2:
@@ -134,7 +133,12 @@ class CollisionErrors():
         elif not self and not error:
             self.horizontal = greatest(self.horizontal, error.horizontal)
 
+    def add_inclination_limit(self, value):
+        if abs(value) > abs(self.front):
+            self.front = value
+            self.correct = False
 
+        
 ###############################################################################
 ###############################################################################
 
