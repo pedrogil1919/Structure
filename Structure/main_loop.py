@@ -38,27 +38,25 @@ axis = {
     "max_speed": 1.2*speed_data["wheel"]}
 graphics = Graphics(image_data, video_data, axis)
 # Draw initial state of the structure.
-continue_loop, manual_mode, key_pressed = graphics.draw(stairs, structure)
+continue_loop, key_pressed = graphics.draw(stairs, structure)
 
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
 inst_number = 0
-# To allow the program to enter the for loop at least once to give the
-# user the chance to switch again to manual mode without doing nothing, or
-# just start automatic mode, send an empty instruction, that allow the for
-# loop to do one iteration without moving the structure.
-instruction = {}
-
 
 while continue_loop:
-    while manual_mode and continue_loop:
+    # To allow the program to enter the for loop at least once to give the
+    # user the chance to switch again to manual mode without doing nothing, or
+    # just start automatic mode, send an empty instruction, that allow the for
+    # loop to do one iteration without moving the structure.
+    instruction = {}
+    while graphics.manual_mode and continue_loop:
         #######################################################################
         #  Manual mode
         #######################################################################
         # Display image and wait for next instruction.
-        continue_loop, manual_mode, key_pressed = \
-            graphics.draw(stairs, structure)
+        continue_loop, key_pressed = graphics.draw(stairs, structure)
         instruction = control.manual_control(key_pressed, sm)
         print("manual:", instruction)
         for res in sm.simulate_instruction(structure, instruction):
@@ -67,7 +65,7 @@ while continue_loop:
     # Exiting manual mode and entering automatic mode.
 
     str_aux = structure
-    while not manual_mode and continue_loop:
+    while not graphics.manual_mode and continue_loop:
         print("Inst", inst_number, ":",  instruction)
         #######################################################################
         #  Automatic mode
@@ -80,18 +78,18 @@ while continue_loop:
         for res in sm.simulate_step(structure, instruction):
             if not res:
                 # The simulation has finished or failed: finish the program.
-                print("Press any key to finish...")
+                # print("Press any key to finish...")
+                graphics.set_manual_mode()
                 graphics.draw(stairs, structure, True)
                 # Finish the outermost loop.
-                continue_loop = False
+                # continue_loop = False
                 break
             # The simulation has succeeded, so, continue loop.
-            continue_loop, manual_mode, key_pressed = \
-                graphics.draw(stairs, structure)
+            continue_loop, key_pressed = graphics.draw(stairs, structure)
             if not continue_loop:
                 # The user has pressed the Esc key to finish the program.
                 break
-            if manual_mode:
+            if graphics.manual_mode:
                 # Entering manual mode. Finish the inner while loop an continue
                 # with a new iteration of the outermost while loop.
                 # NOTE: At the end of the for loop, we substitute the current
@@ -106,9 +104,12 @@ while continue_loop:
         # control module.
         structure = str_aux
 
-        if continue_loop and not manual_mode:
+        if continue_loop and not graphics.manual_mode:
             # Generate the next instruction.
-            instruction, str_aux = control.next_instruction(structure)
+            try:
+                instruction, str_aux = control.next_instruction(structure)
+            except RuntimeError:
+                graphics.set_manual_mode()
             # NOTE: The last instruction returns the future state of the
             # structure when the instruction were completed. This state would
             # be the same than the structure would have after the instruction
