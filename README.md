@@ -20,6 +20,7 @@ These videos show the operation of the structure when crossing different types o
 
 - Python 3 for running the code.
 - OpenCV and Python-OpenCV for displaying and saving image sequences.
+- matplotlib
 
 **Running the code:**
 
