@@ -302,7 +302,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel3(structure, -res_inc.front)
-              
+
                 instruction["incline"] += inc
                 instruction["elevate"] = elv
         elif wheel == 2:

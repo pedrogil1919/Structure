@@ -1,9 +1,12 @@
-'''
+"""
 Created on 31 may. 2021
 
 @author: pedro.gil@uah.es
 
-'''
+Plotting variables as a function of time using matplotlib.
+"""
+
+# TODO: Document this class, if needed.
 
 import io
 import numpy
@@ -12,14 +15,11 @@ import matplotlib.pyplot as plt
 
 
 class Plots():
-    '''
-    classdocs
-    '''
 
     def __init__(self, size, buffer_len, units, margin, axis):
-        '''
-        Constructor
-        '''
+        """Constructor:
+
+        """
         self.data = numpy.zeros((6, buffer_len), numpy.float32)
         self.time = numpy.linspace(-buffer_len, -1, buffer_len)
         self.size = size

@@ -1,31 +1,30 @@
 """
 Created on 5 jun. 2020
 
-@author: pedro
+@author: pedro.gil@uah.es
 
 Step by step simulator of structure motion.
-
 """
 
 from math import ceil
 
 
 class Simulator():
-    """Class to simulate structure motion.
-
-    """
+    """Class to simulate structure motion."""
 
     def __init__(self, speed_data):
         """
         Constructor:
 
-        Parameters:
+        Arguments:
         speed_data: dictionary with the following keys:
             wheel -- Structure horizontal speed, in units/frame.
-            actuator -- Actuator shift speed (without load), in units/frame.
-            elevate -- Structure elevate/incline (with load), in units/frame.
-            TODO: When the structure is taken down, its speed is the
-                actuator speed (no load). Check if this is correct.
+            actuator -- Actuator shift speed, in units/frame.
+            elevate -- Structure elevate, in units/frame.
+            incline -- Structure incline, in units/frame.
+            NOTE: The last three parameter are actually two parameters, one
+              for going up, and the other for going down (normally, going up
+              is slower than going down).
         """
         # Maximum speeds:
         # Horizontal speed:
@@ -48,7 +47,7 @@ class Simulator():
         return distance
 
     def compute_iterations(self, instruction):
-        """Complete the munber of iteration to complete an instruction."""
+        """Complete the number of iteration to complete an instruction."""
 
         # Get the distances to move from the instruction.
         advance = instruction.get('advance', 0.0)
@@ -100,8 +99,22 @@ class Simulator():
         return total_iterations
 
     def simulate_step(self, structure, instruction):
-        """Simulate one instruction step by step."""
+        """Simulate one instruction step by step.
 
+        NOTE: This function is actually a generator, to be included in a for
+        loop, wo that in each iteration, the generator returns True, except
+        when a simulation error happens, as well as update the structure
+        position, so that it can be draw inside the for loop.
+
+        Arguments:
+        structure -- Actual structure to simulate.
+        instruction -- Instruction to simulate.
+
+        Note that the instruction will normally take more than one step, and so
+        the generator will iterate several times, returning True except for the
+        last instruction of the complete simulation (the whole simulation, not
+        the simulation of this instruction).
+        """
         advance = instruction.get('advance', 0.0)
         elevate = instruction.get('elevate', 0.0)
         incline = instruction.get('incline', 0.0)
@@ -173,9 +186,7 @@ class Simulator():
         yield not instruction.get('end', False)
 
     def simulate_instruction(self, structure, instruction):
-        """Complete a list of instructions in one step.
-
-        """
+        """Complete a list of instructions in one step."""
         try:
             distance = instruction['advance']
         except KeyError:

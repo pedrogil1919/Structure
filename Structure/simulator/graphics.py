@@ -1,4 +1,4 @@
-'''
+"""
 Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
@@ -6,7 +6,7 @@ Created on 28 ene. 2021
 Module to include functions related with graphics to display results on screen
 or to save a video.
 
-'''
+"""
 
 import numpy
 import cv2
@@ -20,7 +20,7 @@ class Graphics:
     def __init__(self, image_data, video_data, axis=None):
         """Constructor:
 
-        Parameters:
+        Arguments:
         image_data: dictionary with the following keys:
             size -- Size of the image (height, width)
             origin -- Vertical shift of the stairs with respect to the image
@@ -42,7 +42,6 @@ class Graphics:
             interval -- When pause is False, and display True, 1/framerate for
                 the sequence displayed on screen.
                 TODO: Document Axis
-
         """
         # Flag to switch between manual mode operation, or automatic.
         self.manual_mode = False
@@ -118,17 +117,21 @@ class Graphics:
         else:
             self.save_video = False
 
+    def set_manual_mode(self):
+        """Set to manual mode, so the user can move the structure manually."""
+        self.manual_mode = True
+
     def draw(self, stairs, structure, pause=False):
-        """Generates an image of the actual elements.
+        """Generate an image of the actual elements.
 
         If the object was configured with display set to True, the program can
         be paused with the Space key.
         If video was set to a directory, a video image sequence will be created
         in this directory.
-        Returns False is the user press the key to finish the program (escape).
-        Returns also the key pressed.
+        Return False is the user press the key to finish the program (escape).
+        Return also the key pressed.
 
-        parameters:
+        Arguments:
         stairs, structure -- Elements to draw.
         pause -- If True, and display is True, the program pause until the user
             press a Key. If False, an internal variable check whether to pause
@@ -156,8 +159,8 @@ class Graphics:
         stairs.draw((0, origin), self.image, aa_scale, self.shift)
         # Draw the structure.
         structure.draw((0, origin), self.image, aa_scale, self.shift)
-#         structure.draw_wheel_trajectory(
-#             self.origin, self.image, aa_scale, self.shift, 3)
+        # structure.draw_wheel_trajectory(
+        #     self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
         cv2.putText(self.image, str(self.counter),
                     (20, self.image.shape[0]-30), 1, 5, 0x00, 4)
@@ -226,7 +229,7 @@ class Graphics:
                 composite_name = os.path.join(self.dir_comp, aux_name)
                 cv2.imwrite(composite_name, self.composite_image)
         self.counter += 1
-        return True, self.manual_mode, c
+        return True, c
 
 ###############################################################################
 # End of file.

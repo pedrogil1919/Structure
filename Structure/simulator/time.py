@@ -3,8 +3,10 @@ Created on 30 jun. 2021
 
 @author: pedro.gil@uah.es
 
-Module to compute times for the structure to cross a stair.
-
+Module to compute times for the structure to cross a stair. This module
+performs the same instructions as the graphical simulator but without any
+graphics overload, to complete the function in less time. This module is
+intended for the optimization functions.
 """
 
 from structure import base
@@ -14,16 +16,14 @@ from control.control import next_instruction
 
 class ComputeTime:
     """Main class to compute times."""
-    
-    
+
     def __init__(self, wheels, stairs_list, speed_data):
         """Constructor:
-        
-        Parameters:
+
+        Arguments:
         wheels -- Wheel radius.
         stairs_list -- List of stair to check time.
         speed_data -- Speeds for all the actuators and wheels.
-        
         """
         # Check if the stairs is a tuple or a single stair.
         if type(stairs_list) not in (list, tuple):
@@ -40,7 +40,6 @@ class ComputeTime:
         for stair in self.stairs:
             # Build the structure.
             str_aux = base.Base(size, self.wheels, stair)
-            
             # Make a loop until the structure reaches the end of the stair.
             while True:
                 instruction, str_aux = next_instruction(str_aux)
