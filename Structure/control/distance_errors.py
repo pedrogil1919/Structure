@@ -134,9 +134,15 @@ class CollisionErrors():
             self.horizontal = greatest(self.horizontal, error.horizontal)
 
     def add_inclination_limit(self, value):
-        if abs(value) > abs(self.front):
-            self.front = value
-            self.correct = False
+        """Add error when the structure reaches its inclination limit."""
+        # Add this value when it is greater than the front value, that is, when
+        # the structure reaches it inclination limit at the same time that an
+        # actuator too, set the error to the largest one.
+        print("Central:", self.central)
+        print("Angle:", value)
+        self.central = greatest(self.central, value)
+        print("Central:", self.central)
+        self.correct = False
 
         
 ###############################################################################

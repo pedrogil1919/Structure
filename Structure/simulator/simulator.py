@@ -196,7 +196,7 @@ class Simulator():
             pass
         else:
             # Elevate structure
-            res = structure.elevate(height)
+            res = structure.elevate(height, margin=False)
             if not res:
                 elevate_post = True
         #######################################################################
@@ -207,7 +207,7 @@ class Simulator():
         else:
             rear = instruction.get('elevate_rear', False)
             # Incline structure
-            res = structure.incline(height, None, rear)
+            res = structure.incline(height, None, rear, margin=False)
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################
@@ -218,7 +218,7 @@ class Simulator():
                 pass
             else:
                 # Elevate structure
-                res = structure.elevate(height)
+                res = structure.elevate(height, margin=False)
                 if not res:
                     print("Can not elevate structure:", res)
         #######################################################################
@@ -230,7 +230,7 @@ class Simulator():
             pass
         else:
             # Shift actuator.
-            res = structure.shift_actuator(wheel, height)
+            res = structure.shift_actuator(wheel, height, margin=False)
             if not res:
                 print("Can not shift actuator:", res)
         #######################################################################

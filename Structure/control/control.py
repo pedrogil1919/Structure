@@ -485,6 +485,10 @@ def manual_control(key_pressed, simulator):
     elif key_pressed == ord('h'):
         command = {'incline': -simulator.speed_incline_up,
                    'elevate_rear': True}
+    elif key_pressed == ord('u'):
+        command = {'incline': 5.0, 'elevate_rear': False}
+    elif key_pressed == ord('j'):
+        command = {'incline': -5.0, 'elevate_rear': False}
     ###########################################################################
     else:
         command = {}

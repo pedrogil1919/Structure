@@ -36,8 +36,8 @@ class Wheel:
         If not in a correct position, raise a ValueError exception to warn the
         user to define correctly the starting position.
 
-        The absolute position of the wheel is not stored here, it is computed
-        from the structure base and actuator positions.
+        The absolute position of the wheel is not stored here, it should be
+        computed from the structure and actuator positions.
 
         Parameters:
         radius -- Radius of the wheel.

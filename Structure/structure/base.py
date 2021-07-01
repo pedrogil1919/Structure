@@ -80,6 +80,7 @@ class Base:
         # Total width of the structure.
         self.WIDTH = a+b+c
         # Maximum inclination angle.
+        # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
         self.MAX_INCLINE = 15.0
 
     ###########################################################################
