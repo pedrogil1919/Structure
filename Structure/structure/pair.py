@@ -5,30 +5,24 @@ Created on 29 ene. 2021
 
 The structure can be considered as a set of two sets of a pairs of wheels.
 This module define the functionality of the two pairs of wheels.
-
 """
 
 from math import isinf, inf
 
 from control.distance_errors import merge_collision, StabilityErrors
 
-# When computing the distance for a wheel to move, sometimes we need to give a
-# small margin to prevent the wheel to collide with the stair. This is the
-# meaning of this margin.
-# EDGE_MARGIN = 4.0
-
 
 class ActuatorPair:
+    """Define the behaviour of a pair of actuators."""
 
     def __init__(self, rear, front, rear_pair):
         """Constructor:
 
-        Parameters:
+        Arguments:
         rear -- Rear actuator.
         front -- Front actuator.
         rear_pair -- If true, this is the pair placed in the rear part of the
             structure, the front pair otherwise.
-
         """
         self.REAR = rear
         self.FRNT = front
@@ -37,14 +31,13 @@ class ActuatorPair:
     def shift_actuator(self, rear, front, height):
         """Shift the given actuator.
 
-        Parameters:
+        Argumetns:
         rear -- If None, move the rear actuator the distance given. If not
             None but a float, move the actuator this value.
         front -- Same as rear, for the front actuator.
         height: distance to move the actuator when rear and/or front are
-          None. Positive value means the the wheel moves away from the
-          structure.
-
+            None. Positive value means the the wheel moves away from the
+            structure.
         """
         # Rear actuator.
         if rear is not None:
@@ -60,19 +53,18 @@ class ActuatorPair:
     def shift_actuator_proportional(self, rear, front, height):
         """Shift and actuator a distance proportional to its position.
 
-        This function must be called when inclining the structure. It shift the
-        actuator a distance proportional to heihg, but also proportional to its
-        position with respect to the structure.
+        This function must be called when inclining the structure. It shifts
+        the actuator a distance proportional to height, but also proportional
+        to its position with respect to the structure.
 
-        Parameters:
+        Arguments:
         rear -- If None, move the rear actuator the distance proportional to
-          the height given. If not None but a float, move the actuator this
-          value (the actual value, not the proportional one).
+            the height given. If not None but a float, move the actuator this
+            value (the actual value, not the proportional one).
         front -- Same as rear, for the front actuator.
         height: distance to proportional move the actuator when rear and/or
-          front are None. Positive value means the the wheel moves away from
-          the structure.
-
+            front are None. Positive value means the the wheel moves away from
+            the structure.
         """
         # Rear actuator.
         if rear is not None:
@@ -88,15 +80,14 @@ class ActuatorPair:
     def check_collision(self, margin):
         """Check if any of the wheels (or both) are in a forbidden position.
 
-        Parameters:
+        Arguments:
         margin -- See WheelActuator.check_actuator function.
-        
-        Returns:
+
+        Return:
           - False if any of the wheels have collided, True otherwise.
           - If True, returns the distance the pair need to be moved to place
             it in a safe position, both in horizontal and in vertical, and for
             the actuator.
-
         """
         # Check for possible wheel collisions.
         fr_res = self.FRNT.check_actuator(margin)
@@ -122,12 +113,11 @@ class ActuatorPair:
         This function check if the wheels are in an unstable position (at any
         time, at least one wheel must remain stable).
 
-        Returns:
+        Return:
           - True if the motion succeed. False otherwise.
           - If False, returns the distance the pair need to be moved to place
             it in a safe position. The sign of this distance is always the
             opposite of the distance given.
-
         """
         # Check if either wheel is in a stable position.
         fr_grd = self.REAR.ground()
@@ -272,16 +262,15 @@ class ActuatorPair:
         return index, hor, ver
 
     def set_to_ground(self):
-        """Return the distance to place both wheels on the ground.
+        """Compute the distance to place both wheels on the ground.
 
-        Returns:
+        Return:
           - Index of the wheel to shift:
             - 0: Rear wheel.
             - 1: Front wheel.
           - Vertical height to shift the actuator.
 
-        However, if both wheel are in the ground, return None as first value.
-
+        However, if both wheels are in the ground, return None as first value.
         """
         re_res = self.REAR.get_wheel_distances()
         fr_res = self.FRNT.get_wheel_distances()
@@ -298,7 +287,7 @@ class ActuatorPair:
             raise RuntimeError("Both wheel on the air.")
 
     def get_actuator_position(self, index):
-        """Returns the shift of an actuator.
+        """Return the shift of an actuator.
 
         Parameters:
         index -- Index of the actuator:

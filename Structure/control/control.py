@@ -7,17 +7,35 @@ Module to generate the instructions to move the structure.
 
 List of instructions, along with its arguments:
 
-- advance (float): Horizontal motion, if positive, move forwards.
+- advance (float): Horizontal motion. If positive, move forwards.
 - elevate (float): Vertical elevation of the structure. If positive, elevate.
 - incline (foat): Incline structure. If positive, the front is elevated.
-- main:  (dictionary): Driven wheel (wheel closest to its corresponding step,
-    with the following keys:
-  - wheel (int): Wheel to shift (0 or 1).
-  - height (float): shift actuator. If positive, the wheel is moved downwards.
+- main: (dictionary): Main wheel (wheel closest to its corresponding step,
+    that is, the first wheel that collides with, or get out of the step for
+    negative steps, with the stair if we moved the structure without elevating
+    any wheel) with the following keys:
+  - wheel (int): Index of the main wheel (0, 1, 2 or 3).
+  - height (float): shift actuator. If positive, the wheel is shifted
+    downwards.
   - shift (float): actual shift of the actuator once the structure has been
-      elevetad/inclined.
-- second (dictionary): Same as main, for the wheel in the other pair.
+    elevetad/inclined.
+- second (dictionary): Same as main, for the wheel in the other pair. Note
+    that, at any time, only one wheel in each pair must be on the ground, and
+    so, the other wheel can be on air. The main wheel is the wheel that
+    mandatorily must be shifted when facing the next step, but at the same
+    time, in order to gain time, we can shift another wheel in the other pair.
+    This is the purpose of this key.
 
+NOTE: height and shift are complementary data. For instance, if the structure
+were elevate 10 cm, and do nothing else, all the wheel must remain in the
+ground. If also height is -8 cm, since the wheel is initally at the ground,
+after the instruction the wheel will be situated at 8 cm.
+For the same case, instead of -8 cm for height, we can set shift to 2 cm,
+meaning that the actuator has actually moved 2 cm from its original position to
+the final one.
+Height is intended for performing the actuator shift once the elevation has
+been done, whereas shift in intended for performing the actuator shift at the
+same time as the elevation.
 """
 
 import copy
@@ -25,16 +43,18 @@ from math import isinf
 
 
 def last_instruction(structure):
-    """Generate the last instruction before finishing the program
+    """Generate the last instruction before finishing the program.
 
-    Before finish the program, set the structure to its initial position
+    Before finish the program, set the structure to its canonical position,
     that is, all the wheels in the ground, and all the actuator to their
     lower position.
 
     Returns the instruction to finish the program. This instruction includes
     the key 'end' that informs the simulator that the structure has reached
-    the end of the stair.
+    the end of the stair, to be aware of it and finish the program.
 
+    Arguments:
+    structure -- Actual structure for which we need to compute the instruction.
     """
     # Check if all the wheels are on the ground.
     re, fr = structure.set_horizontal()
@@ -82,7 +102,7 @@ def last_instruction(structure):
 
 
 def make_room_wheel3(structure, height):
-    """Function to make enough space for an actuator to complete its motion.
+    """Make enough space for an actuator to complete its motion.
 
     When an actuator can not complete its actual motion following the
     corresponding structure motion (i.e., incline for wheel 3, elevate for the
@@ -92,8 +112,11 @@ def make_room_wheel3(structure, height):
 
     NOTE: This is for wheel 3. There is a corresponding function for the rest
     of the wheels.
+    NOTE: Inside the function, there are lines with a call to GRAPHICS. This
+    can be used to draw the structure position at any time. To do so, you need
+    to include the graphics in the constructor of the structure.
 
-    Parameter:
+    Arguments:
     height -- additional height the actuator must be shifted and can not be
         completed with a single motion.
 
@@ -134,7 +157,7 @@ def make_room_wheel2(structure, height):
     if res_shf:
         # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
         raise RuntimeError
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # but the value front indicates the inclination for the structure to get
     # the space requirede.
     res_inc = structure.incline(res_shf.front, margin=False)
@@ -149,10 +172,10 @@ def make_room_wheel2(structure, height):
     # actuator, instead that with the second, which is the actual one with
     # which the collision will be produced.
     structure.shift_actuator(2, -height)
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     #  Set the structure to the given inclination.
     res_inc = structure.incline(inclination, elevate_rear=True)
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     if not res_inc:
         raise RuntimeError
     # And elevate the structure to set it back to its actual position. To get
@@ -164,11 +187,11 @@ def make_room_wheel2(structure, height):
     # in central value.
     if not structure.elevate(total+res_elv.central):
         raise RuntimeError
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # Finally, set the actuator to its current position (remember that we
     # elevate this actuator previously).
     structure.shift_actuator(2, +height)
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
 
     return inclination, +total+res_elv.central-inclination
 
@@ -218,22 +241,12 @@ def make_room_wheel0(structure, height):
 
 
 def compute_instruction(structure, wheel, hor, ver):
-    """Generate the values for the next instruction
+    """Generate the values for the next instruction.
 
     The function computes the horizontal motion, elevation and inclination of
-    the structure to get the motion indicaded by the params. Note that the
-    structure is modified inside this function, so, it is needed a copy of the
-        original one if we need to keep it.
-
-    Returns:
-    instruction: A dictionary with the following keys (see key definition 
-    above):
-      - advance.
-      - incline.
-      - elevate.
-    actuator: A dictionary with the following keys (see key definition above):
-      - wheel.
-      - height.
+    the structure to get the motion indicaded by the arguments. Note that the
+    structure is modified inside this function, so, a copy of the original one
+    is needed if we need to keep it.
 
     Parameters:
     structure -- The structure in its current position. The function need the
@@ -242,6 +255,15 @@ def compute_instruction(structure, wheel, hor, ver):
     hor, ver -- Horizontal and vertical distance that the wheel need to move to
         get to its next state.
 
+    Return two dictionaries:
+    instruction: A dictionary with the following keys (see key definition
+    above):
+      - advance.
+      - incline.
+      - elevate.
+    actuator: A dictionary with the following keys (see key definition above):
+      - wheel.
+      - height.
     """
     instruction = {"advance": 0}
     # Simulate elevation of the actuator. Note that the vertical distance is
@@ -280,6 +302,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel3(structure, -res_inc.front)
+              
                 instruction["incline"] += inc
                 instruction["elevate"] = elv
         elif wheel == 2:
@@ -359,14 +382,16 @@ def compute_instruction(structure, wheel, hor, ver):
 
 
 def next_instruction(structure):
-    """Generate in an automatic fashion the next instruction for the structure.
+    """Generate the next instruction for the structure to take the next step.
 
     The function gets the distances from each wheel of the structure to the
     stair (which is stores in the own structure), and generate the list of
-    instructions to perform the next step.
+    instructions to take the next step of the stair.
 
-    Returns a dictionary with the instructions to perform.
+    Arguments:
+    structure -- Actual structure for which we need to compute the instruction.
 
+    Return a dictionary with the instructions to perform.
     """
     # Get the distances each wheel is with respect to its closest step.
     wheel, hor, ver, w_aux, h_aux, v_aux = structure.get_wheels_distances()
@@ -445,9 +470,7 @@ def next_instruction(structure):
 
 
 def manual_control(key_pressed, simulator):
-    """Function to convert a key to a instruction.
-
-    """
+    """Function to convert a key to a instruction."""
     if key_pressed == ord('4'):
         command = {'advance': -simulator.speed_wheel}
     elif key_pressed == ord('6'):
@@ -485,10 +508,6 @@ def manual_control(key_pressed, simulator):
     elif key_pressed == ord('h'):
         command = {'incline': -simulator.speed_incline_up,
                    'elevate_rear': True}
-    elif key_pressed == ord('u'):
-        command = {'incline': 5.0, 'elevate_rear': False}
-    elif key_pressed == ord('j'):
-        command = {'incline': -5.0, 'elevate_rear': False}
     ###########################################################################
     else:
         command = {}
@@ -497,85 +516,3 @@ def manual_control(key_pressed, simulator):
 ###############################################################################
 # End of file.
 ###############################################################################
-
-# def last_instruction2(structure):
-#     """Generate the last instruction before finish the program
-# 
-#     Before finish the program, set the structure to its initial position
-#     that is, all the wheels in the ground, and all the actuator to their
-#     lower position.
-# 
-#     Returns the instruction to finish the program. This instruction includes
-#     the key 'end' that informs to the simulator that the structure has reached
-#     the end of the stair.
-# 
-#     """
-#     # Create a deep copy of the structure, to simulate all the motions computed
-#     # without modifying the actual structure.
-#     st_aux = copy.deepcopy(structure)
-#     instruction = {}
-#     # In some cases, this can not be the last instruction. This flag is
-#     # intended to detect this fact.
-#     finish = True
-#     # Check if all the wheel are on the ground.
-#     re, fr = st_aux.set_horizontal()
-#     # In case any wheel is not on the ground, also generate the instruction to
-#     # take the wheel down to the ground.
-#     if re[0] is not None:
-#         # Check it for the rear pair, and take the wheel to the ground.
-#         res_shf_re = st_aux.shift_actuator(re[0], -re[1])
-#         if not res_shf_re:
-#             # If the actuator can not complete the whole motion, do all the
-#             # motion possible, and mark that this can not be the last
-#             # instruction.
-#             finish = False
-#             if not st_aux.shift_actuator(re[0], -re[1] + res_shf_re.actuator):
-#                 raise RuntimeError
-#             # Generate the instructions to move the wheel.
-#         instruction["wheel"] = re[0]
-#         instruction["height"] = re[1] - res_shf_re.actuator
-#     if fr[0] is not None:
-#         # And do the same for the front pair.
-#         res_shf_fr = st_aux.shift_actuator(fr[0] + 2, -fr[1])
-#         if not res_shf_fr:
-#             finish = False
-#             if not st_aux.shift_actuator(fr[0], -fr[1] + res_shf_fr.actuator):
-#                 raise RuntimeError
-#         instruction["wheel_aux"] = fr[0] + 2
-# 
-#     # Get the current inclination of the structure.
-#     inclination = st_aux.get_inclination()
-#     # and the current elevation.
-#     elevation = st_aux.get_elevation()
-#     # And set the structure to the initial position by moving it in the
-#     # opposite direction.
-#     # First for the inclination.
-#     res_inc = st_aux.incline(-inclination)
-#     if not res_inc:
-#         # Also can happen the the structure can not correct its inclination.
-#         finish = False
-#         if not st_aux.incline(-inclination + res_inc.front):
-#             raise RuntimeError
-#     instruction["incline"] = -inclination + res_inc.front
-#     # And now for the elevation.
-#     res_elv = st_aux.elevate(-elevation)
-#     if not res_elv:
-#         finish = False
-#         if not st_aux.elevate(-elevation + res_elv.actuator):
-#             raise RuntimeError
-#     instruction["elevate"] = -elevation + res_elv.actuator
-#     # Generate the shift for the wheels. Note that we have to use both
-#     # the wheel and wheel_aux keys, although in this special case, both have
-#     # the same meaning, but this is not important in this case.
-#     if re[0] is not None:
-#         instruction["shift"] = \
-#             st_aux.get_actuators_position(re[0]) - \
-#             structure.get_actuators_position(re[0])
-#     if fr[0] is not None:
-#         instruction["shift_aux"] = \
-#             st_aux.get_actuators_position(fr[0] + 2) - \
-#             structure.get_actuators_position(fr[0] + 2)
-#     # Add the end key to inform the simulator that we are done. Note that this
-#     # can be False, indicating that this is not the last instruction.
-#     instruction["end"] = finish
-#     return instruction, st_aux

@@ -3,8 +3,9 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Module to define all the physical interaction between the structure and the
-exterior elements, such as the stair.
+Definition of the structure of a stair, and implementation of all the physical
+interactions with respect to the wheels of the structure (collisions,
+unstabilities and wheel position).
 """
 
 from numpy import int as cv_datatype
@@ -12,24 +13,20 @@ import cv2
 
 from physics.wheel_state import WheelState, MAX_GAP
 
-# =============================================================================
-# Stair definition:
-# =============================================================================
-
 
 class Stair:
-    """Class to define the complete set of steps
+    """Definition of the complete set of steps to form a stair.
 
     The class define a stair from a list of steps, and also implement the
     phisical interactions with the wheels (wheel collisions and unstabilities).
-
+    The steps does not have to be equal in size, and also some can be positive
+    and others negative. Run test.draw_stairs.py to see an example.
     """
 
     def __init__(self, stairs, landing=0.0):
         """Constructor: Generate the coordinates of the set of steps.
 
         See stair_definition_up.svg y stair_definition_down.svg.
-        Run draw_stairs.py.
 
         Parameters:
         stairs -- List of stair parameter. Each element of the list must
@@ -41,10 +38,10 @@ class Stair:
             If more than one stair is defined (len(stairs)>1), the next
             stair starts at the end of the previous one.
         landing -- Initial landing length (make sure it is long enough to place
-            the complete wheelchair in a planar surface). Otherwise, an error
+            the complete structure in a planar surface). Otherwise, an error
             will be raised when building the structure of the wheelchair.
-
         """
+
         # Build the stairs:
         # List with the coordinates of the outer corners (upstairs) or
         # inner corners (downstairs).
@@ -75,14 +72,13 @@ class Stair:
 
         See figure find_step.svg for more details.
 
+        Arguments:
+        p -- Coordinates (x,y) of the center of the wheel.
+
         Returns the coordinates for:
           - height of the step where the wheel lies (yc)
           - horizontal size of this step (xl, xr)
           - height of the previous and next steps (yl, yr)
-
-        Parameters:
-        p -- Coordinates (x,y) of the center of the wheel.
-
         """
         # Horizontal coordinate for the center of the wheel.
         xc = p[0]
@@ -122,18 +118,16 @@ class Stair:
     def check_collision(self, p, r):
         """Check a possible collision of a wheel with the stairs.
 
-        Returns:
-          - If the wheel is inside the stair (collision), returns Inside
-            and the distances to be applied to the wheel center to correct
-            such collision.
-          - If the wheel is in a correct position, return its state with
-            respect to the stair (see WheelState), and None for the other two
-            values.
-
-        Parameters:
+        Arguments:
         p -- Coordinates of the center of the wheel.
         r -- Wheel radius.
 
+        Return:
+          - State of the wheel with respect to the stair (see WheelState).
+          - If the wheel is inside the stair (collision), returns also the
+            distances to be applied to the wheel center to correct such
+            collision in vertical and horizontal directions.
+            If there is no colllision, returns 0 for both values.
         """
         hc, hl, hr, wl, wr = self.get_distances(p, r)
         # First part. Ensure that there is no collision, but if so, return
@@ -250,7 +244,11 @@ class Stair:
     def get_distances(self, p, r):
         """ Find all the useful distances between the stair and a wheel.
 
-        Returns the following values (see get_distances.svg):
+        Arguments:
+        p -- Coordinates of the center of the wheel.
+        r -- Wheel radius.
+
+        Return the following values (see get_distances.svg):
           - hc, hl, hr: Vertical distances from the bottom of the wheel with
             respect to the actual, left and right steps.
           - wl, wr: Horizontal distances from the left (right) edge of the
@@ -265,11 +263,6 @@ class Stair:
         working according to a real scenario. Nevertheless, this should not
         be an inconvenience for the proper working of the complete structure
         (see figure detectCollision.svg).
-
-        Parameters:
-        p -- Coordinates of the center of the wheel.
-        r -- Wheel radius.
-
         """
         # Find left, central and right step. if the function can not find the
         # step, because the wheel is outside the space where the stairs are
@@ -292,12 +285,15 @@ class Stair:
         return hc, hl, hr, wl, wr
 
     def length(self):
-        """Returns the total length of the list of the stairs. """
+        """Return the total length of the list of the stairs."""
         return self.STAIR[-1][0]
 
     def height(self):
-        """Returns the total height (positive or negative) of the list of the
-        stairs. """
+        """Return the total height of the list of the stairs.
+
+        Note that this value can be positive or negative, depending on the step
+        that composes the complete stair.
+        """
         return self.STAIR[-1][1]
 
     # =========================================================================

@@ -4,7 +4,6 @@ Created on 28 ene. 2021
 @author: pedro.gil@uah.es
 
 Definition of the actuator connecting the wheel to the main base.
-
 """
 
 from enum import Enum
@@ -19,6 +18,7 @@ from control.distance_errors import CollisionErrors
 
 
 class ActuatorState(Enum):
+    """Possible states for an actuator."""
     ExitUpperBound = 1
     MarginUpperBound = 2
     UpperBound = 3
@@ -26,32 +26,26 @@ class ActuatorState(Enum):
     LowerBound = 5
     MarginLowerBound = 6
     ExitLowerBound = 7
-# Possible positions for an actuator:
-#   - UpperBound.
-#   - LowerBound.
-#   - Center: A position between the upper and lower bound.
 
-
-# =============================================================================
-# Wheel actuator definition:
-# =============================================================================
 
 class WheelActuator:
-    """Class to store actuator information.
+    """Define the vectical actuator of the structure.
 
     The class also includes its corresponding ending wheel and the joint to the
     structure.
-
     """
 
     def __init__(self, position, length, height, radius, margin, base, stairs):
         """Constructor:
 
-        Parameters:
+        Arguments:
         position -- Horizontal distance with respect to the left side of the
             structure
         length -- Valid range of the actuator.
-        height -- Total height (from the top to the center of the wheel).
+        height -- Total height (from the top to the center of the wheel, this
+            value should be larger than length, otherwhise the wheel would be
+            above the bottom of the structure which, in a real case, is not
+            possible).
         radius --Radius of the ending wheel.
         margin -- See check_actuator function.
         base -- Main structure base that holds the actuator.
@@ -77,24 +71,25 @@ class WheelActuator:
     def shift_actuator(self, distance):
         """Shift the actuator and check if the motion is valid.
 
-        Return True when the actuator can reach the required position.
-        If not, return False, along with the correction needed to place
-        the actuator in a valid position.
+        Arguments:
+        distance -- Distance to move the actuator.
+
+        Return
+          - True when the actuator can reach the required position.
+          - If the previos value is false, return the correction needed to
+              place the actuator in a valid position.
+
         The function can fail when:
           - The actuator reach either the upper or the lower limit.
           - The ending wheel touches the ground.
 
         However, in case of failure, the function does not place the actuator
         back to its original position, so that the actuator is left in an
-        invalid. The calling function have to do the correction.
-
-        Parameters:
-        distance -- Distance to move the actuator.
-
+        invalid position. The calling function have to do the correction.
         """
         # Shift actuator.
         # NOTE: This function does not check whether the shift is possible.
-        # Calling function MUST check the position, using check_actuator
+        # The calling function MUST check the position, using check_actuator
         # function.
         self.d += distance
         if self.d < -self.MARGIN:
@@ -127,10 +122,10 @@ class WheelActuator:
         it succeed (see function shift_actuator), or False otherwise. In this
         case, it also returns the proportional value to correct the actuator to
         a valid position.
-        Parameters:
-        distance -- Absolute distance (the actual value to move is proportional
-          to this value.
 
+        Arguments:
+        distance -- Absolute distance (the actual value to move is proportional
+            to this value.
         """
         # Compute the actual value to move the actuator.
         prop_height = self.JOINT.proportional_lift(height)
@@ -138,10 +133,9 @@ class WheelActuator:
         self.shift_actuator(prop_height)
 
     def distance_to_stable(self):
-        """Compute the distance to place the wheel in a stable position.
+        """Return the distance to place the wheel in a stable position.
 
         See wheel.distance_to_stable for more info.
-
         """
         # Compute actual position for the wheel.
         position = self.JOINT.position(self.HEIGHT+self.d)
@@ -152,15 +146,15 @@ class WheelActuator:
         """Check if the actuator is in a valid position.
 
         This function check both, if the actuator is inside is range of
-        actuation, and if the wheel is in a valid position.
+        actuation, and if the ending wheel is in a valid position.
 
-        Parameters:
+        Arguments:
         margin -- The actuator includes a small margin in both sides. If this
             parameter is True, when checking the position of the structure,
             it is allowed for the actuator to invade this margin without
             raising an error.
 
-        Returns:
+        Return:
           - True if everything is in a valid position. False otherwise.
           - If False, returns the horizontal distance to place the wheel back
             to a valid position.
@@ -172,7 +166,6 @@ class WheelActuator:
             error, this value is the same than the previous value. This is
             needed for incline function, because this function need to
             differenciate between wheel and actuator error.
-
         """
         # Check if the wheel is in a valid position.
         position = self.JOINT.position(self.HEIGHT+self.d)
@@ -211,24 +204,25 @@ class WheelActuator:
     # =========================================================================
 
     def get_wheel_distances(self):
-        """Returns the distances of the ending wheel to the stair.
+        """Return the distances of the ending wheel to the stair.
 
         See stair.set_distances function, and getDistances.svg.
-
         """
         position = self.JOINT.position(self.HEIGHT+self.d)
         return self.WHEEL.get_distances(position)
 
     def get_inverse_lift(self, height):
-        """Returns the proportional shift for an outer actuator.
+        """Return the proportional shift for an outer actuator.
 
         The function computes the shift for an outer actuator when this
         actuator is shfited the given distances when inclining the structure.
         """
         return self.JOINT.inverse_prop_lift(height)
+
     # =========================================================================
     # Drawing functions.
     # =========================================================================
+
     # Actuator colors and widths.
     HOUSING_COLOR = (0xB3, 0xB3, 0xB3)
     ACT_COLOR = (0x00, 0x00, 0x00)
@@ -284,7 +278,7 @@ class WheelActuator:
         x = cv_datatype(scale*(origin[0]+center[0]))
         y = cv_datatype(scale*(origin[1]-center[1]))
 
-        cv2.circle(image, (x, y), int(2*scale), 
+        cv2.circle(image, (x, y), int(2*scale),
                    (0x00, 0xFF, 0x00), -1, cv2.LINE_AA, shift)
 
 ###############################################################################

@@ -3,42 +3,35 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Part of the structure that fix the actuator to the main base. This module
-implements the trigonometric computation to calculate the position of an
-actuator according to the main base inclination.
-
+Definition of the part of the structure that fix the actuator to the main base.
+This module implements the trigonometric computation to calculate the position
+of an actuator according to the structure inclination.
 """
 
-from math import cos, sin, sqrt
-
-# =============================================================================
-# Joint definition:
-# =============================================================================
+from math import cos, sin
 
 
 class Joint:
-    """Class to define the joint of an actuator with the structure."""
+    """Define the joint of an actuator with the structure."""
 
     def __init__(self, base, x):
         """Constructor:
 
-        Parameters:
+        Arguments:
         base -- Reference to the actual base that hold the joint. Used to
           compute absolute coordinates from the offset of the joint with
           respect to the base origin.
         x -- Horizontal distance of the actuator to the back side of the
         structure.
-
         """
         self.base = base
         self.x = x
 
     def position(self, height=0):
-        """Returns the (x, y) position of a given point along the actuator.
+        """Return the (x, y) position of a given point along the actuator.
 
-        Parameters:
+        Arguments:
         height -- Vertical distance from the required point to the joint.
-
         """
         # Copy global variables of the structure.
         shift = self.base.position
@@ -51,30 +44,33 @@ class Joint:
         return x, y
 
     def proportional_lift(self, height):
-        """Computes a lift when inclining the structure.
-        
-        Computes the shift for an inner actuator when the outer actuator is
-        shift the given distance when inclining the structure.
-        
-        Returns the required distance.
+        """Compute a lift when inclining the structure.
 
+        When the structure inclines, each actuator need to shift a different
+        height. This height is proportional to the distance of the actuator
+        to the origin of the structure. This function computes the shift for an
+        inner actuator when the outer actuator is shift the given distance when
+        inclining the structure. This method is only used by the inner
+        actuators.
+
+        Arguments:
+        height -- Height for the outer actuator, needed to compute the
+            proportional height for this actuator.
         """
         return height*self.x/self.base.WIDTH
 
     def inverse_prop_lift(self, height):
-        """Computes and inverse position when inclining the structure.
+        """Compute an inverse height when inclining the structure.
 
-        The function returns the height the exterior actuators need to be
-        shifted to get the current actuator position the given height when
-        inclining. The values returned are:
+        The function computes the height the exterior actuators need to be
+        shifted when one of the inner actuator is shifted the current height
+        when inclining the structure. The values returned are:
           - Height for the front actuator.
           - Height for the rear actuator.
 
         This function can only be called for the interior actuators. For the
         exterior actuators this value will be 0 and infinity.
-
         """
-
         fr_height = height*self.base.WIDTH / self.x
         re_height = height*self.base.WIDTH / (self.base.WIDTH-self.x)
         return fr_height, re_height
@@ -82,44 +78,3 @@ class Joint:
 ###############################################################################
 # End of file.
 ###############################################################################
-
-#     # TODO: Remove unused function.
-#     def lift_from_horizontal_motion(self, distance, front):
-#         """Computes a vertical motion when inclining the structure.
-#
-#         Computes a vertical motion of an actuator to achieve a horizontal
-#         motion when the structure is inclined
-#         (see liftfrom_horizontal_motion.svg).
-#
-#         Returns the horizontal position for the actuator.
-#
-#         Parameters:
-#         distance -- Horizontal distance to achieve.
-#         front -- see function incline in structure.base.
-#
-#         """
-#         # Obtain actual coordinates for the current joint.
-#         xa, ya = self.position()
-#         x0 = xa-self.base.position
-#         y0 = ya-self.base.elevation
-#         if front:
-#             # If the fixed wheel is the front one, we need to update the
-#             # distance to move, taking into account that, when inclining
-#             # the structure, both, the front and the actual, wheels moves.
-#             # So, the distance must be the difference between both:
-#             # d_a=distance
-#             # d_f=distance*W/x
-#             # Reorganizing...
-#             # d=d_a-d_f=d_a*x/(x-W)
-#             distance *= self.x/(self.x-self.base.WIDTH)
-#         # Compute target horizontal coordinate.
-#         x1 = x0+distance
-#         # The value for y can be computed from the Pithagoras theorem.
-#         # Nevertheless, we need to choose the sign of the square root.
-#         # Since the motion required is small, the new height
-#         # must match the sign of the old one.
-#         if y0 > 0:
-#             y1 = +sqrt(self.x**2 - x1**2)
-#         else:
-#             y1 = -sqrt(self.x**2 - x1**2)
-#         return y1-y0

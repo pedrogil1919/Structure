@@ -3,15 +3,15 @@ Created on 28 ene. 2021
 
 @author: pedro.gil@uah.es
 
-Module to define all the elements which composes the structure:
+Definition of all the elements which composes the structure:
 - Actuator (x4).
 - Current position with respect to the environment.
 - Current elevation with respect to the ground.
-
 """
 
 from math import asin, isinf, sqrt, copysign
-#NOTE: Sometimes opencv changes the data type for drawing function. So it is
+
+# NOTE: Sometimes opencv changes the data type for drawing function. So it is
 # better to import the correct data type this way.
 from numpy import int as cv_datatype
 import cv2
@@ -28,17 +28,16 @@ class Base:
     def __init__(self, size, wheels, stairs, graphics=None):
         """Constructor:
 
-        Parameters:
+        Arguments:
         size -- Dictionary with the dimensions of the structure (see paper):
           - a, d, c: Partial dimensions of the base.
           - d: Height of the structure (and length of actuators).
           - g: Gap between floor and lower base.
         wheels -- Dictionary with the radius of wheels:
           - r1, r2, r3, r4: Wheels radius (can be different).
-        stairs -- Physics structure for the stairs.
+        stairs -- Physical structure of the stairs.
         graphics -- Debug option. If given, can be used in any point to draw
             the current state of the structure.
-
         """
         self.GRAPHICS = graphics
         self.STAIRS = stairs
@@ -81,7 +80,7 @@ class Base:
         self.WIDTH = a+b+c
         # Maximum inclination angle.
         # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
-        self.MAX_INCLINE = 15.0
+        self.MAX_INCLINE = 50.0
 
     ###########################################################################
     # MOTION FUNCTION
@@ -127,17 +126,22 @@ class Base:
                 that the one of the wheel pair is place back to a stable
                 position.
 
-        Parameters:
+        Arguments:
         margin -- See WheelActuator.check_actuator function.
-
         """
         # Check if any wheel has collided with the stairs.
         re_col = self.REAR.check_collision(margin)
         fr_col = self.FRNT.check_collision(margin)
         col = merge_collision(re_col, fr_col)
-
+        # Check if the maximum inclination (positive or negative) has been
+        # reached.
+        # Get differences in height between rear and front actuators.
         __, y0 = self.REAR.REAR.JOINT.position(0)
         __, y3 = self.FRNT.FRNT.JOINT.position(0)
+        # And check if the maximum distance has been reached. Note that this
+        # check must be done in both directions.
+        # If the limit has been reached, include this value in the collision
+        # object.
         if y0-y3 > self.MAX_INCLINE+MAX_GAP:
             inclination_error = y0-y3-self.MAX_INCLINE
             col.add_inclination_limit(inclination_error)
@@ -154,18 +158,14 @@ class Base:
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
 
-        Returns False if the structure can not be moved the required distance,
-        for instance, because one of the wheels collides with a step. In this
-        case, it also returns the distance that can be moved, that is, the
-        distance of the closest wheel to the stair.
-
-        Parameters:
+        Arguments:
         distance -- Horizontal distance to move (positive, move right).
         check -- If True, after performing the motion, check that the structure
           is still in a valid position. A False value is intended to place
           the structure back to a valid position after a wrong motion inside
           the own function.
 
+        Return (see note above).
         """
         # Get previous position for speed computation.
         self.prev_pos = self.position
@@ -197,10 +197,7 @@ class Base:
     def elevate(self, height, wheel=None, check=True, margin=True):
         """Elevate (or take down) the whole structure.
 
-        Returns False if the structure can not been elevated the complete
-        distance. For returned values, see advance function.
-
-        Parameters:
+        Arguments:
         height -- Vertical distance to move (positive, structure move
             upwards.
         wheel -- List of four elements, each one can be either None of float:
@@ -210,9 +207,9 @@ class Base:
             wheel is still on the ground. If float, this actuator must be
             shifted the distance given for that actuator.
         check -- See advance function.
-
         margin -- See check_position function.
 
+        Return (see note above).
         """
         if wheel is None:
             wheel = 4*[None]
@@ -249,15 +246,13 @@ class Base:
     def shift_actuator(self, index, height, check=True, margin=True):
         """Shift one actuator independently.
 
-        Returns False if the actuator can not be moved the complete distance
-        because the actuator reach one of its limits, or the ending wheel
-        collides with the ground.
-
-        Parameters:
+        Arguments:
         index -- Index of actuator (0-3)
         height -- Distance to shift (positive, move downwards).
-        cehck -- See advance function.
+        check -- See advance function.
+        margin -- see advance function.
 
+        Return (see note above).
         """
         # Select the actuator to shift.
         if index == 0:
@@ -304,10 +299,7 @@ class Base:
                 elevate_rear=False, check=True, margin=True):
         """Incline the base of the structure.
 
-        Returns False if the structure has not completed the whole motion due
-        to any of the reasons explained within the code.
-
-        Parameters:
+        Arguments:
         height -- Vertical distance to move the exterior actuators (actuators
             0 or 3). The angle can be computed from this value and the length
             of the structure.
@@ -315,7 +307,9 @@ class Base:
         elevate_rear -- If True, when inclining, the rear edge of the structure
             is elevated, while the front remains fixed, an vice versa.
         check -- See advance function.
+        margin -- see advance function.
 
+        Return (see note above).
         """
         if wheel is None:
             wheel = 4*[None]
@@ -390,9 +384,9 @@ class Base:
     # Control functions.
     # =========================================================================
     def get_wheels_distances(self):
-        """Computes the distances from a wheel to the stairs.
+        """Compute the distances from a wheel to the stairs.
 
-        Returns:
+        Return:
           - The index of the wheel to shift, that is, the wheel that is closest
             to its corresponding step:
               - 0: Rearmost wheel.
@@ -444,7 +438,7 @@ class Base:
             return fr_id+2, fr_hor, fr_ver, re_id, re_hor, re_ver
 
     def set_horizontal(self):
-        """Returns the distance to place each wheel on the ground ."""
+        """Return the distance to place each wheel on the ground ."""
         # Check if also any wheel need to be set to the ground.
         re_res = self.REAR.set_to_ground()
         fr_res = self.FRNT.set_to_ground()
@@ -459,8 +453,9 @@ class Base:
         Parameters:
         index -- Index of the actuator.
           - 0: Rearmost actuator.
+          - 1
+          - 2
           - 3: Frontnost actuator.
-
         """
         if index == 0:
             return self.REAR.get_actuator_position(0)
@@ -481,19 +476,20 @@ class Base:
         return y3-y0
 
     def get_inclination_central_wheels(self, wheel1, wheel2):
-        """Get the inclination between wheel 1 and wheel 2.
+        """Return the inclination between wheel 1 and wheel 2.
 
         This is a ad-hoc function for the control algorithm, to compute the
         inclination of the structure when the collinding wheels are the
         central ones. In this case, the functions from the pair module does
-        not work.
-
-        Returns the inclination of the structure.
+        not work. The inclination is computed from the current inclination
+        plus the shift given as arguments.
 
         Parameters:
         wheel1 -- Additional shift of wheel 1.
         wheel2 -- Additional shift of wheel 2.
 
+        This values are added to the current position of the actuator to
+        compute the required inclination.
         """
         # Get current posisions for the central joints.
         __, __, x1, y1 = self.REAR.position(0)
@@ -517,19 +513,26 @@ class Base:
         return inclination
 
     def get_elevation(self):
-        """Returns the elevation of the structure."""
+        """Return the elevation of the structure."""
         # The elevation of the structure is the same as the position of the
         # rear joint.
         return self.REAR.REAR.d
 
     def get_speed(self):
+        """Return the speed of the strucure."""
+        # TODO: Update function with the dynamics of the structure.
         return self.position - self.prev_pos
 
     def get_acceleration(self):
+        """Return the acceleration of the strucure."""
+        # TODO: Update function with the dynamics of the structure.
         return 0.0
 
     def actuator_positions(self):
-        """Returns all the actuator current positions """
+        """Return the current positions of the actuators.
+
+        This function is designed for representation purposes.
+        """
         pos = [
             self.get_actuator_position(0),
             self.get_actuator_position(1),

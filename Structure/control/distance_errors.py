@@ -3,8 +3,8 @@ Created on 15 feb. 2021
 
 @author: pedro.gil@uah.es
 
-Class to return the list of distance errors when checking the position of the
-structure.
+Definition of classes to return the list of distance errors when checking the
+position of the structure with respect to the stairs.
 """
 
 
@@ -39,6 +39,7 @@ def merge_collision(res1, res2):
         rear = greatest(res1.rear, res2.rear)
         return CollisionErrors(
             False, horizontal, actuator, central, front, rear)
+
 
 def merge_stability(res1, res2):
     """Similar than merge_collision, but for stability objects."""
@@ -76,12 +77,15 @@ class CollisionErrors():
         actuator -- Vertical shift needed for an actuator to place the actuator
           in a valid position.
         central -- Vertical distance the structure need to elevate to place
-          both the wheels and the actuators in a valid position.
+          both the wheels and the actuators in a valid position. Central and
+          actuator take the same value except when a wheel is inside the stair
+          and the distance the wheel is inside the stair is greater than the
+          distance the actuator is out of its lower limit. In any other case,
+          both parameters are equal.
         front -- Vertical distance the front actuator need to be shift to place
           the structure in a valid position when inclining the structure (see
           (see inv_proportional_shift.svg).
         rear -- Same as front, for the rear actuator.
-
         """
         # Save all data.
         self.correct = correct
@@ -119,7 +123,6 @@ class CollisionErrors():
         inclination -- Tupla, with the elements:
           - 0: front inclination error.
           - 1: rear inclination error.
-
         """
         self.front = inclination[0]
         self.rear = inclination[1]
@@ -134,17 +137,21 @@ class CollisionErrors():
             self.horizontal = greatest(self.horizontal, error.horizontal)
 
     def add_inclination_limit(self, value):
-        """Add error when the structure reaches its inclination limit."""
+        """Add error when the structure reaches its inclination limit.
+
+        The structure has a maximum inclination value, which is computed from
+        the structure dimensions (see paper ICINCO). If at any time, when
+        inclining the structure, it reaches the maximum value (either possitive
+        or negative), a collision error happens and need to be included in the
+        collision object.
+        """
         # Add this value when it is greater than the front value, that is, when
         # the structure reaches it inclination limit at the same time that an
         # actuator too, set the error to the largest one.
-        print("Central:", self.central)
-        print("Angle:", value)
         self.central = greatest(self.central, value)
-        print("Central:", self.central)
         self.correct = False
 
-        
+
 ###############################################################################
 ###############################################################################
 
@@ -178,7 +185,7 @@ class StabilityErrors():
             self.correct = False
             self.horizontal = rear
         elif front is not None and rear is None:
-            # The same than above, for the rear wheel.
+            # The same than above, 666666666for the rear wheel.
             self.correct = False
             self.horizontal = front
         else:
@@ -191,6 +198,12 @@ class StabilityErrors():
     def __bool__(self):
         return self.correct
 
+    def __str__(self):
+        if self.correct:
+            return "Correct"
+        return f"Error: \n" \
+            "Horizontal: %.2f\n" % \
+            self.horizontal
 ###############################################################################
 # End of file.
 ###############################################################################
