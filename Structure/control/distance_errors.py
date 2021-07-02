@@ -149,6 +149,8 @@ class CollisionErrors():
         # the structure reaches it inclination limit at the same time that an
         # actuator too, set the error to the largest one.
         self.front = greatest(self.front, value)
+        self.rear = greatest(self.rear, value)
+        self.central = greatest(self.central, value)
         self.correct = False
 
 ###############################################################################

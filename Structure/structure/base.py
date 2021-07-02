@@ -80,7 +80,7 @@ class Base:
         self.WIDTH = a+b+c
         # Maximum inclination angle.
         # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
-        self.MAX_INCLINE = 30.0
+        self.MAX_INCLINE = 45.0
 
     ###########################################################################
     # MOTION FUNCTION
