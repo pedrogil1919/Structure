@@ -148,7 +148,7 @@ class CollisionErrors():
         # Add this value when it is greater than the front value, that is, when
         # the structure reaches it inclination limit at the same time that an
         # actuator too, set the error to the largest one.
-        self.central = greatest(self.central, value)
+        self.front = greatest(self.front, value)
         self.correct = False
 
 ###############################################################################

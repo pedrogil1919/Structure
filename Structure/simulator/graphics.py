@@ -181,7 +181,7 @@ class Graphics:
                 ###############################################################
                 if c == 27:
                     # Escape key.
-                    return False, self.manual_mode, 0
+                    return False, 0
                 elif c == ord(' '):
                     # Space key.Toggle between pause and not pause.
                     self.toggle_pause = not self.toggle_pause
