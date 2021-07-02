@@ -41,6 +41,8 @@ same time as the elevation.
 import copy
 from math import isinf
 
+from physics.wheel_state import MAX_GAP
+
 
 def last_instruction(structure):
     """Generate the last instruction before finishing the program.
@@ -367,8 +369,6 @@ def compute_instruction(structure, wheel, hor, ver):
         # correcting the error distance detected. In general, the second term
         # of the sum will be 0.
         instruction["advance"] += res_adv.horizontal
-        if instruction["advance"] == 0.0:
-            raise RuntimeError
         if not structure.advance(instruction["advance"]):
             raise RuntimeError
     # Check that the actuator can now be shifted the required height.
@@ -379,6 +379,19 @@ def compute_instruction(structure, wheel, hor, ver):
             raise RuntimeError
 
     return instruction, actuator
+
+
+def null_instruction(instruction):
+    """Check if the instruction does nothing."""
+    if abs(instruction.get("advance", 0)) > MAX_GAP:
+        return False
+    if abs(instruction.get("incline", 0)) > MAX_GAP:
+        return False
+    if abs(instruction.get("elevate", 0)) > MAX_GAP:
+        return False
+    if abs(instruction.get("height", 0)) > MAX_GAP:
+        return False
+    return True
 
 
 def next_instruction(structure):
@@ -465,6 +478,11 @@ def next_instruction(structure):
         instruction["second"] = act_aux
     except KeyError:
         pass
+    # Check if the control has generated an instruction that does nothing. If
+    # we do not control this error, the program get hung because the strcture
+    # does not move but the program does not finishes.
+    if null_instruction(instruction):
+        raise RuntimeError
 
     return instruction, st_aux
 
