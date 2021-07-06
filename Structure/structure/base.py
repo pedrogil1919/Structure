@@ -10,6 +10,7 @@ Definition of all the elements which composes the structure:
 """
 
 from math import asin, isinf, sqrt, copysign
+from enum import Enum
 
 # NOTE: Sometimes opencv changes the data type for drawing function. So it is
 # better to import the correct data type this way.
@@ -20,6 +21,14 @@ from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from control.distance_errors import merge_collision, merge_stability
 from physics.wheel_state import MAX_GAP
+
+
+# State of the structure acording to its maximum inclination.
+class StructureState(Enum):
+    """Possible states for an actuator."""
+    InclinationNormal = 1
+    InclinationLimit = 2
+    InclinationExit = 3
 
 
 class Base:
@@ -80,7 +89,10 @@ class Base:
         self.WIDTH = a+b+c
         # Maximum inclination angle.
         # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
-        self.MAX_INCLINE = 45.0
+        self.MAX_INCLINE = 30.0
+        # Set the state of the structure to normal, since the initial
+        # inclination is 0, so the structure is not on it inclination limit.
+        self.state = StructureState.InclinationNormal
 
     ###########################################################################
     # MOTION FUNCTION
@@ -341,6 +353,15 @@ class Base:
         # Update the angle taking into account the new height to lift.
         self.angle = asin((h + height) / self.WIDTH)
 
+        # Check inclination state:
+        new_inclination = abs(h + height)
+        if new_inclination < self.MAX_INCLINE:
+            self.state = StructureState.InclinationNormal
+        elif new_inclination < self.MAX_INCLINE + MAX_GAP:
+            self.state = StructureState.InclinationLimit
+        else:
+            self.state = StructureState.InclinationExit
+
 #        # If we fix the rear wheel, the structure does not move (that is, the
 #        # reference frame does not move).
 #        # However, if we fix the front wheel, the reference frame does move,
@@ -546,24 +567,34 @@ class Base:
     # Drawing functions.
     # =========================================================================
     # Base colors and widths.
-    BASE_COLOR = (0xFF, 0x00, 0xB3)
+    BASE_COLOR_NORMAL = (0xFF, 0x00, 0xB3)
+    BASE_COLOR_LIMIT = (0x00, 0xFF, 0xB3)
+    BASE_COLOR_EXIT = (0x00, 0x00, 0xFF)
     BASE_WIDTH = 6
 
     def draw(self, origin, image, scale, shift):
         """Draw complete wheelchair."""
         x1, y1, __, __ = self.REAR.position(0)
         __, __, x2, y2 = self.FRNT.position(0)
+        
+        # Change the color of the structure acording to the MAX_INClINATION
+        if self.state == StructureState.InclinationNormal:
+            color_base = self.BASE_COLOR_NORMAL
+        elif self.state == StructureState.InclinationLimit:
+            color_base = self.BASE_COLOR_LIMIT
+        else:
+            color_base = self.BASE_COLOR_EXIT
 
         cx1 = cv_datatype(scale*(origin[0]+x1))
         cy1 = cv_datatype(scale*(origin[1]-y1))
         cx2 = cv_datatype(scale*(origin[0]+x2))
         cy2 = cv_datatype(scale*(origin[1]-y2))
-        cv2.line(image, (cx1, cy1), (cx2, cy2), self.BASE_COLOR,
+        cv2.line(image, (cx1, cy1), (cx2, cy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
         dy1 = cv_datatype(scale*(origin[1]-y1+self.HEIGHT))
         dy2 = cv_datatype(scale*(origin[1]-y2+self.HEIGHT))
-        cv2.line(image, (cx1, dy1), (cx2, dy2), self.BASE_COLOR,
+        cv2.line(image, (cx1, dy1), (cx2, dy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
         self.REAR.draw(origin, image, scale, shift)
