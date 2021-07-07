@@ -591,7 +591,7 @@ class Base:
         cy2 = cv_datatype(scale*(origin[1]-y2))
         cv2.line(image, (cx1, cy1), (cx2, cy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
-
+ 
         dy1 = cv_datatype(scale*(origin[1]-y1+self.HEIGHT))
         dy2 = cv_datatype(scale*(origin[1]-y2+self.HEIGHT))
         cv2.line(image, (cx1, dy1), (cx2, dy2), color_base,

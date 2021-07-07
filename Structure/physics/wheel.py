@@ -13,6 +13,7 @@ import cv2
 from math import inf
 
 from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN
+from physics import wheel_state
 
 
 class Wheel:
@@ -299,14 +300,18 @@ class Wheel:
     # Drawing functions.
     # =========================================================================
     # Wheel colors:
-    AIR_COLOR = (0xFF, 0x00, 0x00)
-    GROUND_COLOR = (0x00, 0xFF, 0x00)
-    CONTACT_COLOR = (0x00, 0xFF, 0xFF)
-    CORNER_COLOR = (0xFF, 0xFF, 0x00)
-    UNSTABLE_COLOR = (0x00, 0x00, 0xFF)
-    OUTER_COLOR = (0xFF, 0x00, 0xFF)
-    OVER_COLOR = (0xFF, 0x80, 0x80)
-    INSIDE_COLOR = (0x40, 0x40, 0x40)
+    WHEEL_COLOR= {
+        WheelState.Air: (0xFF, 0x00, 0x00),
+        WheelState.Ground: (0x00, 0xFF, 0x00),
+        WheelState.Contact: (0x00, 0xFF, 0xFF),
+        WheelState.Corner: (0xFF, 0xFF, 0x00),
+        WheelState.Unstable: (0x00, 0x00, 0xFF),
+        WheelState.Outer: (0xFF, 0x00, 0xFF),
+        WheelState.Over: (0xFF, 0x80, 0x80),
+        WheelState.Inside: (0x40, 0x40, 0x40),
+        WheelState.Uncheked: (0x00, 0x00, 0x00)
+            }
+
     LINE_COLOR = (0x00, 0x00, 0x00)
     LINE_WIDTH = 4
 
@@ -314,27 +319,9 @@ class Wheel:
         cx = cv_datatype(scale*(origin[0]+position[0]))
         cy = cv_datatype(scale*(origin[1]-position[1]))
         cr = numpy.int(scale*self.RADIUS)
-        if self.state == WheelState.Ground:
-            color = self.GROUND_COLOR
-        elif self.state == WheelState.Unstable:
-            color = self.UNSTABLE_COLOR
-        elif self.state == WheelState.Air:
-            color = self.AIR_COLOR
-        elif self.state == WheelState.Corner:
-            color = self.CORNER_COLOR
-        elif self.state == WheelState.Contact:
-            color = self.CONTACT_COLOR
-        elif self.state == WheelState.Outer:
-            color = self.OUTER_COLOR
-        elif self.state == WheelState.Over:
-            color = self.OVER_COLOR
-        elif self.state == WheelState.Inside:
-            color = self.INSIDE_COLOR
-        else:
-            raise(ValueError("Wheel state not supported."))
-        cv2.circle(image, (cx, cy), cr, color, -1, cv2.LINE_AA, shift)
-        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2,
-                   cv2.LINE_AA, shift)
+        cv2.circle(image, (cx, cy), cr, self.WHEEL_COLOR[self.state],
+                   -1, cv2.LINE_AA, shift)
+        cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2, cv2.LINE_AA, shift)
 
 ###############################################################################
 # End of file.

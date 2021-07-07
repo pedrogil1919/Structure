@@ -226,8 +226,14 @@ class WheelActuator:
     # Actuator colors and widths.
     HOUSING_COLOR = (0xB3, 0xB3, 0xB3)
     ACT_COLOR = (0x00, 0x00, 0x00)
-    LIMIT_COLOR = (0xFF, 0x00, 0x00)
-    MARGIN_COLOR = (0x00, 0x00, 0xFF)
+    LIMIT_COLOR = {
+        ActuatorState.UpperBound: (0xFF, 0x00, 0x00),
+        ActuatorState.LowerBound: (0xFF, 0x00, 0x00),
+        ActuatorState.MarginUpperBound: (0x00, 0x00, 0xFF),
+        ActuatorState.MarginLowerBound: (0x00, 0x00, 0xFF),
+        ActuatorState.ExitUpperBound: (0x00, 0x00, 0x00),
+        ActuatorState.ExitLowerBound: (0x00, 0x00, 0x00)
+        }
     ACT_MIDWIDTH = 4
     HOUSING_MIDWIDTH = 10
 
@@ -261,16 +267,10 @@ class WheelActuator:
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
-        if self.state == ActuatorState.UpperBound or \
-                self.state == ActuatorState.LowerBound:
+        if self.state != ActuatorState.Center:
             px = cv_datatype(scale*(origin[0]+hx0))
-            cv2.circle(image, (px, cy1), int(4*scale), self.LIMIT_COLOR, -1,
-                       cv2.LINE_AA, shift)
-        elif self.state == ActuatorState.MarginUpperBound or \
-                self.state == ActuatorState.MarginLowerBound:
-            px = cv_datatype(scale*(origin[0]+hx0))
-            cv2.circle(image, (px, cy1), int(4*scale), self.MARGIN_COLOR, -1,
-                       cv2.LINE_AA, shift)
+            cv2.circle(image, (px, cy1), int(4*scale),
+                       self.LIMIT_COLOR[self.state], -1, cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):
         """Draw the position of the center of the wheel."""
