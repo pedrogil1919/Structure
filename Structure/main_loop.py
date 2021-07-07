@@ -39,7 +39,6 @@ axis = {
 graphics = Graphics(image_data, video_data, axis)
 # Draw initial state of the structure.
 continue_loop, key_pressed = graphics.draw(stairs, structure)
-
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
@@ -57,6 +56,7 @@ while continue_loop:
         #######################################################################
         # Display image and wait for next instruction.
         continue_loop, key_pressed = graphics.draw(stairs, structure)
+        
         instruction = control.manual_control(key_pressed, sm)
         print("manual:", instruction)
         for res in sm.simulate_instruction(structure, instruction):

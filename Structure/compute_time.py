@@ -24,10 +24,10 @@ except Exception:
 stairs_list, landing = readXML.read_stairs(settings_name)
 stair = Stair(stairs_list, landing)
 
-for st in stairs_list:
-    st['h'] = -st['h']
-stair2 = Stair(stairs_list, landing)
-stair = (stair, stair2)
+# for st in stairs_list:
+#     st['h'] = -st['h']
+# stair2 = Stair(stairs_list, landing)
+# stair = (stair, stair2)
 
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)

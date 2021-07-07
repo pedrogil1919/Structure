@@ -37,6 +37,9 @@ class Simulator():
         self.speed_incline_up = speed_data['incline_up']
         self.speed_incline_dw = speed_data['incline_dw']
         self.sample_time = speed_data['sample_time']
+        # Fraction of a sample time not used when completing the last iteration
+        # of an instruction (see simulate_step).
+        self.remaining_time = 0.0
 
     def compute_step(self, speed, sample_time):
         """Compute the distance traveled in one iteration."""
@@ -92,11 +95,8 @@ class Simulator():
         if incline_time > total_time:
             total_time = incline_time
 
-        # Compute total number of iterations:
-        total_iterations = ceil(total_time/self.sample_time)
-        if total_iterations == 0:
-            total_iterations += 1
-        return total_iterations
+        # Compute total number of iterations.
+        return total_time/self.sample_time
 
     def simulate_step(self, structure, instruction):
         """Simulate one instruction step by step.
@@ -123,7 +123,26 @@ class Simulator():
         wh_aux = instruction.get('second', {}).get('wheel', None)
         sh_aux = instruction.get('second', {}).get('shift', 0.0)
 
-        total_iterations = self.compute_iterations(instruction)
+        # Get the total time required to complete the current instruction.
+        total_time = self.compute_iterations(instruction)
+        # NOTE: The number of iterations needed to complete an instruction is
+        # an integer. However, to compute the actual time required to complete
+        # the whole stair, we need to keep track of all the fractions of
+        # iterations we are not using in completing the last iteration of an
+        # instruction.
+        total_iterations = ceil(total_time)
+        if total_iterations == 0:
+            return True
+        # So, when the accumulated fractions are greater than 1, that means
+        # that we are one iteration ahead.
+        self.remaining_time +=(total_iterations - total_time)
+        if self.remaining_time > 1:
+            # In this case, we have to complete the instruction in one less
+            # iteration.
+            total_iterations -= 1
+            # And start to accumulate the fractions to detect the next.
+            self.remaining_time -= 1
+        
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
         speed_actuator = shift / total_iterations
