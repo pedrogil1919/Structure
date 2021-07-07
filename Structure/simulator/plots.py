@@ -13,7 +13,6 @@ import numpy
 import cv2
 import matplotlib.pyplot as plt
 
-
 class Plots():
 
     def __init__(self, size, buffer_len, units, margin, axis):
