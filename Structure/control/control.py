@@ -78,9 +78,9 @@ def last_instruction(structure):
     # second actuator dictionary, we include one of then in the main and the
     # other in the second, although the other order will work as well.
     if fr[0] is not None:
-        structure.shift_actuator(fr[0]+2, -fr[1], check=False)
+        structure.shift_actuator(fr[0] + 2, -fr[1], check=False)
         act_aux = {
-            "wheel": fr[0]+2,
+            "wheel": fr[0] + 2,
             "height": fr[1]}
     else:
         act_aux = {}
@@ -138,7 +138,7 @@ def make_room_wheel3(structure, height):
     if not structure.elevate(height, margin=False):
         raise RuntimeError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-    return -res_elv.rear, height+res_elv.rear
+    return -res_elv.rear, height + res_elv.rear
 
 
 def make_room_wheel2(structure, height):
@@ -147,7 +147,7 @@ def make_room_wheel2(structure, height):
     # Height is the distance we need to obtain. First, compute the total motion
     # of the actuator, which is the sum of the actual height plus the current
     # position of the actuator.
-    total = structure.FRNT.REAR.d+height
+    total = structure.FRNT.REAR.d + height
     if height < 0:
         # Also, if the motion is negative (that is, the wheel must be moved
         # downwards), the total motion is the last value minus the length of
@@ -187,7 +187,7 @@ def make_room_wheel2(structure, height):
         raise RuntimeError
     # And the distance is the previous value plus the distance of error given
     # in central value.
-    if not structure.elevate(total+res_elv.central):
+    if not structure.elevate(total + res_elv.central):
         raise RuntimeError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # Finally, set the actuator to its current position (remember that we
@@ -195,7 +195,7 @@ def make_room_wheel2(structure, height):
     structure.shift_actuator(2, +height)
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
 
-    return inclination, +total+res_elv.central-inclination
+    return inclination, +total + res_elv.central - inclination
 
 
 def make_room_wheel1(structure, height):
@@ -204,7 +204,7 @@ def make_room_wheel1(structure, height):
     # the errors faced in that function would not be produced for this actuator
     # in a normal structure operation.
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-    total = structure.REAR.FRNT.d+height
+    total = structure.REAR.FRNT.d + height
     if height < 0:
         total -= structure.HEIGHT
 
@@ -225,7 +225,7 @@ def make_room_wheel0(structure, height):
     """See make_room_whell3"""
 
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-    total = structure.REAR.REAR.d+height
+    total = structure.REAR.REAR.d + height
     if height < 0:
         total -= structure.REAR.REAR.LENGTH
 
@@ -275,7 +275,7 @@ def compute_instruction(structure, wheel, hor, ver):
         "wheel": wheel,
         "height": -ver}
     res_shf = structure.shift_actuator(
-            actuator["wheel"], actuator["height"], margin=False)
+        actuator["wheel"], actuator["height"], margin=False)
     if not res_shf:
         # If the actuator can not be sifted, we have to make room for the
         # actuator to compete the motion. This action depends on the index
@@ -431,8 +431,8 @@ def next_instruction(structure):
         # To prevent for a zero division, add a small amount to both horizontal
         # distances. To make it invariant to system scale, add a value
         # proportional to the size of the structure.
-        k = structure.WIDTH/1000
-        v_total = v_aux*(hor+k)/(h_aux+k)
+        k = structure.WIDTH / 1000
+        v_total = v_aux * (hor + k) / (h_aux + k)
         inst_aux, act_aux = compute_instruction(st_aux, w_aux, 0.0, v_total)
         # Just if the second wheel need an additional motion for the
         # structure, add this motion to the original one needed by the main
