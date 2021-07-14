@@ -66,6 +66,7 @@ class CollisionErrors():
     class.
 
     """
+
     def __init__(self, correct=True, horizontal=0.0,
                  actuator=0.0, central=0.0, front=0.0, rear=0.0):
         """Constructor
@@ -153,6 +154,11 @@ class CollisionErrors():
         self.central = greatest(self.central, value)
         self.correct = False
 
+
+class MaxInclinationError(CollisionErrors):
+
+    def __init__(self, height):
+        super().__init__(False, central=height)
 ###############################################################################
 ###############################################################################
 
@@ -163,6 +169,7 @@ class StabilityErrors():
     See CollisionErrors class for more info.
 
     """
+
     def __init__(self, correct=True, front=None, rear=None):
         """Constructor:
 

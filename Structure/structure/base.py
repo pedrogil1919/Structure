@@ -20,6 +20,7 @@ import cv2
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from control.distance_errors import merge_collision, merge_stability
+from control.distance_errors import MaxInclinationError, StabilityErrors
 from physics.wheel_state import MAX_GAP
 
 
@@ -352,8 +353,18 @@ class Base:
         __, y3 = self.FRNT.FRNT.JOINT.position(0)
 #         x3, y3 = self.FRNT.FRNT.JOINT.position(0)
         h = y3 - y0
-        # Update the angle taking into account the new height to lift.
-        self.angle = asin((h + height) / self.WIDTH)
+        try:
+            # Update the angle taking into account the new height to lift.
+            self.angle = asin((h + height) / self.WIDTH)
+        except ValueError:
+            # In case we pretend to elevate a height larger than the maximum
+            # allowed, that is, in the previous instruction we try to comppute
+            # the arcsin of a value greater than 1, an error is raised. We
+            # need to return false.
+            if h + height > 0:
+                return MaxInclinationError(+self.MAX_INCLINE - h - height)
+            else:
+                return MaxInclinationError(-self.MAX_INCLINE - h - height)
 
         # Check inclination state:
         new_inclination = abs(h + height)
