@@ -20,7 +20,11 @@ import cv2
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from control.distance_errors import merge_collision, merge_stability
+<<<<<<< HEAD
+from control.distance_errors import MaxInclinationError
+=======
 from control.distance_errors import MaxInclinationError, StabilityErrors
+>>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
 from physics.wheel_state import MAX_GAP
 
 
@@ -358,9 +362,18 @@ class Base:
             self.angle = asin((h + height) / self.WIDTH)
         except ValueError:
             # In case we pretend to elevate a height larger than the maximum
+<<<<<<< HEAD
+            # allowed, that is, in the previous instruction we try to compute
+            # the arcsin of a value greater than 1, an error is raised. We
+            # need to return false.
+            # Note that, although this instruction also raises an error because
+            # it overpass the maximum inclination, this error is raised before,
+            # and so, it must be detected here.
+=======
             # allowed, that is, in the previous instruction we try to comppute
             # the arcsin of a value greater than 1, an error is raised. We
             # need to return false.
+>>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
             if h + height > 0:
                 return MaxInclinationError(+self.MAX_INCLINE - h - height)
             else:

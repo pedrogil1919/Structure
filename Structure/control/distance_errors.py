@@ -156,8 +156,18 @@ class CollisionErrors():
 
 
 class MaxInclinationError(CollisionErrors):
+    """Class to take account for large inclinations.
+
+    See base.incline -> ValueError exception catch for more info.
+    """
 
     def __init__(self, height):
+        """Constructor:
+
+        For this error, we only need to save the central height, since it is
+        the same as an inclination error. This can be done just calling to the
+        super constructor.
+        """
         super().__init__(False, central=height)
 ###############################################################################
 ###############################################################################
