@@ -20,11 +20,7 @@ import cv2
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from control.distance_errors import merge_collision, merge_stability
-<<<<<<< HEAD
 from control.distance_errors import MaxInclinationError
-=======
-from control.distance_errors import MaxInclinationError, StabilityErrors
->>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
 from physics.wheel_state import MAX_GAP
 
 
@@ -330,6 +326,29 @@ class Base:
 
         Return (see note above).
         """
+
+        # Get vertical coordinates of the outer joints to update structure
+        # angle.
+        __, y0 = self.REAR.REAR.JOINT.position(0)
+        __, y3 = self.FRNT.FRNT.JOINT.position(0)
+#         x3, y3 = self.FRNT.FRNT.JOINT.position(0)
+        h = y3 - y0
+        try:
+            # Update the angle taking into account the new height to lift.
+            self.angle = asin((h + height) / self.WIDTH)
+        except ValueError:
+            # In case we pretend to elevate a height larger than the maximum
+            # allowed, that is, in the previous instruction we try to compute
+            # the arcsin of a value greater than 1, an error is raised. We
+            # need to return false.
+            # Note that, although this instruction also raises an error because
+            # it overpass the maximum inclination, this error is raised before,
+            # and so, it must be detected here.
+            if h + height > 0:
+                return MaxInclinationError(+self.MAX_INCLINE - h - height)
+            else:
+                return MaxInclinationError(-self.MAX_INCLINE - h - height)
+
         if wheel is None:
             wheel = 4 * [None]
 
@@ -351,34 +370,12 @@ class Base:
             self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -height)
             self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -height)
 
-        # Get vertical coordinates of the outer joints to update structure
-        # angle.
-        __, y0 = self.REAR.REAR.JOINT.position(0)
-        __, y3 = self.FRNT.FRNT.JOINT.position(0)
-#         x3, y3 = self.FRNT.FRNT.JOINT.position(0)
-        h = y3 - y0
-        try:
-            # Update the angle taking into account the new height to lift.
-            self.angle = asin((h + height) / self.WIDTH)
-        except ValueError:
-            # In case we pretend to elevate a height larger than the maximum
-<<<<<<< HEAD
-            # allowed, that is, in the previous instruction we try to compute
-            # the arcsin of a value greater than 1, an error is raised. We
-            # need to return false.
-            # Note that, although this instruction also raises an error because
-            # it overpass the maximum inclination, this error is raised before,
-            # and so, it must be detected here.
-=======
-            # allowed, that is, in the previous instruction we try to comppute
-            # the arcsin of a value greater than 1, an error is raised. We
-            # need to return false.
->>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
             if h + height > 0:
                 return MaxInclinationError(+self.MAX_INCLINE - h - height)
             else:
                 return MaxInclinationError(-self.MAX_INCLINE - h - height)
 
+>>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
         # Check inclination state:
         new_inclination = abs(h + height)
         if new_inclination < self.MAX_INCLINE:
