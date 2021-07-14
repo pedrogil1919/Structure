@@ -176,75 +176,16 @@ class Wheel:
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, r)
 
         res = {'st': self.ground(position)}
-        # Check if going upstairs, downstairs or the end of the stairs.
-        # TODO: Check if in a change of direction in a double stair.
-        #######################################################################
-        # Upstairs:
-        #######################################################################
-        if hr > hc and hc >= hl:
-            res['up'] = True
-            # Upstairs direction. The comparison hc = hl happens at the
-            # beginning of the stair.
-            # See figures in get_distances folder.
-            # TODO: (update figures 14/05/20):
-            # The value for hr is always the same.
-            res['hr'] = hr + VER_MARGIN
-            # But the values for hc and wr depend on the position to the wheel
-            # with respect to the steps.
-            if self.state == WheelState.Air:
-                res['hc'] = hc
-                res['wr'] = -wr
-            elif self.state == WheelState.Contact:
-                res['hc'] = hc
-                res['wr'] = -wr
-            elif self.state == WheelState.Corner:
-                res['wr'] = -wr
-            elif self.state == WheelState.Ground:
-                res['wr'] = -wr
-            elif self.state == WheelState.Outer:
-                res['hc'] = hc
-                # In outer state, return the distance to place the wheel in a
-                # over position. This ensures that in the next iteration, the
-                # state will be the Over state, and so, the wheel moves to the
-                # correct position.
-                res['wr'] = -wr + r / 2
-            elif self.state == WheelState.Over:
+        
+        if self.state == WheelState.Over or self.state == WheelState.Unstable:
+            if hl <= hc:
+                #Upstairs:
+                res['up'] = True
                 res['wr'] = -wr + r + HOR_MARGIN
-            elif self.state == WheelState.Unstable:
-                res['wr'] = -wr + r + HOR_MARGIN
-
-        #######################################################################
-        # Downstairs:
-        #######################################################################
-        elif hr < hc and hc <= hl:
-            # Downstairs direction.
-            # See figures in get_distances foloder:
-            res['up'] = False
-
-            res['wr'] = -wr + r - HOR_MARGIN
-            if res['wr'] < 0:
-                # However, if wr is negative, it is better to return 0, since
-                # the opposite can make the structure bo backwards, which is
-                # worse than returning 0.
-                res['wr'] = 0
-
-            # The vertical distance is always the distance to place the wheel
-            # on the ground, except if the wheel is in the middle of the step
-            # in which case, the distance is the distance to the previous
-            # step.
-            res['hr'] = hc
-            # For the horizontal distance, this is always the distance to
-            # place de wheel some margin further than the edge of the step,
-            # so that the wheel can be taken down to the ground.
-            if self.state == WheelState.Air:
-                res['wc'] = -wr + 2*r + HOR_MARGIN
-            elif self.state == WheelState.Contact:
-                res['wc'] = -wr + 2*r + HOR_MARGIN
-            elif self.state == WheelState.Corner:
-                res['wc'] = -wr + 2*r + HOR_MARGIN
-            elif self.state == WheelState.Ground:
-                res['wc'] = -wr + 2*r + HOR_MARGIN
-            elif self.state == WheelState.Over:
+                res['hr'] = hr + VER_MARGIN
+            else:
+                #Downstairs:
+                res['up'] = False
                 # If the wheel is in the middle of the corner of the step, we
                 # can not take the wheel down to the ground, so the vertical
                 # distance must be the distance to the previous step (the step
@@ -258,42 +199,105 @@ class Wheel:
                 # get out of the step, since we can not take the wheel down to
                 # the ground.
                 res['wr'] = wl + HOR_MARGIN
-            elif self.state == WheelState.Unstable:
-                res['hr'] = hl
-                # Same as state Over.
-                res['wc'] = wl + HOR_MARGIN
-                res['wr'] = wl + HOR_MARGIN
-            elif self.state == WheelState.Outer:
-                raise NotImplementedError("It should not happen")
-
+                
+            
+        
+        # Check if going upstairs, downstairs or the end of the stairs.
+        # TODO: Check if in a change of direction in a double stair.
         #######################################################################
-        # End:
+        # Upstairs:
         #######################################################################
-        elif hr == hc:
-            # The wheel has reached the end of the stair. Send an infinite
-            # value to warn the calling function.
-            res['wr'] = inf
-            if self.state == WheelState.Air:
-                res['hr'] = hc
-            elif self.state == WheelState.Contact:
-                res['hr'] = hc
-            elif self.state == WheelState.Corner:
-                res['hr'] = hc
-            elif self.state == WheelState.Ground:
-                res['hr'] = hc
-            elif self.state == WheelState.Outer:
-                res['hr'] = hc
-            elif self.state == WheelState.Over:
-                res['hr'] = hl
-                res['wc'] = wl
-            elif self.state == WheelState.Unstable:
-                res['hr'] = 0.0
-                res['wc'] = wl
-            res['hc'] = res['hr']
-
         else:
-            raise NotImplementedError("Detect when this case happens...")
-
+            if hr > hc:
+                res['up'] = True
+                # Upstairs direction. The comparison hc = hl happens at the
+                # beginning of the stair.
+                # See figures in get_distances folder.
+                # TODO: (update figures 14/05/20):
+                # The value for hr is always the same.
+                res['hr'] = hr + VER_MARGIN
+                # But the values for hc and wr depend on the position to the
+                # wheel with respect to the steps.
+                if self.state == WheelState.Air:
+                    res['hc'] = hc
+                    res['wr'] = -wr
+                elif self.state == WheelState.Contact:
+                    res['hc'] = hc
+                    res['wr'] = -wr
+                elif self.state == WheelState.Corner:
+                    res['wr'] = -wr
+                elif self.state == WheelState.Ground:
+                    res['wr'] = -wr
+                elif self.state == WheelState.Outer:
+                    res['hc'] = hc
+                    # In outer state, return the distance to place the wheel in
+                    # a over position. This ensures that in the next iteration,
+                    # the state will be the Over state, and so, the wheel moves
+                    # to the correct position.
+                    res['wr'] = -wr + r / 2
+    
+            ###################################################################
+            # Downstairs:
+            ###################################################################
+            elif hr < hc:
+                # Downstairs direction.
+                # See figures in get_distances foloder:
+                res['up'] = False
+    
+                res['wr'] = -wr + r - HOR_MARGIN
+                if res['wr'] < 0:
+                    # However, if wr is negative, it is better to return 0,
+                    # since the opposite can make the structure bo backwards,
+                    # which is worse than returning 0.
+                    res['wr'] = 0
+    
+                # The vertical distance is always the distance to place the
+                # wheel on the ground, except if the wheel is in the middle of
+                # the step in which case, the distance is the distance to the
+                # previous step.
+                res['hr'] = hc
+                # For the horizontal distance, this is always the distance to
+                # place de wheel some margin further than the edge of the step,
+                # so that the wheel can be taken down to the ground.
+                if self.state == WheelState.Air:
+                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                elif self.state == WheelState.Contact:
+                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                elif self.state == WheelState.Corner:
+                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                elif self.state == WheelState.Ground:
+                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                elif self.state == WheelState.Outer:
+                    raise NotImplementedError("It should not happen")
+    
+            ###################################################################
+            # End:
+            ###################################################################
+            elif hr == hc:
+                # The wheel has reached the end of the stair. Send an infinite
+                # value to warn the calling function.
+                res['wr'] = inf
+                if self.state == WheelState.Air:
+                    res['hr'] = hc
+                elif self.state == WheelState.Contact:
+                    res['hr'] = hc
+                elif self.state == WheelState.Corner:
+                    res['hr'] = hc
+                elif self.state == WheelState.Ground:
+                    res['hr'] = hc
+                elif self.state == WheelState.Outer:
+                    res['hr'] = hc
+                elif self.state == WheelState.Over:
+                    res['hr'] = hl
+                    res['wc'] = wl
+                elif self.state == WheelState.Unstable:
+                    res['hr'] = 0.0
+                    res['wc'] = wl
+                res['hc'] = res['hr']
+    
+            else:
+                raise NotImplementedError("Detect when this case happens...")
+    
         return res
 
     # =========================================================================
