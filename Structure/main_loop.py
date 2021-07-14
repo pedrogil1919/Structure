@@ -35,7 +35,7 @@ sm = Simulator(speed_data)
 image_data, video_data = readXML.read_graphics(settings_name)
 axis = {
     "height": structure_size["d"],
-    "max_speed": 1.2*speed_data["wheel"]}
+    "max_speed": 1.2 * speed_data["wheel"]}
 graphics = Graphics(image_data, video_data, axis)
 # Draw initial state of the structure.
 continue_loop, key_pressed = graphics.draw(stairs, structure)
@@ -56,7 +56,7 @@ while continue_loop:
         #######################################################################
         # Display image and wait for next instruction.
         continue_loop, key_pressed = graphics.draw(stairs, structure)
-        
+
         instruction = control.manual_control(key_pressed, sm)
         print("manual:", instruction)
         for res in sm.simulate_instruction(structure, instruction):

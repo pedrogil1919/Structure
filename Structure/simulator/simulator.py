@@ -96,7 +96,7 @@ class Simulator():
             total_time = incline_time
 
         # Compute total number of iterations.
-        return total_time/self.sample_time
+        return total_time / self.sample_time
 
     def simulate_step(self, structure, instruction):
         """Simulate one instruction step by step.
@@ -135,14 +135,14 @@ class Simulator():
             return True
         # So, when the accumulated fractions are greater than 1, that means
         # that we are one iteration ahead.
-        self.remaining_time +=(total_iterations - total_time)
+        self.remaining_time += (total_iterations - total_time)
         if self.remaining_time > 1:
             # In this case, we have to complete the instruction in one less
             # iteration.
             total_iterations -= 1
             # And start to accumulate the fractions to detect the next.
             self.remaining_time -= 1
-        
+
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
         speed_actuator = shift / total_iterations
@@ -159,18 +159,18 @@ class Simulator():
 
         # Build the list with all the elements equal to none but the wheel
         # that must move with the structure.
-        actuator_elevate = 4*[None]
-        actuator_incline = 4*[None]
+        actuator_elevate = 4 * [None]
+        actuator_incline = 4 * [None]
         try:
             actuator_elevate[wheel] = speed_actuator * proportional_value
-            actuator_incline[wheel] = speed_actuator * (1-proportional_value)
+            actuator_incline[wheel] = speed_actuator * (1 - proportional_value)
         except TypeError:
             # In case there is no wheel to move, the exception raises, so that
             # all tne elements in the list are note, which is what we need.
             pass
         try:
             actuator_elevate[wh_aux] = speed_ac_aux * proportional_value
-            actuator_incline[wh_aux] = speed_ac_aux * (1-proportional_value)
+            actuator_incline[wh_aux] = speed_ac_aux * (1 - proportional_value)
         except TypeError:
             # In case there is no wheel to move, the exception raises, so that
             # all tne elements in the list are note, which is what we need.

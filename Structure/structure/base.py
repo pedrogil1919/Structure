@@ -64,7 +64,7 @@ class Base:
         r3 = wheels['r3']
         r4 = wheels['r4']
         # Current vertical position.
-        self.elevation = d+g
+        self.elevation = d + g
         # Current horizontal position.
         self.position = 0.0
         # Previous position, to get control of its speed.
@@ -76,17 +76,19 @@ class Base:
         # structure (d), plus the gap between the floor and the lower base of
         # the structure (g), minus the wheel radius (r).
         self.REAR = ActuatorPair(
-            WheelActuator(0, d, d+g-r1, r1, m, self, stairs),
-            WheelActuator(a, d, d+g-r2, r2, m, self, stairs), True)
+            WheelActuator(0, d, d + g - r1, r1, m, self, stairs),
+            WheelActuator(a, d, d + g - r2, r2, m, self, stairs),
+            True)
         self.FRNT = ActuatorPair(
-            WheelActuator(a+b, d, d+g-r3, r3, m, self, stairs),
-            WheelActuator(a+b+c, d, d+g-r4, r4, m, self, stairs), False)
+            WheelActuator(a + b, d, d + g - r3, r3, m, self, stairs),
+            WheelActuator(a + b + c, d, d + g - r4, r4, m, self, stairs),
+            False)
         # Size of the structure.
-        self.LENGTH = d+g
+        self.LENGTH = d + g
         # Size of the actuators.
         self.HEIGHT = d
         # Total width of the structure.
-        self.WIDTH = a+b+c
+        self.WIDTH = a + b + c
         # Maximum inclination angle.
         # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
         self.MAX_INCLINE = 30.0
@@ -154,11 +156,11 @@ class Base:
         # check must be done in both directions.
         # If the limit has been reached, include this value in the collision
         # object.
-        if y0-y3 > self.MAX_INCLINE+MAX_GAP:
-            inclination_error = y0-y3-self.MAX_INCLINE
+        if y0 - y3 > self.MAX_INCLINE + MAX_GAP:
+            inclination_error = y0 - y3 - self.MAX_INCLINE
             col.add_inclination_limit(inclination_error)
-        elif y3-y0 > self.MAX_INCLINE+MAX_GAP:
-            inclination_error = y0-y3+self.MAX_INCLINE
+        elif y3 - y0 > self.MAX_INCLINE + MAX_GAP:
+            inclination_error = y0 - y3 + self.MAX_INCLINE
             col.add_inclination_limit(inclination_error)
         # Check if any pair of wheels are not stable.
         re_stb = self.REAR.check_stable()
@@ -224,7 +226,7 @@ class Base:
         Return (see note above).
         """
         if wheel is None:
-            wheel = 4*[None]
+            wheel = 4 * [None]
         # Elevate the structure,
         self.elevation += height
         # and place the actuators in the correct position.
@@ -324,7 +326,7 @@ class Base:
         Return (see note above).
         """
         if wheel is None:
-            wheel = 4*[None]
+            wheel = 4 * [None]
 
         # Current computations keep fixed the rear edge of the structure. To
         # change this and elevate the front edge instead, we simply have to
@@ -349,7 +351,7 @@ class Base:
         __, y0 = self.REAR.REAR.JOINT.position(0)
         __, y3 = self.FRNT.FRNT.JOINT.position(0)
 #         x3, y3 = self.FRNT.FRNT.JOINT.position(0)
-        h = y3-y0
+        h = y3 - y0
         # Update the angle taking into account the new height to lift.
         self.angle = asin((h + height) / self.WIDTH)
 
@@ -430,7 +432,7 @@ class Base:
         if isinf(fr_hor) and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground.
-            return fr_id+2, re_hor/2, fr_ver, re_id, re_hor, re_ver
+            return fr_id + 2, re_hor / 2, fr_ver, re_id, re_hor, re_ver
 
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
@@ -440,15 +442,16 @@ class Base:
             # that reason, only when a wheel is not close enough to the stair,
             # this will not be lift. The reference is a quarter of the width of
             # the structure.
-            if fr_hor > self.WIDTH / 4:
+            if re_hor > self.WIDTH / 4:
                 fr_ver = 0.0
+            # TODO: Review this comment.
             # When the structure is far apart from the stair, it is better to
             # advance horizontaly until the structure is close enough. This is
             # done with this code.
-            if re_hor > self.WIDTH / 4:
-                re_ver = 0.0
-                re_hor -= self.WIDTH / 4
-            return re_id, re_hor, re_ver, fr_id+2, fr_hor, fr_ver
+            # if re_hor > self.WIDTH / 4:
+            #     re_ver = 0.0
+            #     re_hor -= self.WIDTH / 4
+            return re_id, re_hor, re_ver, fr_id + 2, fr_hor, fr_ver
         else:
             # Same comment that above.
             if re_hor > self.WIDTH / 4:
@@ -456,7 +459,7 @@ class Base:
             # NOTE: The index of wheel are numbered from 0. Since the rear
             # wheel is the third wheel of the structure, we have to add 2 to
             # the index returned for the pair.
-            return fr_id+2, fr_hor, fr_ver, re_id, re_hor, re_ver
+            return fr_id + 2, fr_hor, fr_ver, re_id, re_hor, re_ver
 
     def set_horizontal(self):
         """Return the distance to place each wheel on the ground ."""
@@ -494,7 +497,7 @@ class Base:
         # front and the rear joints of the structure.
         __, y0, __, __ = self.REAR.position(0)
         __, __, __, y3 = self.FRNT.position(0)
-        return y3-y0
+        return y3 - y0
 
     def get_inclination_central_wheels(self, wheel1, wheel2):
         """Return the inclination between wheel 1 and wheel 2.
@@ -522,10 +525,10 @@ class Base:
         w = wheel2 - wheel1
         # Compute the final inclination from the central actuators. This
         # expression is get from the pithagoras theorem.
-        m = (y + w) / sqrt(x**2-w**2-2*w*y)
+        m = (y + w) / sqrt(x**2 - w**2 - 2 * w * y)
         # And interpolate with respect to the whole structure. This one is get
         # from basic trigonometry.
-        inclination = sqrt(self.WIDTH**2/(1+1/m**2))
+        inclination = sqrt(self.WIDTH**2 / (1 + 1 / m**2))
         # Last expresion ellimate the sign of the height. To get the sign
         # again, we copy the sign of the slope m.
         inclination = copysign(inclination, m)
@@ -561,7 +564,7 @@ class Base:
             self.get_actuator_position(3),
             self.get_inclination(),
             self.get_speed()
-            ]
+        ]
         return pos
     # =========================================================================
     # Drawing functions.
@@ -576,7 +579,7 @@ class Base:
         """Draw complete wheelchair."""
         x1, y1, __, __ = self.REAR.position(0)
         __, __, x2, y2 = self.FRNT.position(0)
-        
+
         # Change the color of the structure acording to the MAX_INClINATION
         if self.state == StructureState.InclinationNormal:
             color_base = self.BASE_COLOR_NORMAL
@@ -585,15 +588,15 @@ class Base:
         else:
             color_base = self.BASE_COLOR_EXIT
 
-        cx1 = cv_datatype(scale*(origin[0]+x1))
-        cy1 = cv_datatype(scale*(origin[1]-y1))
-        cx2 = cv_datatype(scale*(origin[0]+x2))
-        cy2 = cv_datatype(scale*(origin[1]-y2))
+        cx1 = cv_datatype(scale * (origin[0] + x1))
+        cy1 = cv_datatype(scale * (origin[1] - y1))
+        cx2 = cv_datatype(scale * (origin[0] + x2))
+        cy2 = cv_datatype(scale * (origin[1] - y2))
         cv2.line(image, (cx1, cy1), (cx2, cy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
- 
-        dy1 = cv_datatype(scale*(origin[1]-y1+self.HEIGHT))
-        dy2 = cv_datatype(scale*(origin[1]-y2+self.HEIGHT))
+
+        dy1 = cv_datatype(scale * (origin[1] - y1 + self.HEIGHT))
+        dy2 = cv_datatype(scale * (origin[1] - y2 + self.HEIGHT))
         cv2.line(image, (cx1, dy1), (cx2, dy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 

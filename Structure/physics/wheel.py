@@ -13,7 +13,6 @@ import cv2
 from math import inf
 
 from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN
-from physics import wheel_state
 
 
 class Wheel:
@@ -176,15 +175,15 @@ class Wheel:
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, r)
 
         res = {'st': self.ground(position)}
-        
+
         if self.state == WheelState.Over or self.state == WheelState.Unstable:
             if hl <= hc:
-                #Upstairs:
+                # Upstairs:
                 res['up'] = True
                 res['wr'] = -wr + r + HOR_MARGIN
                 res['hr'] = hr + VER_MARGIN
             else:
-                #Downstairs:
+                # Downstairs:
                 res['up'] = False
                 # If the wheel is in the middle of the corner of the step, we
                 # can not take the wheel down to the ground, so the vertical
@@ -199,9 +198,7 @@ class Wheel:
                 # get out of the step, since we can not take the wheel down to
                 # the ground.
                 res['wr'] = wl + HOR_MARGIN
-                
-            
-        
+
         # Check if going upstairs, downstairs or the end of the stairs.
         # TODO: Check if in a change of direction in a double stair.
         #######################################################################
@@ -235,7 +232,7 @@ class Wheel:
                     # the state will be the Over state, and so, the wheel moves
                     # to the correct position.
                     res['wr'] = -wr + r / 2
-    
+
             ###################################################################
             # Downstairs:
             ###################################################################
@@ -243,14 +240,14 @@ class Wheel:
                 # Downstairs direction.
                 # See figures in get_distances foloder:
                 res['up'] = False
-    
+
                 res['wr'] = -wr + r - HOR_MARGIN
                 if res['wr'] < 0:
                     # However, if wr is negative, it is better to return 0,
                     # since the opposite can make the structure bo backwards,
                     # which is worse than returning 0.
                     res['wr'] = 0
-    
+
                 # The vertical distance is always the distance to place the
                 # wheel on the ground, except if the wheel is in the middle of
                 # the step in which case, the distance is the distance to the
@@ -260,16 +257,16 @@ class Wheel:
                 # place de wheel some margin further than the edge of the step,
                 # so that the wheel can be taken down to the ground.
                 if self.state == WheelState.Air:
-                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + HOR_MARGIN
                 elif self.state == WheelState.Contact:
-                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + HOR_MARGIN
                 elif self.state == WheelState.Corner:
-                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + HOR_MARGIN
                 elif self.state == WheelState.Ground:
-                    res['wc'] = -wr + 2*r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + HOR_MARGIN
                 elif self.state == WheelState.Outer:
                     raise NotImplementedError("It should not happen")
-    
+
             ###################################################################
             # End:
             ###################################################################
@@ -294,17 +291,17 @@ class Wheel:
                     res['hr'] = 0.0
                     res['wc'] = wl
                 res['hc'] = res['hr']
-    
+
             else:
                 raise NotImplementedError("Detect when this case happens...")
-    
+
         return res
 
     # =========================================================================
     # Drawing functions.
     # =========================================================================
     # Wheel colors:
-    WHEEL_COLOR= {
+    WHEEL_COLOR = {
         WheelState.Air: (0xFF, 0x00, 0x00),
         WheelState.Ground: (0x00, 0xFF, 0x00),
         WheelState.Contact: (0x00, 0xFF, 0xFF),
@@ -314,15 +311,15 @@ class Wheel:
         WheelState.Over: (0xFF, 0x80, 0x80),
         WheelState.Inside: (0x40, 0x40, 0x40),
         WheelState.Uncheked: (0x00, 0x00, 0x00)
-            }
+    }
 
     LINE_COLOR = (0x00, 0x00, 0x00)
     LINE_WIDTH = 4
 
     def draw(self, origin, image, position, scale, shift):
-        cx = cv_datatype(scale*(origin[0]+position[0]))
-        cy = cv_datatype(scale*(origin[1]-position[1]))
-        cr = numpy.int(scale*self.RADIUS)
+        cx = cv_datatype(scale * (origin[0] + position[0]))
+        cy = cv_datatype(scale * (origin[1] - position[1]))
+        cr = numpy.int(scale * self.RADIUS)
         cv2.circle(image, (cx, cy), cr, self.WHEEL_COLOR[self.state],
                    -1, cv2.LINE_AA, shift)
         cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2, cv2.LINE_AA, shift)
