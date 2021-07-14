@@ -180,7 +180,7 @@ class ActuatorPair:
         hor = active['wr']
         ver = active['hr']
 
-        if re_res['up'] and fr_res['up']:
+        if active['up']:
             # Facing a positive step.
             # Check for possible unstabilities when shifting the wheel.
             if not passive['st']:
@@ -191,7 +191,10 @@ class ActuatorPair:
                 # complete the motion for the active wheel, but this will be
                 # done, hopefully, in the following iteration.
                 try:
-                    passive_ver = passive['hc']
+                    if passive['up']:
+                        passive_ver = passive['hc']
+                    else:
+                        passive_ver = passive['hr']
                 except KeyError:
                     # However, if the key 'hc' does not exist in the passive
                     # wheel, that means that this wheel can not be taken to the
@@ -216,7 +219,7 @@ class ActuatorPair:
                     index = (index + 1) % 2
                 # The passive wheel is on the ground, so that we need not
                 # take care of this wheel.
-                # NOTE: Removed (13/05/21). This functionality has been 
+                # NOTE: Removed (13/05/21). This functionality has been
                 # moved to wheel.get_wheel_distances function.
                 # if ver > 0:
                     # If the vertical distance is positive, its means that
@@ -232,7 +235,7 @@ class ActuatorPair:
                     # motion so that the wheel lands further than the edge
                     # of the step.
                     # hor += EDGE_MARGIN
-        elif not re_res['up'] and not fr_res['up']:
+        else:
             # Facing a negative step.
             if passive['st']:
                 hor = active['wc']
@@ -250,14 +253,17 @@ class ActuatorPair:
                 # Change the active wheel, so that the other wheel can be
                 # taking down to the ground.
                 index = (index + 1) % 2
-                # Note that if the active wheel is stable, the vertical
-                # distance must be 0 (you can not take a wheel down if it is
-                # on the ground).
-                ver = passive['hr']
+                if not passive['up']:
+                    # Note that if the active wheel is stable, the vertical
+                    # distance must be 0 (you can not take a wheel down if it
+                    # is on the ground).
+                    ver = passive['hr']
+                else:
+                    ver = passive['hc']
 #                 hor -= EDGE_MARGIN
-        else:
-            raise NotImplementedError(
-                "Wheel facing steps with different sign.")
+        # else:
+        #     raise NotImplementedError(
+        #         "Wheel facing steps with different sign.")
 
         return index, hor, ver
 
