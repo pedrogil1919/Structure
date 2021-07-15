@@ -375,7 +375,6 @@ class Base:
             else:
                 return MaxInclinationError(-self.MAX_INCLINE - h - height)
 
->>>>>>> branch 'master' of https://github.com/pedrogil1919/Structure.git
         # Check inclination state:
         new_inclination = abs(h + height)
         if new_inclination < self.MAX_INCLINE:
