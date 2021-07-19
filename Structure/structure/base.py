@@ -615,8 +615,33 @@ class Base:
         cv2.line(image, (cx1, dy1), (cx2, dy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
+        chair_position = [origin[0] + (x1 + x2) / 2,
+                          origin[1] - (y1 + y2) / 2]
+        self.draw_chair(chair_position, image, scale, shift)
         self.REAR.draw(origin, image, scale, shift)
         self.FRNT.draw(origin, image, scale, shift)
+
+    CHAIR_ELEVATION = 8
+    CHAIR_SHIFT = 10
+    CHAIR_HEIGHT = 40
+    CHAIR_BASE = 30
+    CHAIR_BACK = 3
+    CHAIR_COLOR = (0x40, 0x50, 0xA0)
+    CHAIR_WIDTH = 15
+
+    def draw_chair(self, position, image, scale, shift):
+        position[1] -= self.CHAIR_ELEVATION
+        position[0] -= self.CHAIR_SHIFT
+        x1 = cv_datatype(scale * (position[0] + self.CHAIR_BASE))
+        y1 = cv_datatype(scale * (position[1]))
+        x2 = cv_datatype(scale * (position[0]))
+        y2 = cv_datatype(scale * (position[1]))
+        x3 = cv_datatype(scale * (position[0] - self.CHAIR_BACK))
+        y3 = cv_datatype(scale * (position[1] - self.CHAIR_HEIGHT))
+        cv2.line(image, (x1, y1), (x2, y2), self.CHAIR_COLOR,
+                 self.CHAIR_WIDTH, cv2.LINE_AA, shift)
+        cv2.line(image, (x2, y2), (x3, y3), self.CHAIR_COLOR,
+                 self.CHAIR_WIDTH, cv2.LINE_AA, shift)
 
     def draw_wheel_trajectory(self, origin, image, scale, shift, index):
         """Draw the trajectory of the center of the wheel."""
