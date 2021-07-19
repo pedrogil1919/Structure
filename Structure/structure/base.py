@@ -370,11 +370,6 @@ class Base:
             self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -height)
             self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -height)
 
-            if h + height > 0:
-                return MaxInclinationError(+self.MAX_INCLINE - h - height)
-            else:
-                return MaxInclinationError(-self.MAX_INCLINE - h - height)
-
         # Check inclination state:
         new_inclination = abs(h + height)
         if new_inclination < self.MAX_INCLINE:
