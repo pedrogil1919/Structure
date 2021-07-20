@@ -4,10 +4,10 @@
 
 These videos show the operation of the structure when crossing different types of stairs:
 
-- [Simple upstairs](https://youtu.be/8-lpxCzakF4)
-- [Simple downstairs](https://youtu.be/sgxnuBw1sqY)
-- [Different steps upstairs](https://youtu.be/5wlVkhid1ww)
-- [Different steps downstairs](https://youtu.be/ihX66zaVnf4)
+- [Simple upstairs](https://youtu.be/8nu6gVammgE)
+- [Simple downstairs](https://youtu.be/eKk1jwbbIsY)
+- [Different steps upstairs](https://youtu.be/V4PdnCV-9IE)
+- [Different steps downstairs](https://youtu.be/ryIuuUXebrc)
 - [Doble upstairs](not available)
 - [Doble downstairs](not available)
 - [Up down](not available)
