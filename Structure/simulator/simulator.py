@@ -136,12 +136,19 @@ class Simulator():
         # So, when the accumulated fractions are greater than 1, that means
         # that we are one iteration ahead.
         self.remaining_time += (total_iterations - total_time)
-        if self.remaining_time > 1:
+        remaining_iterations = int(self.remaining_time)
+        if remaining_iterations >= 1 and \
+                total_iterations > remaining_iterations:
             # In this case, we have to complete the instruction in one less
             # iteration.
-            total_iterations -= 1
+            # NOTE: however, if the total itarations are equal to 1, we can not
+            # do the following proccess, since in this case the total number
+            # of iterations become 0, and an ZeroDivisionError will be
+            # raised. In this case, this will be corrected in the next
+            # instruction.
+            total_iterations -= remaining_iterations
             # And start to accumulate the fractions to detect the next.
-            self.remaining_time -= 1
+            self.remaining_time -= remaining_iterations
 
         # Compute actual speeds based on the more restrictive one.
         speed_wheel = advance / total_iterations
