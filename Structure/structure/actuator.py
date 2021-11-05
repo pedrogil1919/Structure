@@ -269,7 +269,7 @@ class WheelActuator:
         # Draw a mark if the actuator is at either end:
         if self.state != ActuatorState.Center:
             px = cv_datatype(scale * (origin[0] + hx0))
-            cv2.circle(image, (px, cy1), int(4 * scale),
+            cv2.circle(image, (px, cy1), int(3 * scale),
                        self.LIMIT_COLOR[self.state], -1, cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):
