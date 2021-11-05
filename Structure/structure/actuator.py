@@ -138,7 +138,7 @@ class WheelActuator:
         See wheel.distance_to_stable for more info.
         """
         # Compute actual position for the wheel.
-        position = self.JOINT.position(self.HEIGHT+self.d)
+        position = self.JOINT.position(self.HEIGHT + self.d)
         # And return the required distance.
         return self.WHEEL.distance_to_stable(position)
 
@@ -168,7 +168,7 @@ class WheelActuator:
             differenciate between wheel and actuator error.
         """
         # Check if the wheel is in a valid position.
-        position = self.JOINT.position(self.HEIGHT+self.d)
+        position = self.JOINT.position(self.HEIGHT + self.d)
         check, h_err, v_err = self.WHEEL.check_wheel(position)
         # Change the sign to the vertical error, since wheel error is measured
         # upwards, while actuator error is downwards (see
@@ -196,7 +196,7 @@ class WheelActuator:
 
     def ground(self):
         """Return True if its ending wheel is lying on the ground."""
-        position = self.JOINT.position(self.HEIGHT+self.d)
+        position = self.JOINT.position(self.HEIGHT + self.d)
         return self.WHEEL.ground(position)
 
     # =========================================================================
@@ -208,7 +208,7 @@ class WheelActuator:
 
         See stair.set_distances function, and getDistances.svg.
         """
-        position = self.JOINT.position(self.HEIGHT+self.d)
+        position = self.JOINT.position(self.HEIGHT + self.d)
         return self.WHEEL.get_distances(position)
 
     def get_inverse_lift(self, height):
@@ -233,52 +233,52 @@ class WheelActuator:
         ActuatorState.MarginLowerBound: (0x00, 0x00, 0xFF),
         ActuatorState.ExitUpperBound: (0x00, 0x00, 0x00),
         ActuatorState.ExitLowerBound: (0x00, 0x00, 0x00)
-        }
-    ACT_MIDWIDTH = 4
-    HOUSING_MIDWIDTH = 10
+    }
+    ACT_MIDWIDTH = 2
+    HOUSING_MIDWIDTH = 5
 
     def draw(self, origin, image, scale, shift):
         """Draw the actuator."""
         # Get joint position:
         hx0, hy0 = self.JOINT.position(0)
         # Bottom of the housing
-        hy1 = hy0-self.LENGTH
+        hy1 = hy0 - self.LENGTH
         # Top of the actuator.
-        hy2 = hy0-self.d
+        hy2 = hy0 - self.d
         # Bottom of the actuator.
-        hy3 = hy0-self.HEIGHT-self.d
+        hy3 = hy0 - self.HEIGHT - self.d
 
         # Draw actuator wheel.
         self.WHEEL.draw(origin, image, (hx0, hy3), scale, shift)
 
         # Draw actuator housing:
-        cx1 = cv_datatype(scale*(origin[0]+hx0-self.HOUSING_MIDWIDTH))
-        cy1 = cv_datatype(scale*(origin[1]-hy0))
-        cx2 = cv_datatype(scale*(hx0+origin[0]+self.HOUSING_MIDWIDTH))
-        cy2 = cv_datatype(scale*(origin[1]-hy1))
+        cx1 = cv_datatype(scale * (origin[0] + hx0 - self.HOUSING_MIDWIDTH))
+        cy1 = cv_datatype(scale * (origin[1] - hy0))
+        cx2 = cv_datatype(scale * (hx0 + origin[0] + self.HOUSING_MIDWIDTH))
+        cy2 = cv_datatype(scale * (origin[1] - hy1))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.HOUSING_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
 
         # Draw actuator bar:
-        cx1 = cv_datatype(scale*(origin[0]+hx0-self.ACT_MIDWIDTH))
-        cy1 = cv_datatype(scale*(origin[1]-hy2))
-        cx2 = cv_datatype(scale*(hx0+origin[0]+self.ACT_MIDWIDTH))
-        cy2 = cv_datatype(scale*(origin[1]-hy3))
+        cx1 = cv_datatype(scale * (origin[0] + hx0 - self.ACT_MIDWIDTH))
+        cy1 = cv_datatype(scale * (origin[1] - hy2))
+        cx2 = cv_datatype(scale * (hx0 + origin[0] + self.ACT_MIDWIDTH))
+        cy2 = cv_datatype(scale * (origin[1] - hy3))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
         if self.state != ActuatorState.Center:
-            px = cv_datatype(scale*(origin[0]+hx0))
-            cv2.circle(image, (px, cy1), int(4*scale),
+            px = cv_datatype(scale * (origin[0] + hx0))
+            cv2.circle(image, (px, cy1), int(4 * scale),
                        self.LIMIT_COLOR[self.state], -1, cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):
         """Draw the position of the center of the wheel."""
-        center = self.JOINT.position(self.HEIGHT+self.d)
-        x = cv_datatype(scale*(origin[0]+center[0]))
-        y = cv_datatype(scale*(origin[1]-center[1]))
+        center = self.JOINT.position(self.HEIGHT + self.d)
+        x = cv_datatype(scale * (origin[0] + center[0]))
+        y = cv_datatype(scale * (origin[1] - center[1]))
 
-        cv2.circle(image, (x, y), int(2*scale),
+        cv2.circle(image, (x, y), int(2 * scale),
                    (0x00, 0xFF, 0x00), -1, cv2.LINE_AA, shift)
 
 ###############################################################################
