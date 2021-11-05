@@ -389,7 +389,11 @@ def null_instruction(instruction):
         return False
     if abs(instruction.get("elevate", 0)) > MAX_GAP:
         return False
-    if abs(instruction.get("height", 0)) > MAX_GAP:
+    main = instruction.get("main", {})
+    if abs(main.get("height", 0)) > MAX_GAP:
+        return False
+    second = instruction.get("second", {})
+    if abs(second.get("height", 0)) > MAX_GAP:
         return False
     return True
 
