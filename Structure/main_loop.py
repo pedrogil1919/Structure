@@ -109,6 +109,10 @@ while continue_loop:
             try:
                 instruction, str_aux = control.next_instruction(structure)
             except RuntimeError:
+                # A runtime error is raised when the control does not find any
+                # instruction (probably because the wheelchair has reached the
+                # end of the stair). In this case, give the control to the
+                # user to finish the program (or to do any other thing).
                 graphics.set_manual_mode()
             # NOTE: The last instruction returns the future state of the
             # structure when the instruction were completed. This state would
