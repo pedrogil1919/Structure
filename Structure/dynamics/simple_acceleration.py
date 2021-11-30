@@ -46,6 +46,7 @@ def compute_simple_acceleration(v_ini, v_end, d_tot, t_tot, k):
 
 
 def draw_distance(v0, t1, t2, a1, a2):
+
     n1 = numpy.arange(0, t1, t2 / 100, numpy.float64)
     n2 = numpy.arange(t1, t2, t2 / 100, numpy.float64)
     p1 = v0 * n1 + 0.5 * a1 * n1**2
