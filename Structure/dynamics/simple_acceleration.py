@@ -69,6 +69,18 @@ def compute_two_sections(v_ini, v_end, d_tot, t_tot, k):
     return a1, a2, t1, v1 + v_ini
 
 
+def compute_one_section(v_ini, v_end, d_tot, t_tot, k):
+    """Compute acceleration and intermediate time for 2 section profile.
+
+    """
+
+    v_aux = v_end - v_ini
+    d_aux = d_tot - v_ini * t_tot
+    t1 = 2 * (v_aux * t_tot - d_aux) / v_aux
+    a1 = v_aux / t1
+    return a1, 0, t1, v_end
+
+
 def plot_dynamics(init_speed, accelerations, times, sample_time, draw=False):
     """Plot speed and position for a list of acceleration -time pairs.
 
