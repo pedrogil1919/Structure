@@ -4,44 +4,69 @@ Created on 25 nov. 2021
 @author: pedrogil
 '''
 
-from math import sqrt, ceil
+from math import sqrt
 from numpy import arange, ndarray, hstack
 from numpy import float64 as data_type
 import matplotlib.pyplot as plt
 
+MAX_ACEL = 2  # m/s^2
 
-def compute_simple_acceleration(v_ini, v_end, d_tot, t_tot, k):
 
+def compute_two_sections(v_ini, v_end, d_tot, t_tot, k):
+    """Compute acceleration and intermediate time for 2 section profile.
+
+    """
     # Compute mean velocity.
-    v_mean = d_tot / t_tot - v_ini
+    v_mean = d_tot / t_tot
+    # Normalize problem substracting initial velocity to all velocities.
+    v_mean -= v_ini
     v_end -= v_ini
+    # Check type of profile. The limit happens when the mean velocity is half
+    # of the final velocity once normilized, that is, substracted the initial
+    # velocity to both velocities.
+    v_mean2 = 2 * v_mean
+    # When the mean velocity is the average value between the initial and
+    # final velocity, this insttruction can be completed with only one
+    # section (single acceleration if final velocity is greater than
+    # initial velocity, o single decceleration otherwise).
+    if v_mean2 == v_end:
+        a1 = v_end / t_tot
+        print("1 section")
+        return a1, t_tot, v_end
+    elif v_mean2 < v_end:
+        # In this case, the profile is the inverse of the original, that is,
+        # first deccelarete, and the accelerate. The only difference is that
+        # the first section must be done with the decceleration value, and the
+        # second section with the acceleration. To solve this, it is enough to
+        # change the value of k.
+        k = 1 / k
 
-    # Compute intermediate terms.
+    # Compute intermediate terms (see paper).
     a0 = v_end / t_tot
     v0 = 2 * v_mean - v_end
     t2 = t_tot
     v2 = v_end
-    # Comtupe second order equation terms
-    c = -a0 * v_end
-    b = v2 - k * a0 * t2 - v0 * (1 + k)
-    a = k * t2
+    # Comtupe second order equation terms.
+    b2 = k * t2
+    b1 = v2 - k * a0 * t2 - v0 * (1 + k)
+    b0 = -a0 * v_end
 
-    d = sqrt(b**2 - 4 * a * c)
-    ap = (-b + d) / (2 * a)
-    an = (-b - d) / (2 * a)
-
-    tp = v0 / (ap - a0)
-    tn = v0 / (an - a0)
-    if tp > 0 and tp < t_tot:
-        a1 = ap
-        t1 = tp
-    elif tn > 0 and tn < t_tot:
-        a1 = an
-        t1 = tn
-
+    # Solve second order equation to get the acceleration (see papers).
+    # Get the discriminant:
+    d = sqrt(b1**2 - 4 * b2 * b0)
+    # The second order solution depends on the type of profile. If the mean
+    # velocity if greater than half of the final velocity, the profile is
+    # always first accelerate, and the solution is the one considering the
+    # positive discriminant.
+    if v_mean2 < v_end:
+        # Positive solution.
+        d = -d
+    a1 = (-b1 + d) / (2 * b2)
+    # Compute the rest of the variables:
+    t1 = v0 / (a1 - a0)
     v1 = a1 * t1
-
-    return a1, t1, v1
+    a2 = -a1 * k
+    return a1, a2, t1, v1 + v_ini
 
 
 def plot_dynamics(init_speed, accelerations, times, sample_time, draw=False):
@@ -140,85 +165,3 @@ def plot_dynamics(init_speed, accelerations, times, sample_time, draw=False):
 
     # And return all the signals computed.
     return time_list, speed_list, position_list
-
-
-def draw_dynamics2(initial_speed, accelerations, times, sample_time):
-    # List of arrrays to store all the samples computed.
-    time_list = ndarray((0,), data_type)
-    speed_list = ndarray((0,), data_type)
-    position_list = ndarray((0,), data_type)
-
-    # Variables needed to compute the values at the end of the section. This
-    # is needed for when the sample time is not multiple of the time intervals.
-    last_time = 0.0
-    last_speed = initial_speed
-    last_position = 0.0
-    # To allow the system to work with non-integer sample times, we have to
-    # take account of the difference between the last sample and the ending
-    # time, to add this time to the distance traveled for the next section.
-    remaining_time = 0.0
-    # This variable is needed to allow the function to compute samples at
-    # uniform time, independently of the sample time.
-    last_sample = 0
-
-    for acceleration, total_time in zip(accelerations, times):
-        if total_time < 0:
-            raise ValueError("Time intervals must be positive.")
-        #######################################################################
-        # Now, compute the samples:
-        current_time = last_sample * sample_time
-        # Compute the number of samples for this section.
-        total_samples = ceil(total_time / sample_time)
-        # Generate the indices for all samples.
-        samples = arange(0, total_samples, 1, data_type)
-        # Generate the time, with respect to 0, for all samples. This way,
-        # we generate uniform time samples, even if the sample time is not
-        # multiple of all the time intervals.
-        time_samples = sample_time * samples + remaining_time
-
-        last_sample += total_samples
-
-        # Compute samples for the speed.
-        speed_samples = last_speed + acceleration * time_samples
-        # And compute also the samples for the position traveled.
-        position_samples = last_position + \
-            last_speed * time_samples + \
-            0.5 * acceleration * time_samples**2
-        # Add new samples to the actual ones.
-        time_list = hstack(
-            (time_list, (time_samples + current_time - remaining_time)))
-        speed_list = hstack((speed_list, speed_samples))
-        position_list = hstack((position_list, position_samples))
-
-        #######################################################################
-        # Get the values for the end of the section. This make the function
-        # independent of the sample time.
-        # This is the position at the end of the section, that can be
-        # different to the last sample, if the sample time is not multiple of
-        # the time interval.
-        last_position += \
-            last_speed * total_time + 0.5 * acceleration * total_time**2
-        last_time += total_time
-        last_speed += acceleration * total_time
-
-        remaining_time = last_time - (last_sample - 1) * sample_time
-
-    for t, p in zip(time_list, position_list):
-        print("%.2f, %.3f" % (t, p))
-    # Plot figures.
-    plt.figure(figsize=(8, 6), dpi=100)
-
-    plt.subplot(2, 1, 1)
-    plt.plot(time_list, speed_list, 'b')
-    plt.title("velocidad")
-    plt.grid()
-    plt.xlim([0, last_time])
-
-    plt.subplot(2, 1, 2)
-    plt.plot(time_list, position_list, 'b')
-    plt.title("espacio")
-    plt.grid()
-    plt.xlim([0, last_time])
-    plt.show()
-
-    return last_position
