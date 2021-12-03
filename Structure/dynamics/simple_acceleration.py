@@ -9,10 +9,34 @@ from numpy import arange, ndarray, hstack
 from numpy import float64 as data_type
 import matplotlib.pyplot as plt
 
-MAX_ACEL = 2  # m/s^2
+MAX_ACEL = 2.0  # m/s^2
+MAX_DECL = 3.0  # m/s^2
 
 
-def compute_two_sections(v_ini, v_end, d_tot, t_tot, k):
+def compute_three_sections(v_ini, v_end, d_tot, t_tot):
+    """Compute acceleration and intermediate time for 3 section profile.
+
+    """
+    # Normalize problem substracting initial velocity to all velocities.
+    v_end -= v_ini
+    d_tot -= v_ini * t_tot
+    # Compute second order equation terms.
+    b2 = -(MAX_ACEL / MAX_DECL) * (MAX_ACEL + MAX_DECL)
+    b1 = 2 * MAX_ACEL * (t_tot + v_end / MAX_DECL)
+    b0 = - v_end**2 / MAX_DECL + 2 * d_tot
+
+    # Solve second order equation to get the acceleration (see papers).
+    # Get the discriminant:
+    d = sqrt(b1**2 - 4 * b2 * b0)
+
+    t1 = (-b1 + d) / (2 * b2)
+    t2 = v_end / MAX_DECL - MAX_ACEL / MAX_DECL * t1 + t_tot
+    # tn = (-b1 - d) / (2 * b2)
+    v1 = MAX_ACEL * t1 - MAX_DECL * (t_tot - t2)
+    return (-MAX_ACEL, 0, MAX_DECL), (t1, t2 - t1, t_tot - t2), (v1, v1, v_end)
+
+
+def compute_two_sections(v_ini, v_end, d_tot, t_tot):
     """Compute acceleration and intermediate time for 2 section profile.
 
     """
@@ -32,21 +56,26 @@ def compute_two_sections(v_ini, v_end, d_tot, t_tot, k):
     if v_mean2 == v_end:
         a1 = v_end / t_tot
         print("1 section")
-        return a1, t_tot, v_end
-    elif v_mean2 < v_end:
+        return a1, 0, t_tot, v_end + v_ini
+    elif v_mean2 > v_end:
+        # Since there are infinite solutions,we impose the restriction that
+        # the current ratio between the deceleration and the acceleration be
+        # equal to the ratio of the maximum of both magnitudes.
+        k = MAX_DECL / MAX_ACEL
+    else:
         # In this case, the profile is the inverse of the original, that is,
         # first deccelarete, and the accelerate. The only difference is that
         # the first section must be done with the decceleration value, and the
         # second section with the acceleration. To solve this, it is enough to
         # change the value of k.
-        k = 1 / k
+        k = MAX_ACEL / MAX_DECL
 
     # Compute intermediate terms (see paper).
     a0 = v_end / t_tot
     v0 = 2 * v_mean - v_end
     t2 = t_tot
     v2 = v_end
-    # Comtupe second order equation terms.
+    # Compute second order equation terms.
     b2 = k * t2
     b1 = v2 - k * a0 * t2 - v0 * (1 + k)
     b0 = -a0 * v_end
@@ -66,22 +95,24 @@ def compute_two_sections(v_ini, v_end, d_tot, t_tot, k):
     t1 = v0 / (a1 - a0)
     v1 = a1 * t1
     a2 = -a1 * k
-    return a1, a2, t1, v1 + v_ini
+    t2 = t_tot - t1
+    return (a1, a2), (t1, t2), (v1 + v_ini, v_end + v_ini)
 
 
-def compute_one_section(v_ini, v_end, d_tot, t_tot, k):
-    """Compute acceleration and intermediate time for 2 section profile.
+def compute_one_section(v_ini, v_end, d_tot, t_tot):
+    """Compute acceleration and intermediate time for 1 section profile.
 
     """
-
     v_aux = v_end - v_ini
     d_aux = d_tot - v_ini * t_tot
     t1 = 2 * (v_aux * t_tot - d_aux) / v_aux
     a1 = v_aux / t1
-    return a1, 0, t1, v_end
+    t2 = t_tot - t1
+    return (a1, 0), (t1, t2), (v_end, v_end)
 
 
-def plot_dynamics(init_speed, accelerations, times, sample_time, draw=False):
+def plot_dynamics(init_speed, accelerations, times, sample_time,
+                  draw=True, block=True):
     """Plot speed and position for a list of acceleration -time pairs.
 
     Arguments:
@@ -173,7 +204,7 @@ def plot_dynamics(init_speed, accelerations, times, sample_time, draw=False):
         plt.title("espacio")
         plt.grid()
         plt.xlim([0, current_time])
-        plt.show()
+        plt.show(block=block)
 
     # And return all the signals computed.
     return time_list, speed_list, position_list
