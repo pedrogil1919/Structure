@@ -28,8 +28,8 @@ structure_size, wheels_radius = readXML.read_structure(settings_name)
 structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
-speed_data = readXML.read_simulator(settings_name)
-sm = Simulator(speed_data)
+speed_data, dynamics_data = readXML.read_simulator(settings_name)
+sm = Simulator(speed_data, dynamics_data)
 
 # Read graphical variables.
 image_data, video_data = readXML.read_graphics(settings_name)
