@@ -17,7 +17,7 @@ from control.control import next_instruction
 class ComputeTime:
     """Main class to compute times."""
 
-    def __init__(self, wheels, stairs_list, speed_data):
+    def __init__(self, wheels, stairs_list, speed_data, dynamics_data):
         """Constructor:
 
         Arguments:
@@ -30,20 +30,23 @@ class ComputeTime:
             # If not, convert it to tuple.
             stairs_list = (stairs_list,)
         self.stairs = stairs_list
-        self.sim = simulator.Simulator(speed_data)
+        self.sim = simulator.Simulator(speed_data, dynamics_data)
         self.wheels = wheels
 
     def compute(self, size):
         """Return the time required to complete the stairs."""
 
         total_time = 0
+        instructions = []
         for stair in self.stairs:
             # Build the structure.
             str_aux = base.Base(size, self.wheels, stair)
             # Make a loop until the structure reaches the end of the stair.
             while True:
                 instruction, str_aux = next_instruction(str_aux)
-                total_time += self.sim.compute_iterations(instruction)
+                instructions += [instruction]
+                total_time += self.sim.compute_time(instructions[0])
+                instructions = instructions[1:]
                 if instruction.get('end', False):
                     break
             # Return the total number of iterations needed.
