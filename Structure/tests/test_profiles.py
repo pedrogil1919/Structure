@@ -5,7 +5,7 @@ Created on 25 nov. 2021
 '''
 
 
-from dynamics.simple_acceleration \
+from dynamics.profiles \
     import compute_three_sections, compute_two_sections, compute_one_section, \
     plot_dynamics
 
