@@ -42,8 +42,8 @@ MAX_GAP = 0.05
 # small margin to prevent the wheel to collide with the stair. This is the
 # meaning of these margins.
 # TODO: Move these values to the settings.xml configuration file.
-HOR_MARGIN = 4.0
-VER_MARGIN = 8.0
+HOR_MARGIN = 2.0
+VER_MARGIN = 2.0
 
 ###############################################################################
 # End of file.

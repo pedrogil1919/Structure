@@ -32,7 +32,7 @@ stair = Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
 # Read simulator data.
-speed_data = readXML.read_simulator(settings_name)
-compute_time = ComputeTime(wheels_radius, stair, speed_data)
+speed_data, dynamics_data = readXML.read_simulator(settings_name)
+compute_time = ComputeTime(wheels_radius, stair, speed_data, dynamics_data)
 total = compute_time.compute(structure_size)
-print("Total:", total)
+print("Total:", total, "seconds")
