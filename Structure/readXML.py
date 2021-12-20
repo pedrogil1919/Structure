@@ -72,8 +72,21 @@ def read_stairs(xml_file):
     return stairs_list, landing
 
 
-def read_simulator(xml_file):
-    """Read simulator speeds.
+def get_dynamics(dynamics, key_value):
+
+    dynamics_data = dynamics.find(key_value)
+    try:
+        data = {
+            'speed': float(dynamics_data.attrib['speed']),
+            'acceleration': float(dynamics_data.attrib(['acceleration'])),
+            'decceleration': float(dynamics_data.attrib(['decceleration']))}
+    except KeyError:
+        data = {'speed': float(dynamics_data.attrib['speed'])}
+    return data
+
+
+def read_dynamics(xml_file):
+    """Read structure dynamics.
 
     Returns the variables required by the constructor of class Simulator (see
     simulator.py).
@@ -85,18 +98,18 @@ def read_simulator(xml_file):
     except ElementTree.ParseError:
         raise RuntimeError("XML file " + xml_file + " is incorrect.")
 
-    speed = element.find('speed')
-    speed_data = {
-        'sample_time': float(speed.attrib['sample_time']),
-        'wheel': float(speed.attrib['wheel']),
-        'actuator_up': float(speed.attrib['actuator_up']),
-        'actuator_dw': float(speed.attrib['actuator_dw']),
-        'incline_up': float(speed.attrib['incline_up']),
-        'incline_dw': float(speed.attrib['incline_dw']),
-        'elevate_up': float(speed.attrib['elevate_up']),
-        'elevate_dw': float(speed.attrib['elevate_dw'])
-        }
-    return speed_data
+    dynamics = element.find('dynamics')
+    dynamics_data = {'sample_time': float(dynamics.attrib['sample_time'])}
+
+    dynamics_data['horizontal'] = get_dynamics(dynamics, 'horizontal')
+    dynamics_data['actuator_up'] = get_dynamics(dynamics, 'actuator_up')
+    dynamics_data['actuator_dw'] = get_dynamics(dynamics, 'actuator_dw')
+    dynamics_data['elevate_up'] = get_dynamics(dynamics, 'elevate_up')
+    dynamics_data['elevate_dw'] = get_dynamics(dynamics, 'elevate_dw')
+    dynamics_data['incline_up'] = get_dynamics(dynamics, 'incline_up')
+    dynamics_data['incline_dw'] = get_dynamics(dynamics, 'incline_dw')
+
+    return dynamics_data
 
 
 def read_graphics(xml_file):
