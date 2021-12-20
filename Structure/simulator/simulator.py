@@ -12,19 +12,12 @@ Step by step simulator of structure motion.
 class Simulator():
     """Class to simulate structure motion."""
 
-    def __init__(self, speed_data, dynamics_data):
+    def __init__(self, dynamics_data):
         """
         Constructor:
 
         Arguments:
-        speed_data: dictionary with the following keys:
-            wheel -- Structure horizontal speed, in units/frame.
-            actuator -- Actuator shift speed, in units/frame.
-            elevate -- Structure elevate, in units/frame.
-            incline -- Structure incline, in units/frame.
-            NOTE: The last three parameter are actually two parameters, one
-              for going up, and the other for going down (normally, going up
-              is slower than going down).
+        dynamics_data: see dynamics entry in xml.
 
         """
         # Maximum speeds:
@@ -109,17 +102,17 @@ class Simulator():
         # iteration without moving.
         # for __ in range(total_iterations):
         while True:
-            # Compute actual speeds based on the more restrictive one.
-            speed_wheel = advance / total_time * sample_time
-            speed_actuator = shift / total_time * sample_time
-            speed_elevate = elevate / total_time * sample_time
-            speed_incline = incline / total_time * sample_time
-            speed_ac_aux = sh_aux / total_time * sample_time
+            # Compute actual steps based on the more restrictive one.
+            step_wheel = advance / total_time * sample_time
+            step_actuator = shift / total_time * sample_time
+            step_elevate = elevate / total_time * sample_time
+            step_incline = incline / total_time * sample_time
+            step_ac_aux = sh_aux / total_time * sample_time
             # Compute proportional speeds for the actuator based on the amount
             # of motion when elevating and inclining.
-            total_motion = abs(speed_elevate) + abs(speed_incline)
+            total_motion = abs(step_elevate) + abs(step_incline)
             try:
-                proportional_value = abs(speed_elevate) / total_motion
+                proportional_value = abs(step_elevate) / total_motion
             except ZeroDivisionError:
                 proportional_value = 0.0
 
@@ -128,8 +121,8 @@ class Simulator():
             actuator_elevate = 4 * [None]
             actuator_incline = 4 * [None]
             try:
-                actuator_elevate[wheel] = speed_actuator * proportional_value
-                actuator_incline[wheel] = speed_actuator * \
+                actuator_elevate[wheel] = step_actuator * proportional_value
+                actuator_incline[wheel] = step_actuator * \
                     (1 - proportional_value)
             except TypeError:
                 # In case there is no wheel to move, the exception raises, so
@@ -137,8 +130,8 @@ class Simulator():
                 # need.
                 pass
             try:
-                actuator_elevate[wh_aux] = speed_ac_aux * proportional_value
-                actuator_incline[wh_aux] = speed_ac_aux * \
+                actuator_elevate[wh_aux] = step_ac_aux * proportional_value
+                actuator_incline[wh_aux] = step_ac_aux * \
                     (1 - proportional_value)
             except TypeError:
                 # In case there is no wheel to move, the exception raises, so
@@ -153,9 +146,9 @@ class Simulator():
             # to a valid position. For this reason, we do not check the
             # validity of the position until the three motions have been
             # performed.
-            structure.advance(speed_wheel, check=False)
-            structure.incline(speed_incline, actuator_incline, check=False)
-            structure.elevate(speed_elevate, actuator_elevate, check=False)
+            structure.advance(step_wheel, check=False)
+            structure.incline(step_incline, actuator_incline, check=False)
+            structure.elevate(step_elevate, actuator_elevate, check=False)
             # Is here when we must check the validity of the position.
             col, stb = structure.check_position(False)
             if not col or not stb:
