@@ -7,34 +7,29 @@ Created on 25 nov. 2021
 
 from dynamics.profiles import SpeedProfile, MaxVelocityError
 
-v_ini = 0.0
+v_ini = 4.0
 v_end = 1.0
-d_tot = 12.5
+d_tot = 14.0
 t_tot = 6.0
 
 data = {
-    'speed': 10.0,
+    'speed': 5.0,
     'acceleration': 10.0,
     'decceleration': 20.0}
 
 
 profile = SpeedProfile(data, v_ini)
 
-a, t, v = profile.profile_three_sections(v_end, d_tot, t_tot)
-profile.plot_dynamics(v_ini, a, t, 0.001, True, True)
-
-# while d_tot > 0:
-#     try:
-#         min_a, min_t, v_max = profile.profile_two_sections(
-#             v_end, d_tot, t_tot)
-#         print(d_tot, min_a, min_t, v_max)
-#         # profile.plot_dynamics(v_ini, min_a, min_t, 0.001, True, True)
+while d_tot > 0:
+    min_a, min_t, v_max = profile.profile_two_sections(v_end, d_tot, t_tot)
+    print(d_tot, min_a, min_t, v_max)
+    profile.plot_dynamics(v_ini, min_a, min_t, 0.001, True, True)
 #     except MaxVelocityError:
 #         min_a, min_t, v_max = profile.profile_three_sections(
 #             v_end, d_tot, t_tot)
 #     except ValueError as er:
 #         print(er.description())
-#     d_tot += 0.5
+    d_tot -= 0.5
 #
 
 

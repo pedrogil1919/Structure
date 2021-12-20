@@ -89,8 +89,10 @@ class SpeedProfile():
 
         k1 = (v_max - v_end) / v_max
         k2 = ((v_max + v_end) * t_tot - 2 * d_tot) / v_max
+        k3 = - k * v_max / (v_max - v_end)
+        k4 = -k3 * t_tot
 
-        t2 = 2.0
+        t2 = (k4 - k2) / (k1 - k3)
 
         t1 = k1 * t2 + k2
 
@@ -100,7 +102,7 @@ class SpeedProfile():
         # Acceleration pairs.
         a = (a0, 0, a1)
         # Time pairs (remember that t1 + t2 = t_total
-        t = (t2, t1 - t2, t_tot - t1)
+        t = (t1, t2 - t1, t_tot - t2)
         # Speeds pairs. Denormalize adding the initial speed to both values.
         v = (self.speed, v_end)
         return a, t, v
@@ -185,18 +187,24 @@ class SpeedProfile():
         t2 = t_tot - t1
         # Check whether any limit has been reached.
         # Check acceleration limits:
-        if a1 > 0:
-            # Profile: Accelerate - Deccelerate:
-            if a1 > self.acceleration or -a2 > self.decceleration:
-                raise MaxAccelerationError
-        else:
-            if a2 > self.acceleration or -a1 > self.decceleration:
-                raise MaxAccelerationError
-        # Check velocity limits:
+        # if a1 > 0:
+        #     # Profile: Accelerate - Deccelerate:
+        #     if a1 > self.acceleration or -a2 > self.decceleration:
+        #         raise MaxAccelerationError
+        # else:
+        #     if a2 > self.acceleration or -a1 > self.decceleration:
+        #         raise MaxAccelerationError
+
+        # Denormalize velocities:
+        v1 += self.prev_speed
+        v_end += self.prev_speed
+        # # Check velocity limits:
         if v1 > self.speed:
-            raise MaxVelocityError
+            # If the system reaches the maximum velocity, switch the
+            # profile to 3 sections one.
+            return self.profile_three_sections(v_end, d_tot, t_tot)
         elif v1 < 0.0:
-            raise CeroVelocityError
+            return self.profile_three_sections(v_end, d_tot, t_tot)
 
         # Compute final tuplas:
         # Acceleration pairs.
