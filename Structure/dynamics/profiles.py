@@ -23,23 +23,11 @@ class MinDistanceError(ValueError):
 Enlarge distace or reduce gap between previous and end velocities."
 
 
-class MaxVelocityError(ValueError):
-    @classmethod
-    def description(cls):
-        return "The profile overpasses the maximum speed."
-
-
 class MaxAccelerationError(ValueError):
     @classmethod
     def description(cls):
         return "The profile overpasses he maximum acceleration \
 or decceleration."
-
-
-class CeroVelocityError(ValueError):
-    @classmethod
-    def description(cls):
-        return "The profile gets a negative velocity."
 
 
 class ProfileClass(Enum):
@@ -72,11 +60,11 @@ class SpeedProfile():
         elif self.profile_type == ProfileClass.ThreeSections:
             return 0.0
 
-    def profile_three_sections(self, v_end, d_tot, t_tot):
+    def profile_three_sections_max(self, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 3 section profile.
 
         This profile is used when the 2-sections profile reaches the object
-        maximum velocity, wo we have to limit it.
+        maximum velocity, and we have to limit it.
 
         """
         # Compute mean velocity.
@@ -99,14 +87,45 @@ class SpeedProfile():
         a0 = v_max / t1
         a1 = -k * a0
         # Compute final tuplas:
-        # Acceleration pairs.
+        # Acceleration.
         a = (a0, 0, a1)
-        # Time pairs (remember that t1 + t2 = t_total
+        # Time (remember that t1 + t2 = t_total
         t = (t1, t2 - t1, t_tot - t2)
-        # Speeds pairs. Denormalize adding the initial speed to both values.
+        # Speeds.
         v = (self.speed, v_end)
         return a, t, v
 
+    
+    def profile_three_sections_zero(self, v_end, d_tot, t_tot):
+        """Compute acceleration and intermediate time for 3 section profile.
+
+        This profile is used when the 2-sections profile reaches zero velocity.
+        Although this motion can steel be done with the two section profile,
+        this means that the object move backwards in some moment. In this case
+        it is better to stop the object when it reaches zero velocity, and
+        wait there until the required time ellapses.
+
+        """
+        k = self.decceleration / self.acceleration
+        v0 = self.prev_speed
+        v2 = v_end
+        d = d_tot
+        # Compute time intervals.
+        t0 = 2 * d * v0 / (k * v2**2 + v0**2)
+        t2 = (k * v2 + v0) * t0 / v0 - t0
+        t1 = t_tot - t0 - t2
+        # Compute accelerations:
+        a2 = v0 / (k * t0)
+        a1 = -k * a2
+        # Compute final tuplas:
+        # Accelerations:
+        a = (a1, 0, a2)
+        # Time:
+        t = (t0, t1, t2)
+        # Speeds:
+        v = (0, v_end)
+        return a, t, v
+        
     def profile_two_sections(self, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 2 section profile.
 
@@ -130,7 +149,7 @@ class SpeedProfile():
         # is larger than the object maximum velocity, raise an error to extend
         # the time to complete the motion.
         if v_mean > self.speed:
-            raise MaxVelocityError
+            raise ValueError("Require more time.")
 
         # Normalize problem substracting initial velocity to all velocities.
         v_mean -= self.prev_speed
@@ -202,9 +221,9 @@ class SpeedProfile():
         if v1 > self.speed:
             # If the system reaches the maximum velocity, switch the
             # profile to 3 sections one.
-            return self.profile_three_sections(v_end, d_tot, t_tot)
+            return self.profile_three_sections_max(v_end, d_tot, t_tot)
         elif v1 < 0.0:
-            return self.profile_three_sections(v_end, d_tot, t_tot)
+            return self.profile_three_sections_zero(v_end, d_tot, t_tot)
 
         # Compute final tuplas:
         # Acceleration pairs.
@@ -212,9 +231,9 @@ class SpeedProfile():
         # Time pairs (remember that t1 + t2 = t_total
         t = (t1, t2)
         # Speeds pairs. Denormalize adding the initial speed to both values.
-        v = (v1 + self.prev_speed, v_end + self.prev_speed)
+        v = (v1, v_end)
         return a, t, v
-
+        
     def time_limit(self, a1, a2, v0, v2, d):
 
         # Compute intermediate variables:
