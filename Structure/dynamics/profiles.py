@@ -8,10 +8,10 @@ acceleration and decceleration (which can be different).
 
 '''
 
-from enum import Enum
+# from enum import Enum
 
-from math import sqrt
-from numpy import arange, ndarray, hstack
+from math import sqrt, fabs
+from numpy import arange, array, hstack
 from numpy import float64 as data_type
 import matplotlib.pyplot as plt
 
@@ -30,37 +30,147 @@ class MaxAccelerationError(ValueError):
 or decceleration."
 
 
-class ProfileClass(Enum):
-    NoDynamics = 1
-    ThreeSections = 2
-    TwoSections = 3
+# class ProfileClass(Enum):
+#     NoDynamics = 1
+#     ThreeSections = 2
+#     TwoSections = 3
 
 
 class SpeedProfile():
 
-    def __init__(self, dynamics_data, init_speed=0.0):
+    def __init__(self, dynamics_data):
 
-        self.prev_speed = init_speed
         self.speed = dynamics_data['speed']
-        try:
-            self.acceleration = dynamics_data['acceleration']
-            self.decceleration = dynamics_data['decceleration']
-        except KeyError:
-            self.profile_type = ProfileClass.NoDynamics
-        else:
-            self.profile_type = ProfileClass.ThreeSections
-        pass
+        # try:
+        self.acceleration = dynamics_data['acceleration']
+        self.decceleration = dynamics_data['decceleration']
+        # except KeyError:
+        #     self.profile_type = ProfileClass.NoDynamics
+        # else:
+        #     self.profile_type = ProfileClass.ThreeSections
+        # pass
 
-    def compute_time(self, distance, next_speed):
-        """Compute the minimum time required to complete the motion.
+    def speed_range(self, v_ini, d_tot):
+        """Computes range of end speeds.
+
+        For a initial speed and a total distance to travel, there is a range of
+        speed at which the motion can be finished. The function returns a tupla
+        with this range (v_end_min, v_end_max).
 
         """
-        if self.profile_type == ProfileClass.NoDynamics:
-            return distance / self.speed
-        elif self.profile_type == ProfileClass.ThreeSections:
-            return 0.0
+        # Compute minimum speed:
+        # Check if the motion can use the maximum decceleration.
+        if v_ini**2 < 2 * d_tot * self.decceleration:
+            v_end_min = 0.0
+        else:
+            v_end_min = sqrt(v_ini**2 - 2 * d_tot * self.decceleration)
+        # Compute maximum speed:
+        v_end_max = sqrt(v_ini**2 + 2 * d_tot * self.acceleration)
+        # Check if the motion reaches the maximum speed:
+        if v_end_max > self.speed:
+            v_end_max = self.speed
+        return (v_end_min, v_end_max)
 
-    def profile_three_sections_max(self, v_end, d_tot, t_tot):
+    def time_limit(self, a1, a2, v0, v2, d):
+
+        # Compute intermediate variables:
+        t0 = (v2 - v0) / a1
+        k0 = a2 / a1
+        # Compute second order equation terms:
+        b2 = a1 * k0**2 + a2
+        b1 = 2 * (v0 * k0 + a1 * t0 * k0 + v2)
+        b0 = a1 * t0**2 + 2 * v0 * t0 - 2 * d
+
+        # Solve second order equation to get the acceleration (see papers).
+        # Get the discriminant:
+        # try:
+        d = b1**2 - 4 * b2 * b0
+        if d < 0:
+            return float('inf')
+        t2 = (-b1 + sqrt(d)) / (2 * b2)
+        t1 = t0 + k0 * t2
+
+        return t1 + t2
+
+    def min_distance(self, v_ini, v_end):
+        """Auxiliary function to compute the minimun distance.
+
+        For the current previous velocity and the final velocity given, and
+        using the current acceleration, this function computes the minimum
+        distance the object can travel if the motion consist only in one
+        section, according to its initial and the given end velocity
+        (see docs).
+
+        Returns the computed distance.
+
+        """
+        # Check if the motion should be accelerated or deccelerated, since
+        # if the values are different, the time requirede in each case will
+        # be different.
+        if v_end > v_ini:
+            d = (v_ini + v_end) * (v_end - v_ini) / (2 * self.acceleration)
+        else:
+            d = (v_ini + v_end) * (v_ini - v_end) / (2 * self.decceleration)
+        return d
+
+    def two_sections_time_limits(self, v_ini, v_end, d_tot):
+        """Compute the time limits required to complete the motion.
+
+        The function computes the minimum time required to complete the
+        distance given, according to its previous velocity and the end
+        velocity, using the actual maximum acceleration - deccerelation values.
+        The minimum time is accieved when using the maximum accelerations,
+        so that the motion is possible to be completed using more time, but
+        never using less time than the computed here.
+
+        The function also computes the maximum time the motion can be completed
+        in, according to the same values as above.
+
+        TODO: Check why if the velocity becomes 0 o bellow, the computation of
+        the maximum distance fails (time becomes complex).
+
+        Returns the minimum and maximum times.
+
+        """
+        # Check if the distance to travel is large enough to accomplish with
+        # the required end velocity.
+        if d_tot < self.min_distance(v_ini, v_end):
+            # If not possible, raise an error. The only solution to this
+            # error is to modify accordingly the end velocity (or the initial
+            # one if computing offline).
+            raise MinDistanceError
+        # Rename internal variables:
+        v0 = v_ini
+        v2 = v_end
+        # Profile: Accelerate - Deccelerate.
+        # Rename internal variables:
+        a1 = self.acceleration
+        a2 = self.decceleration
+
+        t_min = self.time_limit(a1, a2, v0, v2, d_tot)
+        t_max = self.time_limit(-a2, -a1, v0, v2, d_tot)
+        return (t_min, t_max)
+
+    ###########################################################################
+    ###########################################################################
+    ###########################################################################
+
+    def compute_profile(self, v_ini, v_end, d_tot, t_tot):
+        """Compute the speed profile to complete the motion.
+
+        Returns the list of acceleration - time for the profile.
+
+        Raise an error if the motion can not be completed.
+
+        """
+        # Check values:
+        if v_ini < 0 or v_end < 0:
+            raise ValueError("Speeds must be greater than 0")
+        if v_ini > self.speed or v_end > self.speed:
+            raise ValueError("Speeds must be smaller than maximum speed")
+        return self.profile_two_sections(v_ini, v_end, d_tot, t_tot)
+
+    def profile_three_sections_max(self, v_ini, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 3 section profile.
 
         This profile is used when the 2-sections profile reaches the object
@@ -70,9 +180,9 @@ class SpeedProfile():
         # Compute mean velocity.
         v_max = self.speed
         # Normalize problem substracting initial velocity to all velocities.
-        v_max -= self.prev_speed
-        v_end -= self.prev_speed
-        d_tot -= self.prev_speed * t_tot
+        v_max -= v_ini
+        v_end -= v_ini
+        d_tot -= v_ini * t_tot
         k = self.decceleration / self.acceleration
 
         k1 = (v_max - v_end) / v_max
@@ -95,8 +205,7 @@ class SpeedProfile():
         v = (self.speed, v_end)
         return a, t, v
 
-    
-    def profile_three_sections_zero(self, v_end, d_tot, t_tot):
+    def profile_three_sections_zero(self, v_ini, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 3 section profile.
 
         This profile is used when the 2-sections profile reaches zero velocity.
@@ -107,7 +216,7 @@ class SpeedProfile():
 
         """
         k = self.decceleration / self.acceleration
-        v0 = self.prev_speed
+        v0 = v_ini
         v2 = v_end
         d = d_tot
         # Compute time intervals.
@@ -125,8 +234,19 @@ class SpeedProfile():
         # Speeds:
         v = (0, v_end)
         return a, t, v
-        
-    def profile_two_sections(self, v_end, d_tot, t_tot):
+
+    def profile_one_section(self, v_ini, v_end, d_tot, t_tot):
+        """Compute acceleration and intermediate time for 1 section profile.
+
+        """
+        v_aux = v_end - v_ini
+        d_aux = d_tot - v_ini * t_tot
+        t1 = 2 * (v_aux * t_tot - d_aux) / v_aux
+        a1 = v_aux / t1
+        t2 = t_tot - t1
+        return (a1, 0), (t1, t2), (v_end, v_end)
+
+    def profile_two_sections(self, v_ini, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 2 section profile.
 
         Arguments:
@@ -152,8 +272,8 @@ class SpeedProfile():
             raise ValueError("Require more time.")
 
         # Normalize problem substracting initial velocity to all velocities.
-        v_mean -= self.prev_speed
-        v_end -= self.prev_speed
+        v_mean -= v_ini
+        v_end -= v_ini
         # Check type of profile. The limit happens when the mean velocity is
         # half of the final velocity once normilized, that is, substracted the
         # initial velocity to both velocities.
@@ -164,7 +284,7 @@ class SpeedProfile():
         # initial velocity, o single decceleration otherwise).
         if v_mean2 == v_end:
             a1 = v_end / t_tot
-            return (a1,), (t_tot,), (v_end + self.prev_speed,)
+            return (a1,), (t_tot,), (v_end + v_ini,)
         elif v_mean2 > v_end:
             # Since there are infinite solutions,we impose the restriction that
             # the current ratio between the deceleration and the acceleration
@@ -215,15 +335,33 @@ class SpeedProfile():
         #         raise MaxAccelerationError
 
         # Denormalize velocities:
-        v1 += self.prev_speed
-        v_end += self.prev_speed
+        v1 += v_ini
+        v_end += v_ini
         # # Check velocity limits:
         if v1 > self.speed:
             # If the system reaches the maximum velocity, switch the
             # profile to 3 sections one.
-            return self.profile_three_sections_max(v_end, d_tot, t_tot)
+            # However, if the initial speed is close to the maximum speed, the
+            # expresion for the computation of the 3 section profile raises an
+            # error (zero division). In this case, use the alternative profile
+            # of one section (one acceleration section and other at constant
+            # speed).
+            if fabs(v_end - self.speed) < 1e-2:
+                # When is the end speed the one that is close to the maximum
+                # use the implemented function.
+                return self.profile_one_section(v_ini, v_end, d_tot, t_tot)
+            if fabs(v_ini - self.speed) < 1e-2:
+                # However, if the speed close to the maximum is the initial,
+                # it is enough to "invert" time, and change the order of the
+                # result.
+                a, t, v = self.profile_one_section(v_end, v_ini, d_tot, t_tot)
+                # In this case, change the order of the arrays, but also change
+                # sign of the acceleration.
+                a = (a[1], -a[0])
+                return a, t[::-1], v[::-1]
+            return self.profile_three_sections_max(v_ini, v_end, d_tot, t_tot)
         elif v1 < 0.0:
-            return self.profile_three_sections_zero(v_end, d_tot, t_tot)
+            return self.profile_three_sections_zero(v_ini, v_end, d_tot, t_tot)
 
         # Compute final tuplas:
         # Acceleration pairs.
@@ -233,87 +371,8 @@ class SpeedProfile():
         # Speeds pairs. Denormalize adding the initial speed to both values.
         v = (v1, v_end)
         return a, t, v
-        
-    def time_limit(self, a1, a2, v0, v2, d):
 
-        # Compute intermediate variables:
-        t0 = (v2 - v0) / a1
-        k0 = a2 / a1
-        # Compute second order equation terms:
-        b2 = a1 * k0**2 + a2
-        b1 = 2 * (v0 * k0 + a1 * t0 * k0 + v2)
-        b0 = a1 * t0**2 + 2 * v0 * t0 - 2 * d
-
-        # Solve second order equation to get the acceleration (see papers).
-        # Get the discriminant:
-        d = sqrt(b1**2 - 4 * b2 * b0)
-        t2 = (-b1 + d) / (2 * b2)
-        t1 = t0 + k0 * t2
-
-        return t1 + t2
-
-    def two_sections_time_limits(self, v_end, d_tot):
-        """Compute the time limits required to complete the motion.
-
-        The function computes the minimum time required to complete the
-        distance given, according to its previous velocity and the end
-        velocity, using the actual maximum acceleration - deccerelation values.
-        The minimum time is accieved when using the maximum accelerations,
-        so that the motion is possible to be completed using more time, but
-        never using less time than the computed here.
-
-        The function also computes the maximum time the motion can be completed
-        in, according to the same values as above.
-
-        TODO: Check why if the velocity becomes 0 o bellow, the computation of
-        the maximum distance fails (time becomes complex).
-
-        Returns the minimum and maximum times.
-
-        """
-        # Check if the distance to travel is large enough to accomplish with
-        # the required end velocity.
-        if d_tot < self.min_distance(v_end):
-            # If not possible, raise an error. The only solution to this
-            # error is to modify accordingly the end velocity (or the previous
-            # one if computing offline).
-            raise MinDistanceError
-        # Rename internal variables:
-        v0 = self.prev_speed
-        v2 = v_end
-        # Profile: Accelerate - Deccelerate.
-        # Rename internal variables:
-        a1 = self.acceleration
-        a2 = self.decceleration
-
-        t_min = self.time_limit(a1, a2, v0, v2, d_tot)
-        t_max = self.time_limit(-a2, -a1, v0, v2, d_tot)
-        return t_min, t_max
-
-    def min_distance(self, v_end):
-        """Auxiliary function to compute the minimun distance.
-
-        For the current previous velocity and the final velocity given, and
-        using the current acceleration, this function computes the minimum
-        distance the object can travel if the motion consist only in one
-        section, according to its initial and the given end velocity
-        (see docs).
-
-        Returns the computed distance.
-
-        """
-        v_ini = self.prev_speed
-        # Check if the motion should be accelerated or deccelerated, since
-        # if the values are different, the time requirede in each case will
-        # be different.
-        if v_end > v_ini:
-            d = (v_ini + v_end) * (v_end - v_ini) / (2 * self.acceleration)
-        else:
-            d = (v_ini + v_end) * (v_ini - v_end) / (2 * self.decceleration)
-        return d
-
-    def plot_dynamics(self, init_speed, accelerations, times, sample_time,
-                      draw=True, block=True):
+    def plot_dynamics(self, init_speed, accelerations, times, sample_time):
         """Plot speed and position for a list of acceleration -time pairs.
 
         Arguments:
@@ -325,8 +384,8 @@ class SpeedProfile():
         """
 
         # List of arrrays to store all the samples computed.
-        speed_list = ndarray((0,), data_type)
-        position_list = ndarray((0,), data_type)
+        speed_list = array((init_speed,), data_type)
+        position_list = array((0.0,), data_type)
         # Indices to get track of the time intervals and the samples for a
         # given section of the motion.
         current_sample = 0
@@ -393,27 +452,30 @@ class SpeedProfile():
         #                    sample_time, data_type)
         # time_list += sample_time
 
-        # Plot figures, if required.
-        if draw:
-            # Plot figures.
-            plt.figure(figsize=(8, 6), dpi=100)
-
-            plt.subplot(2, 1, 1)
-            plt.plot(time_list, speed_list, 'b')
-            plt.title("velocidad")
-            plt.grid()
-            plt.xlim([0, current_time])
-
-            plt.subplot(2, 1, 2)
-            plt.plot(time_list, position_list, 'b')
-            plt.title("espacio")
-            plt.grid()
-            plt.xlim([0, current_time])
-            plt.show(block=block)
-
         # And return all the signals computed.
         return time_list, speed_list, position_list
 
+    def draw_dynamics(self, time_data, speed_data, position_data,
+                      max_time=None, block=False):
+        # Plot figures.
+
+        if max_time is None:
+            max_time = time_data[-1]
+        plt.subplot(2, 1, 1)
+        plt.plot(time_data, speed_data, 'b')
+        plt.title("velocidad")
+        plt.grid(True)
+        plt.xlim([0, max_time])
+
+        plt.subplot(2, 1, 2)
+        plt.plot(time_data, position_data, 'b')
+        plt.title("espacio")
+        plt.grid(True)
+        plt.xlim([0, max_time])
+        plt.show(block=block)
+
+    def clear_figures(self):
+        plt.figure(figsize=(8, 6), dpi=100)
     ###########################################################################
 
     # def compute_three_sections(self, v_ini, v_end, d_tot, t_tot):
@@ -439,13 +501,11 @@ class SpeedProfile():
     #     return (-MAX_ACEL, 0, MAX_DECL), (t1, t2 - t1, t_tot - t2), (v1, v1, v_end)
     #
     #
-    # def compute_one_section(self, v_ini, v_end, d_tot, t_tot):
-    #     """Compute acceleration and intermediate time for 1 section profile.
+    # def compute_time(self, distance, next_speed):
+    #     """Compute the minimum time required to complete the motion.
     #
     #     """
-    #     v_aux = v_end - v_ini
-    #     d_aux = d_tot - v_ini * t_tot
-    #     t1 = 2 * (v_aux * t_tot - d_aux) / v_aux
-    #     a1 = v_aux / t1
-    #     t2 = t_tot - t1
-    #     return (a1, 0), (t1, t2), (v_end, v_end)
+    #     if self.profile_type == ProfileClass.NoDynamics:
+    #         return distance / self.speed
+    #     elif self.profile_type == ProfileClass.ThreeSections:
+    #         return 0.0
