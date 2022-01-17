@@ -7,21 +7,26 @@ Created on 25 nov. 2021
 
 from dynamics.profiles import SpeedProfile
 
-v_ini = 5.0
-d_tot = 40.0
-t_lim = 10.0
+v_ini = 6.3242
+v_end = 0.0
+d_tot = 5.0
+t_tot = 1.5811388300841898
 
 data = {
-    'speed': 13.0,
+    'speed': 10.0,
     'acceleration': 2.0,
     'decceleration': 4.0}
 
 profile = SpeedProfile(data)
 
-v_min, v_max = profile.speed_range(v_ini, d_tot)
-
-a, t, v = profile.compute_profile(8.0, 13.0, d_tot, 3.5)
-res = profile.plot_dynamics(8.0, a, t, 0.001)
+v_min, v_max = profile.init_speed_range(v_end, d_tot)
+# v_min, v_max = profile.speed_range(v_ini, d_tot)
+print("Velocidad:", v_max)
+t_min, t_max = profile.two_sections_time_limits(v_ini, v_end, d_tot)
+print("Tiempo:", t_min)
+a, t, v = profile.compute_profile(v_ini, v_end, d_tot, t_tot)
+print(a)
+res = profile.plot_dynamics(v_ini, a, t, 0.001)
 profile.draw_dynamics(res[0], res[1], res[2], None, True)
 
 
