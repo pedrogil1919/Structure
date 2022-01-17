@@ -151,7 +151,7 @@ class SpeedProfile():
     def max_speed_minimum_time(self, v_ini, v_end, d_tot):
         """Auxiliary function for the computation of time limits.
 
-        when computing the time limits, it can happen than, for an 
+        when computing the time limits, it can happen than, for an
         acceleration - decceleration profile, the maximum speed is reached. In
         this case, the minimum time shall be greater than the original one,
         since for some time, the motion will have the maximum speed, and this
