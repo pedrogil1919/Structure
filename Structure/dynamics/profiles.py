@@ -64,7 +64,7 @@ class SpeedProfile():
         """Computes range of end speeds.
 
         For a initial speed and a total distance to travel, there is a range of
-        speed at which the motion can be finished. This range is function of
+        speeds at which the motion can be finished. This range is function of
         the maximum acceleration and decceleration values.
 
         The function returns a tupla with this range (v_end_min, v_end_max).
@@ -99,6 +99,24 @@ class SpeedProfile():
         if v_ini_max > self.speed:
             v_ini_max = self.speed
         return (v_ini_min, v_ini_max)
+
+    def distance_to_stop(self, v_ini):
+        """Computes the distance required to stop from an initial speed.
+
+        """
+        stop_time = v_ini / self.decceleration
+        distance = v_ini * stop_time / 2.0
+        return distance
+
+    def max_end_speed(self, v_ini, d_tot, t_tot):
+        """Return the maximum end speed for the given data.
+
+        In this case, for a given initial speed, total distance to travel and a
+        given time to complete the motion, the maximum speed is reached when
+        profiling a uniformly accelerated motion.
+
+        """
+        return 2 * d_tot / t_tot - v_ini
 
     def time_limit(self, a1, a2, v0, v2, d):
         """Auxiliary function to solve the 2 order equation for time limits.
@@ -295,7 +313,7 @@ class SpeedProfile():
         """Compute acceleration and intermediate time for 3 section profile.
 
         This profile is used when the 2-sections profile reaches zero velocity.
-        Although this motion can steel be done with the two section profile,
+        Although this motion can still be done with the two section profile,
         this means that the object move backwards in some moment. In this case
         it is better to stop the object when it reaches zero velocity, and
         wait there until the required time ellapses.
@@ -448,7 +466,8 @@ class SpeedProfile():
         v = (v1, v_end)
         return a, t, v
 
-    def plot_dynamics(self, init_speed, accelerations, times, sample_time):
+    def plot_dynamics(self, init_speed, accelerations,
+                      times, sample_time, time_offset):
         """Plot speed and position for a list of acceleration -time pairs.
 
         Arguments:
@@ -457,6 +476,8 @@ class SpeedProfile():
         times -- list of time intervals. Must be the same size of acceleration
             list.
         sample_time -- need not be multiple of time intervals.
+        time_offset -- If first sample does not start in t = 0. Can be
+            positive or negative.
         """
 
         # List of arrrays to store all the samples computed.
@@ -465,14 +486,13 @@ class SpeedProfile():
         # Indices to get track of the time intervals and the samples for a
         # given section of the motion.
         current_sample = 0
-        current_time = 0.0
+        current_time = time_offset
         # Variables to compute the position and speed at the end of the section
         # independently of the sample time.
         current_position = 0.0
         current_speed = init_speed
 
         for acceleration, interval in zip(accelerations, times):
-
             # Compute the number of samples for the current section. Note that
             # we have to do this computation to ensure that we get the same
             # number of samples independently of the sample time being multiple
@@ -574,7 +594,8 @@ class SpeedProfile():
     #     t2 = v_end / MAX_DECL - MAX_ACEL / MAX_DECL * t1 + t_tot
     #     # tn = (-b1 - d) / (2 * b2)
     #     v1 = MAX_ACEL * t1 - MAX_DECL * (t_tot - t2)
-    #     return (-MAX_ACEL, 0, MAX_DECL), (t1, t2 - t1, t_tot - t2), (v1, v1, v_end)
+    #     return (-MAX_ACEL, 0, MAX_DECL), (t1, t2 - t1, t_tot - t2),
+    #           (v1, v1, v_end)
     #
     #
     # def compute_time(self, distance, next_speed):
