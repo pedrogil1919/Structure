@@ -39,12 +39,11 @@ same time as the elevation.
 """
 
 import copy
-from math import isinf
 
 from physics.wheel_state import MAX_GAP
 
 
-def last_instruction(structure):
+def last_instruction(structure, distance):
     """Generate the last instruction before finishing the program.
 
     Before finish the program, set the structure to its canonical position,
@@ -85,6 +84,7 @@ def last_instruction(structure):
     else:
         act_aux = {}
 #     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    structure.advance(distance, check=False)
     # Get the current inclination of the structure
     # and the current elevation.
     incline = -structure.get_inclination()
@@ -97,9 +97,13 @@ def last_instruction(structure):
     if not col or not stb:
         raise RuntimeError
     instruction = {
+        "advance": distance,
         "incline": incline,
-        "elevate": elevate,
-        "end": True}
+        "elevate": elevate}
+    # Although this is the last instruction, only end the execution when also
+    # there is not any motion.
+    if null_instruction(instruction):
+        return None, None, None
     return instruction, actuator, act_aux
 
 
@@ -392,9 +396,17 @@ def compute_distance(structure, distance):
 
     """
     instructions = []
+    # Compute new instructions until the total distance is covered.
     while distance > 0:
+        # Get next instruction.
         next_inst, structure = next_instruction(structure)
+        # If it is the last instruction, we can not return any more
+        # instruction, and so, end here.
+        if next_inst is None:
+            return instructions
+        # Take account of the distance traveled,
         distance -= next_inst.get('advance', 0.0)
+        # and append the instruction to the list.
         instructions.append(next_inst)
     return instructions
 
@@ -429,7 +441,8 @@ def next_instruction(structure):
     Return a dictionary with the instructions to perform.
     """
     # Get the distances each wheel is with respect to its closest step.
-    wheel, hor, ver, w_aux, h_aux, v_aux = structure.get_wheels_distances()
+    wheel, hor, ver, w_aux, h_aux, v_aux, end \
+        = structure.get_wheels_distances()
 
     # Create a deep copy of the structure, to simulate all the motions computed
     # without modifying the actual structure.
@@ -439,9 +452,11 @@ def next_instruction(structure):
     # structure, and so, we have to finish the program.
     inst_aux = {}
     act_aux = {}
-    if isinf(hor):
+    if end:
         # Computing the las instruction before finishing the program.
-        instruction, actuator, act_aux = last_instruction(st_aux)
+        instruction, actuator, act_aux = last_instruction(st_aux, hor)
+        if instruction is None:
+            return None, None
     else:
         # Get the next instruction for the main wheel.
         instruction, actuator = compute_instruction(st_aux, wheel, hor, ver)

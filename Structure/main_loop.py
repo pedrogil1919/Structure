@@ -108,6 +108,9 @@ while continue_loop:
             try:
                 # Compute the next instruction.
                 instruction, str_aux = control.next_instruction(structure)
+                if instruction is None:
+                    graphics.set_manual_mode()
+                    continue
                 stop_distance = sm.estimate_end_speed(instruction)
                 next_instructions = control.compute_distance(
                     str_aux, stop_distance)

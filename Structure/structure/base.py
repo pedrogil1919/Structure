@@ -440,14 +440,14 @@ class Base:
         See stair.set_distances function, and getDistances.svg.
         """
         # Compute distances for the rear pair, and the front pair.
-        re_id, re_hor, re_ver = self.REAR.get_wheel_distances()
-        fr_id, fr_hor, fr_ver = self.FRNT.get_wheel_distances()
+        re_id, re_hor, re_ver, re_end = self.REAR.get_wheel_distances()
+        fr_id, fr_hor, fr_ver, fr_end = self.FRNT.get_wheel_distances()
         # If the front pair has reached the end of the stair, but not the rear
         # pair.
-        if isinf(fr_hor) and fr_ver < -MAX_GAP:
+        if fr_end and fr_ver < -MAX_GAP:
             # And also, one of the wheels is not still in the ground, take the
             # front wheel right to the ground.
-            return fr_id + 2, re_hor / 2, fr_ver, re_id, re_hor, re_ver
+            return fr_id + 2, re_hor / 2, fr_ver, re_id, re_hor, re_ver, re_end
 
         # Take the minimum of both pairs.
         if re_hor < fr_hor:
@@ -457,8 +457,8 @@ class Base:
             # that reason, only when a wheel is not close enough to the stair,
             # this will not be lift. The reference is a quarter of the width of
             # the structure.
-            if re_hor > self.WIDTH / 4:
-                fr_ver = 0.0
+            # if re_hor > self.WIDTH / 4:
+            #     fr_ver = 0.0
             # TODO: Review this comment.
             # When the structure is far apart from the stair, it is better to
             # advance horizontaly until the structure is close enough. This is
@@ -466,15 +466,15 @@ class Base:
             # if re_hor > self.WIDTH / 4:
             #     re_ver = 0.0
             #     re_hor -= self.WIDTH / 4
-            return re_id, re_hor, re_ver, fr_id + 2, fr_hor, fr_ver
+            return re_id, re_hor, re_ver, fr_id + 2, fr_hor, fr_ver, re_end
         else:
             # Same comment that above.
-            if re_hor > self.WIDTH / 4:
-                re_ver = 0.0
+            # if re_hor > self.WIDTH / 4:
+            #     re_ver = 0.0
             # NOTE: The index of wheel are numbered from 0. Since the rear
             # wheel is the third wheel of the structure, we have to add 2 to
             # the index returned for the pair.
-            return fr_id + 2, fr_hor, fr_ver, re_id, re_hor, re_ver
+            return fr_id + 2, fr_hor, fr_ver, re_id, re_hor, re_ver, re_end
 
     def set_horizontal(self):
         """Return the distance to place each wheel on the ground ."""

@@ -59,6 +59,21 @@ class SpeedProfile():
     def total_time(self, distance):
         return distance / self.speed
 
+    def end_speed_range(self, v_ini, d_tot):
+        return self.speed, self.speed
+
+    def init_speed_range(self, v_end, d_tot):
+        return self.speed, self.speed
+
+    def profile_time_limits(self, v_ini, v_end, d_tot):
+        return d_tot / self.speed, float('inf')
+
+    def max_end_speed(self, v_ini, d_tot, t_tot):
+        return float('inf')
+
+    def compute_profile(self, v_ini, v_end, d_tot, t_tot):
+        return (0.0,), (t_tot,), (d_tot / t_tot, d_tot / t_tot)
+
     def plot_dynamics(self, init_speed, accelerations,
                       times, sample_time, time_offset):
         """Plot speed and position for a list of acceleration -time pairs.
@@ -167,6 +182,10 @@ class SpeedProfile():
     def clear_figures(self):
         plt.figure(figsize=(8, 6), dpi=100)
 
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 class AccelerationProfile(SpeedProfile):
 
@@ -443,7 +462,7 @@ class AccelerationProfile(SpeedProfile):
         # Time (remember that t1 + t2 = t_total
         t = (t1, t2 - t1, t_tot - t2)
         # Speeds.
-        v = (self.speed, v_end)
+        v = (v_ini, self.speed, v_end)
         return a, t, v
 
     def profile_three_sections_zero(self, v_ini, v_end, d_tot, t_tot):
@@ -473,7 +492,7 @@ class AccelerationProfile(SpeedProfile):
         # Time:
         t = (t0, t1, t2)
         # Speeds:
-        v = (0, v_end)
+        v = (v_ini, 0.0, v_end)
         return a, t, v
 
     def profile_one_section(self, v_ini, v_end, d_tot, t_tot):
@@ -485,7 +504,7 @@ class AccelerationProfile(SpeedProfile):
         t1 = 2 * (v_aux * t_tot - d_aux) / v_aux
         a1 = v_aux / t1
         t2 = t_tot - t1
-        return (a1, 0), (t1, t2), (v_end, v_end)
+        return (a1, 0.0), (t1, t2), (v_ini, v_end, v_end)
 
     def profile_two_sections(self, v_ini, v_end, d_tot, t_tot):
         """Compute acceleration and intermediate time for 2 section profile.
@@ -525,7 +544,7 @@ class AccelerationProfile(SpeedProfile):
         # initial velocity, o single decceleration otherwise).
         if fabs(v_mean2 - v_end) < ROUND_ERROR:
             a1 = v_end / t_tot
-            return (a1,), (t_tot,), (v_end + v_ini,)
+            return (a1,), (t_tot,), (v_ini, v_end + v_ini,)
         elif v_mean2 > v_end:
             # Since there are infinite solutions,we impose the restriction that
             # the current ratio between the deceleration and the acceleration
@@ -600,7 +619,7 @@ class AccelerationProfile(SpeedProfile):
         # Time pairs (remember that t1 + t2 = t_total
         t = (t1, t2)
         # Speeds pairs. Denormalize adding the initial speed to both values.
-        v = (v1, v_end)
+        v = (v_ini, v1, v_end)
         return a, t, v
 
     ###########################################################################

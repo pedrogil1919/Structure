@@ -12,7 +12,7 @@ import numpy
 import cv2
 from math import inf
 
-from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN
+from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN, MAX_GAP
 
 
 class Wheel:
@@ -174,7 +174,7 @@ class Wheel:
         r = self.RADIUS
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, r)
 
-        res = {'st': self.ground(position)}
+        res = {'st': self.ground(position), 'end': False}
 
         if self.state == WheelState.Over or self.state == WheelState.Unstable:
             if hl <= hc:
@@ -271,9 +271,13 @@ class Wheel:
             # End:
             ###################################################################
             elif hr == hc:
-                # The wheel has reached the end of the stair. Send an infinite
-                # value to warn the calling function.
-                res['wr'] = inf
+                # The wheel has reached the last step.
+                if wr > 0:
+                    res['wr'] = 0.0
+                else:
+                    res['wr'] = -wr
+                res['end'] = True
+                res['up'] = (hl < hr)
                 if self.state == WheelState.Air:
                     res['hr'] = hc
                 elif self.state == WheelState.Contact:

@@ -147,13 +147,13 @@ class ActuatorPair:
         re_res = self.REAR.get_wheel_distances()
         fr_res = self.FRNT.get_wheel_distances()
         # Test if the structure is reaching the end of the stair.
-        if isinf(fr_res['wr']):
+        if fr_res['end']:
             # The front wheel has reached the end of the stair.
-            if isinf(re_res['wr']):
+            if re_res['end']:
                 # The rear wheel has also reached the end of the stair.
                 # NOTE: Check if must be absolute value in the comparison
                 # below.
-                return 0, inf, min([fr_res['hr'], re_res['hr']])
+                return 0, fr_res['wr'], min([fr_res['hr'], re_res['hr']]), True
             else:
                 # Only the front wheel has reached the end of the stair. Set
                 # the value up to the same than the rear wheel, because then
@@ -216,7 +216,7 @@ class ActuatorPair:
                     index = (index + 1) % 2
                 # The passive wheel is on the ground, so that we need not
                 # take care of this wheel.
-                # NOTE: Removed (13/05/21). This functionality has been 
+                # NOTE: Removed (13/05/21). This functionality has been
                 # moved to wheel.get_wheel_distances function.
                 # if ver > 0:
                     # If the vertical distance is positive, its means that
@@ -259,7 +259,7 @@ class ActuatorPair:
             raise NotImplementedError(
                 "Wheel facing steps with different sign.")
 
-        return index, hor, ver
+        return index, hor, ver, re_res['end'] and fr_res['end']
 
     def set_to_ground(self):
         """Compute the distance to place both wheels on the ground.

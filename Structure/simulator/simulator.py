@@ -188,6 +188,8 @@ class Simulator():
         # the limitation of that instructions. The speed to finally return is
         # the minimum of all of them.
         return_speed = init_speed
+        # Just if no instruction is given, set this variable to 0.
+        end_speed = init_speed
         for next_inst in instructions:
             # The actuator time is the minimum time we have to perform the
             # instruction (the actuators can not complete the instrucion in
@@ -226,6 +228,9 @@ class Simulator():
                     end_speed = mean_speed - speed_delta
                 else:
                     end_speed = 0.0
+                # Now, we have to determine the initial speed of the whole
+                # set of instructions. For that purpose, we use the total
+                # distance traveled so far.
                 __, init_speed = self.profile.init_speed_range(
                     end_speed, distance_run)
                 # We have to return the minimum of all speed computed.
@@ -234,13 +239,16 @@ class Simulator():
             # The speed for the next instruction will be the end speed computed
             # for the current instruction.
             next_speed = end_speed
-        # Now, we have to determine the initial speed of the whole
-        # set of instruction. For that purpose, we use the total
-        # distance traveled so far.
         if end_speed > 0.0:
-            raise RuntimeError(
-                "Error en deteccion de colisiones. \
-                Las instrucciones no cubren la distancia de parada")
+            # Since the list of instructions given must cover the stop distance
+            # for the current speed, at the end of the loop we must have
+            # reached 0 velocity. However, when we are finishing the complete
+            # stair and there is not more instructions, it is possible that we
+            # do not get speed equal to 0. In this case, it is obvious that
+            # the end velocity is equal to 0.
+            __, init_speed = self.profile.init_speed_range(0.0, distance_run)
+            if init_speed < return_speed:
+                return_speed = init_speed
 
         return return_speed
 
@@ -318,11 +326,12 @@ class Simulator():
         # needed when simulating the motion.
         instruction['time'] = min_time
         # Calculate the speed profile for the horizontal motion.
-        accelerations, intervals, __ = self.profile.compute_profile(
+        accelerations, intervals, speeds = self.profile.compute_profile(
             self.current_speed, end_speed, distance, min_time)
         instruction['dynamics'] = {
             'accelerations': accelerations,
-            'intervals': intervals}
+            'intervals': intervals,
+            'speeds': speeds}
         # Save the computed end speed, to replace for the computed in
         # simulation, since due to rounding errors, can be slightly different.
         self.end_speed = end_speed
@@ -346,6 +355,8 @@ class Simulator():
         the simulation of this instruction).
 
         """
+        if structure is None:
+            return False
         # Get the time needed to complete the instruction.
         # TODO: This value must be computed with the function "comptue_time".
         # If not done, suppose there is an empty instruction, or at least an
@@ -393,17 +404,25 @@ class Simulator():
         # NOTE: For the horizontal motion, we compute an array with the motion
         # for each sample time, independently of the type of profile employed.
         time_offset = self.sample_time - sample_time
-        try:
-            # Check if the dynamics has been computed for this instruction.
-            dynamics = instruction['dynamics']
-            __, speed, position = self.profile.plot_dynamics(
-                self.current_speed, dynamics['accelerations'],
-                dynamics['intervals'], self.sample_time, time_offset)
-        except KeyError:
-            # If not, we are considering infinite acceleration.
-            __, speed, position = self.profile.plot_dynamics(
-                instruction['end_speed'], (0,), (total_time,),
-                self.sample_time,  time_offset)
+        dynamics = instruction['dynamics']
+        # Use the current speed stored in the instruction instead of the
+        # actual current speed of the structure (when using dynamics both are
+        # the same value, but not when not using it).
+        current_speed = dynamics['speeds'][0]
+        __, speed, position = self.profile.plot_dynamics(
+            current_speed, dynamics['accelerations'],
+            dynamics['intervals'], self.sample_time, time_offset)
+        # try:
+        #     # Check if the dynamics has been computed for this instruction.
+        #     dynamics = instruction['dynamics']
+        #     __, speed, position = self.profile.plot_dynamics(
+        #         self.current_speed, dynamics['accelerations'],
+        #         dynamics['intervals'], self.sample_time, time_offset)
+        # except KeyError:
+        #     # If not, we are considering infinite acceleration.
+        #     __, speed, position = self.profile.plot_dynamics(
+        #         instruction['end_speed'], (0,), (total_time,),
+        #         self.sample_time,  time_offset)
         motion = position[1:] - position[0:-1]
         # NOTE: If we implement a for loop, at the end of each instruction the
         # generator is called twice, causing the simulator to perform one
@@ -472,14 +491,8 @@ class Simulator():
             # first iteration of the instruction. For the rest of the
             # iterations, the sample time must be the system sample time.
             sample_time = self.sample_time
-        # # Once the complete instruction has been executed, change the structure
-        # # current speed to the one calculated previously. This value can be a
-        # # little different to the one after the continuous update done in the
-        # # loop, due to rounding effects.
-        # self.current_speed = instruction['end_speed2']
-        # Check for the end of the trajectory. Return false when is the last
-        # instruction. This is marked with the key end in the dictionary.
-        yield not instruction.get('end', False)
+
+        yield True
 
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step."""
