@@ -28,17 +28,17 @@ structure_size, wheels_radius = readXML.read_structure(settings_name)
 structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
-speed_data, dynamics_data = readXML.read_simulator(settings_name)
-sm = Simulator(speed_data, dynamics_data)
+dynamics_data = readXML.read_dynamics(settings_name)
+sm = Simulator(dynamics_data)
 
 # Read graphical variables.
 image_data, video_data = readXML.read_graphics(settings_name)
 axis = {
     "height": structure_size["d"],
-    "max_speed": 1.2 * speed_data["wheel"]}
+    "max_speed": 1.2 * dynamics_data["speed"]}
 graphics = Graphics(image_data, video_data, axis)
 # Draw initial state of the structure.
-continue_loop, key_pressed = graphics.draw(stairs, structure)
+continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
@@ -55,7 +55,7 @@ while continue_loop:
         #  Manual mode
         #######################################################################
         # Display image and wait for next instruction.
-        continue_loop, key_pressed = graphics.draw(stairs, structure)
+        continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
 
         instruction = control.manual_control(key_pressed, sm)
         print("manual:", instruction)
@@ -80,18 +80,17 @@ while continue_loop:
                 # The simulation has finished or failed: finish the program.
                 # print("Press any key to finish...")
                 graphics.set_manual_mode()
-                graphics.draw(stairs, structure, True)
+                graphics.draw(stairs, structure, sm, True)
                 # Finish the outermost loop.
                 # continue_loop = False
                 break
             # The simulation has succeeded, so, continue loop.
-            continue_loop, key_pressed = graphics.draw(stairs, structure)
+            continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
             if not continue_loop:
                 # The user has pressed the Esc key to finish the program.
                 break
-            if graphics.manual_mode:
-                # Entering manual mode. Finish the inner while loop an continue
-                # with a new iteration of the outermost while loop.
+                # Entering manual mode. Finish the inner while loop and
+                # continue with a new iteration of the outermost while loop.
                 # NOTE: At the end of the for loop, we substitute the current
                 # structure by the one returned by the control module. However,
                 # if we change mode before the instruction is finished, we
@@ -107,7 +106,25 @@ while continue_loop:
         if continue_loop and not graphics.manual_mode:
             # Generate the next instruction.
             try:
+                # Compute the next instruction.
                 instruction, str_aux = control.next_instruction(structure)
+                stop_distance = sm.estimate_end_speed(instruction)
+                next_instructions = control.compute_distance(
+                    str_aux, stop_distance)
+                # Compute and initial estimation of the time requirede to
+                # complete the instruction, and if dynamics is implemented,
+                # compute the instructions that the structure has to suposedly
+                # complete until the structure stop. This is only to check
+                # for collisions when computing the actual profile for the
+                # horizontal motion (if needed).
+                # Compute the actual time required to complete the instruction.
+                sm.compute_time(instruction, next_instructions)
+                # str_aux2 = str_aux
+                # while not sm.compute_time(instruction, next_instructions):
+                #     next_instructions = control.compute_distance(
+                #         str_aux2, instruction['stop_distance'])
+                # next_inst, str_aux = control.next_instruction(str_aux2)
+                # next_instructions += [next_inst]
             except RuntimeError:
                 # A runtime error is raised when the control does not find any
                 # instruction (probably because the wheelchair has reached the

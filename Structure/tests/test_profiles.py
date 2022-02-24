@@ -19,15 +19,18 @@ data = {
 
 profile = SpeedProfile(data)
 
-v_min, v_max = profile.init_speed_range(v_end, d_tot)
-# v_min, v_max = profile.speed_range(v_ini, d_tot)
-print("Velocidad:", v_max)
-t_min, t_max = profile.two_sections_time_limits(v_ini, v_end, d_tot)
-print("Tiempo:", t_min)
-a, t, v = profile.compute_profile(v_ini, v_end, d_tot, t_tot)
-print(a)
-res = profile.plot_dynamics(v_ini, a, t, 0.001)
-profile.draw_dynamics(res[0], res[1], res[2], None, True)
+tl, sl, pl = profile.plot_dynamics(2.0, (0.0, 0.0), (10.0, 5.0), 0.1, 0.001)
+profile.draw_dynamics(tl, sl, pl, block=True)
+
+# v_min, v_max = profile.init_speed_range(v_end, d_tot)
+# # v_min, v_max = profile.speed_range(v_ini, d_tot)
+# print("Velocidad:", v_max)
+# t_min, t_max = profile.two_sections_time_limits(v_ini, v_end, d_tot)
+# print("Tiempo:", t_min)
+# a, t, v = profile.compute_profile(v_ini, v_end, d_tot, t_tot)
+# print(a)
+# res = profile.plot_dynamics(v_ini, a, t, 0.001)
+# profile.draw_dynamics(res[0], res[1], res[2], None, True)
 
 
 # v_aux = 10.0

@@ -13,13 +13,13 @@ class CollisionTest(unittest.TestCase):
 
     def testConstructor(self):
         """Check if the wheel constructor raises correct exceptions.
-        
+
         """
         # Positive steps.
         landing = 100.0
         stair_list = [
             {'N': 2, 'd': 250.0, 'w': 50.0, 'h': +25.0}
-            ]
+        ]
         radius = 15.0
 
         stairs_test = stairs.Stair(stair_list, landing)
@@ -34,7 +34,7 @@ class CollisionTest(unittest.TestCase):
         # Negative steps.
         stair_list = [
             {'N': 2, 'd': 250.0, 'w': 50.0, 'h': -25.0}
-            ]
+        ]
         radius = 15.0
 
         stairs_test = stairs.Stair(stair_list, landing)
@@ -53,12 +53,12 @@ class CollisionTest(unittest.TestCase):
         landing = 100.0
         stair_list = [
             {'N': 2, 'd': 250.0, 'w': 50.0, 'h': +25.0}
-            ]
+        ]
         radius = 15.0
 
         stairs_test = stairs.Stair(stair_list, landing)
         wheel_test = wheel.Wheel(radius, stairs_test, (radius, radius))
-        position = [50, radius-10]
+        position = [50, radius - 10]
         res, w, h = wheel_test.move_wheel(position)
         self.assertFalse(res, "Error. Collision not detected.")
         position[0] += w
@@ -67,7 +67,7 @@ class CollisionTest(unittest.TestCase):
         self.assertTrue(res, "Error. Collision correction failed.")
         self.assertTrue(wheel_test.contact(),
                         "Error: Wheel not in contact after correction")
-        
+
 ###############################################################################
 # End of file.
 ###############################################################################

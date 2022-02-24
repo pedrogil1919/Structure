@@ -55,10 +55,133 @@ class SpeedProfile():
         # Save system parameters:
         # Maximum speed:
         self.speed = dynamics_data['speed']
+
+    def total_time(self, distance):
+        return distance / self.speed
+
+    def plot_dynamics(self, init_speed, accelerations,
+                      times, sample_time, time_offset):
+        """Plot speed and position for a list of acceleration -time pairs.
+
+        Arguments:
+        initial_speed
+        accelerations -- list of acceleration values.
+        times -- list of time intervals. Must be the same size of acceleration
+            list.
+        sample_time -- need not be multiple of time intervals.
+        time_offset -- If first sample does not start in t = 0. Can be
+            positive or negative.
+        """
+
+        # List of arrrays to store all the samples computed.
+        speed_list = array((init_speed,), data_type)
+        position_list = array((0.0,), data_type)
+        # Indices to get track of the time intervals and the samples for a
+        # given section of the motion.
+        current_sample = 0
+        current_time = time_offset
+        # Variables to compute the position and speed at the end of the section
+        # independently of the sample time.
+        current_position = 0.0
+        current_speed = init_speed
+        times = list(times)
+        times[-1] += sample_time
+        for acceleration, interval in zip(accelerations, times):
+            # Compute the number of samples for the current section. Note that
+            # we have to do this computation to ensure that we get the same
+            # number of samples independently of the sample time being multiple
+            # or not of the time intervals.
+
+            # Get the time limits for the current section.
+            last_time = current_time
+            current_time += interval
+            # Get the sample limits for the current section.
+            last_sample = current_sample
+            current_sample = int(current_time / sample_time)
+            new_samples = current_sample - last_sample
+
+            # When the sample time is not a multiple or the time intervals, we
+            # have to take account of the remains of each side of the sample.
+            # The time offset is the difference between the current time,
+            # computed as the accumulation of the actual intervals, and the
+            # position of the last sample, which is a multiple of the sample
+            # time.
+            time_offset = last_time - last_sample * sample_time
+            # Get an auxiliary array for the computation of the intermediate
+            # samples of the secion.
+            samples = arange(1, new_samples + 1, 1, data_type)
+            samples *= sample_time
+            samples -= time_offset
+
+            # Compute the intermediate values for the speed and position for
+            # the current section.
+            # Compute samples for the speed.
+            speed_samples = current_speed + acceleration * samples
+            # And compute also the samples for the position traveled.
+            position_samples = current_position + \
+                current_speed * samples + 0.5 * acceleration * samples**2
+            # Add new samples to the actual ones.
+            speed_list = hstack((speed_list, speed_samples))
+            position_list = hstack((position_list, position_samples))
+
+            # Get the values for the end of the section. This make the function
+            # independent of the sample time.
+            # This is the position at the end of the section, that can be
+            # different to the last sample, if the sample time is not multiple
+            # of the time interval.
+            current_position += \
+                current_speed * interval + 0.5 * acceleration * interval**2
+            # And this is the speed at the end of the section. Note that this
+            # must be computed after the computation of the position.
+            current_speed += acceleration * interval
+
+        # One computed all the sections, generate a time array.
+        time_list = arange(0, speed_list.shape[0], 1, data_type)
+        time_list *= sample_time
+        # time_list = arange(0, current_sample * sample_time,
+        #                    sample_time, data_type)
+        # time_list += sample_time
+
+        # And return all the signals computed.
+        return time_list, speed_list, position_list
+
+    def draw_dynamics(self, time_data, speed_data, position_data,
+                      max_time=None, block=False):
+        # Plot figures.
+
+        if max_time is None:
+            max_time = time_data[-1]
+        plt.subplot(2, 1, 1)
+        plt.plot(time_data, speed_data, 'b')
+        plt.title("velocidad")
+        plt.grid(True)
+        plt.xlim([0, max_time])
+
+        plt.subplot(2, 1, 2)
+        plt.plot(time_data, position_data, 'b')
+        plt.title("espacio")
+        plt.grid(True)
+        plt.xlim([0, max_time])
+        plt.show(block=block)
+
+    def clear_figures(self):
+        plt.figure(figsize=(8, 6), dpi=100)
+
+
+class AccelerationProfile(SpeedProfile):
+
+    def __init__(self, dynamics_data):
+
+        # Save system parameters:
+        # Maximum speed:
+        self.speed = dynamics_data['speed']
         # Maximum acceleration and decceleration rates. Both values must be
         # positive values.
         self.acceleration = dynamics_data['acceleration']
         self.decceleration = dynamics_data['decceleration']
+
+    def total_time(self, distance):
+        raise TypeError
 
     def end_speed_range(self, v_ini, d_tot):
         """Computes range of end speeds.
@@ -116,7 +239,14 @@ class SpeedProfile():
         profiling a uniformly accelerated motion.
 
         """
-        return 2 * d_tot / t_tot - v_ini
+        vm = 2 * d_tot / t_tot - v_ini
+        if vm > 0.0:
+            return vm
+        else:
+            # If the distance to travel is short and the time long enough, we
+            # can get negative values. In this case, the maximum end speed,
+            # as well as the minimum end speed is 0.
+            return 0.0
 
     def time_limit(self, a1, a2, v0, v2, d):
         """Auxiliary function to solve the 2 order equation for time limits.
@@ -192,18 +322,25 @@ class SpeedProfile():
         # The total time is the sum of the threee previous times.
         return t1 + t2 + t12
 
-    def two_sections_time_limits(self, v_ini, v_end, d_tot):
+    def profile_time_limits(self, v_ini, v_end, d_tot):
         """Compute the time limits required to complete the motion.
 
         The function computes the minimum time required to complete the
         distance given, according to its previous velocity and the end
         velocity, using the actual maximum acceleration - deccerelation values.
-        The minimum time is accieved when using the maximum accelerations,
+        The minimum time is achieved when using the maximum accelerations,
         so that the motion is possible to be completed using more time, but
         never using less time than the computed here.
 
         The function also computes the maximum time the motion can be completed
         in, according to the same values as above.
+
+        Initially, the time is computed assuming a 2 section profile. However,
+        if the profile reaches the maximum speed, a 3 section profile is
+        computed instead. For the maximum time, if the profile reaches 0 speed,
+        an infinity value - float("inf") - is returned, that is, if the
+        object stops at any time, we can wait infinite time before start the
+        motion again, and so, the motion can take up to infinite time.
 
         TODO: Check why if the velocity becomes 0 o bellow, the computation of
         the maximum distance fails (time becomes complex).
@@ -466,112 +603,6 @@ class SpeedProfile():
         v = (v1, v_end)
         return a, t, v
 
-    def plot_dynamics(self, init_speed, accelerations,
-                      times, sample_time, time_offset):
-        """Plot speed and position for a list of acceleration -time pairs.
-
-        Arguments:
-        initial_speed
-        accelerations -- list of acceleration values.
-        times -- list of time intervals. Must be the same size of acceleration
-            list.
-        sample_time -- need not be multiple of time intervals.
-        time_offset -- If first sample does not start in t = 0. Can be
-            positive or negative.
-        """
-
-        # List of arrrays to store all the samples computed.
-        speed_list = array((init_speed,), data_type)
-        position_list = array((0.0,), data_type)
-        # Indices to get track of the time intervals and the samples for a
-        # given section of the motion.
-        current_sample = 0
-        current_time = time_offset
-        # Variables to compute the position and speed at the end of the section
-        # independently of the sample time.
-        current_position = 0.0
-        current_speed = init_speed
-
-        for acceleration, interval in zip(accelerations, times):
-            # Compute the number of samples for the current section. Note that
-            # we have to do this computation to ensure that we get the same
-            # number of samples independently of the sample time being multiple
-            # or not of the time intervals.
-
-            # Get the time limits for the current section.
-            last_time = current_time
-            current_time += interval
-            # Get the sample limits for the current section.
-            last_sample = current_sample
-            current_sample = int(current_time / sample_time)
-            new_samples = current_sample - last_sample
-
-            # When the sample time is not a multiple or the time intervals, we
-            # have to take account of the remains of each side of the sample.
-            # The time offset is the difference between the current time,
-            # computed as the accumulation of the actual intervals, and the
-            # position of the last sample, which is a multiple of the sample
-            # time.
-            time_offset = last_time - last_sample * sample_time
-            # Get an auxiliary array for the computation of the intermediate
-            # samples of the secion.
-            samples = arange(1, new_samples + 1, 1, data_type)
-            samples *= sample_time
-            samples -= time_offset
-
-            # Compute the intermediate values for the speed and position for
-            # the current section.
-            # Compute samples for the speed.
-            speed_samples = current_speed + acceleration * samples
-            # And compute also the samples for the position traveled.
-            position_samples = current_position + \
-                current_speed * samples + 0.5 * acceleration * samples**2
-            # Add new samples to the actual ones.
-            speed_list = hstack((speed_list, speed_samples))
-            position_list = hstack((position_list, position_samples))
-
-            # Get the values for the end of the section. This make the function
-            # independent of the sample time.
-            # This is the position at the end of the section, that can be
-            # different to the last sample, if the sample time is not multiple
-            # of the time interval.
-            current_position += \
-                current_speed * interval + 0.5 * acceleration * interval**2
-            # And this is the speed at the end of the section. Note that this
-            # must be computed after the computation of the position.
-            current_speed += acceleration * interval
-
-        # One computed all the sections, generate a time array.
-        time_list = arange(0, speed_list.shape[0], 1, data_type)
-        time_list *= sample_time
-        # time_list = arange(0, current_sample * sample_time,
-        #                    sample_time, data_type)
-        # time_list += sample_time
-
-        # And return all the signals computed.
-        return time_list, speed_list, position_list
-
-    def draw_dynamics(self, time_data, speed_data, position_data,
-                      max_time=None, block=False):
-        # Plot figures.
-
-        if max_time is None:
-            max_time = time_data[-1]
-        plt.subplot(2, 1, 1)
-        plt.plot(time_data, speed_data, 'b')
-        plt.title("velocidad")
-        plt.grid(True)
-        plt.xlim([0, max_time])
-
-        plt.subplot(2, 1, 2)
-        plt.plot(time_data, position_data, 'b')
-        plt.title("espacio")
-        plt.grid(True)
-        plt.xlim([0, max_time])
-        plt.show(block=block)
-
-    def clear_figures(self):
-        plt.figure(figsize=(8, 6), dpi=100)
     ###########################################################################
 
     # def compute_three_sections(self, v_ini, v_end, d_tot, t_tot):

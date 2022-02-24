@@ -557,15 +557,15 @@ class Base:
         # rear joint.
         return self.REAR.REAR.d
 
-    def get_speed(self):
-        """Return the speed of the strucure."""
-        # TODO: Update function with the dynamics of the structure.
-        return self.position - self.prev_pos
-
-    def get_acceleration(self):
-        """Return the acceleration of the strucure."""
-        # TODO: Update function with the dynamics of the structure.
-        return 0.0
+    # def get_speed(self):
+    #     """Return the speed of the strucure."""
+    #     # TODO: Update function with the dynamics of the structure.
+    #     return self.current_pos - self.prev_pos
+    #
+    # def get_acceleration(self):
+    #     """Return the acceleration of the strucure."""
+    #     # TODO: Update function with the dynamics of the structure.
+    #     return 0.0
 
     def actuator_positions(self):
         """Return the current positions of the actuators.
@@ -577,8 +577,9 @@ class Base:
             self.get_actuator_position(1),
             self.get_actuator_position(2),
             self.get_actuator_position(3),
-            self.get_inclination(),
-            self.get_speed()
+            self.get_inclination()
+            # ,
+            # self.get_speed()
         ]
         return pos
     # =========================================================================

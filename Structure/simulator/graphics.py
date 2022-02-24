@@ -88,26 +88,26 @@ class Graphics:
                 # the image. The image must be doble in both dimensions (see
                 # images layout).
                 self.composite_image = numpy.full(
-                    (2*size[0], 2*size[1], 3), 0xFF, numpy.uint8)
+                    (2 * size[0], 2 * size[1], 3), 0xFF, numpy.uint8)
                 # Variables to compute images offsets relative to the
                 # composited image.
                 # NOTE: If the height is even, one row of the strucuture
                 # image is lost, but this is not unimportant. However, try to
                 # image size to an odd number in both directions, since this
                 # is the common.
-                h = size[0]//2
+                h = size[0] // 2
                 w = size[1]
                 # Build RoIs (OpenCV rectangular region of interest) where
                 # each graph must be placed (see image layout).
                 self.RoI = {
                     "video": (slice(0, size[0], 1), slice(0, size[1], 1)),
-                    "ac_L1": (slice(1*0, 1*h, 1), slice(1*w, 2*w, 1)),
-                    "ac_L2": (slice(1*h, 2*h, 1), slice(1*w, 2*w, 1)),
-                    "ac_L3": (slice(2*h, 3*h, 1), slice(1*w, 2*w, 1)),
-                    "ac_L4": (slice(3*h, 4*h, 1), slice(1*w, 2*w, 1)),
-                    "veloc": (slice(2*h, 3*h, 1), slice(1*0, 1*w, 1)),
-                    "incli": (slice(3*h, 4*h, 1), slice(1*0, 1*w, 1))
-                    }
+                    "ac_L1": (slice(1 * 0, 1 * h, 1), slice(1 * w, 2 * w, 1)),
+                    "ac_L2": (slice(1 * h, 2 * h, 1), slice(1 * w, 2 * w, 1)),
+                    "ac_L3": (slice(2 * h, 3 * h, 1), slice(1 * w, 2 * w, 1)),
+                    "ac_L4": (slice(3 * h, 4 * h, 1), slice(1 * w, 2 * w, 1)),
+                    "veloc": (slice(2 * h, 3 * h, 1), slice(1 * 0, 1 * w, 1)),
+                    "incli": (slice(3 * h, 4 * h, 1), slice(1 * 0, 1 * w, 1))
+                }
                 self.plots = Plots((w, h),
                                    video_data["buffer_size"],
                                    video_data["units"],
@@ -121,7 +121,7 @@ class Graphics:
         """Set to manual mode, so the user can move the structure manually."""
         self.manual_mode = True
 
-    def draw(self, stairs, structure, pause=False):
+    def draw(self, stairs, structure, simulator, pause=False):
         """Generate an image of the actual elements.
 
         If the object was configured with display set to True, the program can
@@ -152,9 +152,9 @@ class Graphics:
         # to add the wheel radius, but this is unimportant.
         # The parameter origin also allow the user to shift the drawing some
         # pixels from the center of the image.
-        origin = (self.image.shape[0]+self.origin)/(2*self.scale)
+        origin = (self.image.shape[0] + self.origin) / (2 * self.scale)
         total_height = structure.HEIGHT + stairs.height()
-        origin += total_height/2
+        origin += total_height / 2
         # Draw the stairs.
         stairs.draw((0, origin), self.image, aa_scale, self.shift)
         # Draw the structure.
@@ -163,7 +163,7 @@ class Graphics:
         #     self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
         cv2.putText(self.image, str(self.counter),
-                    (20, self.image.shape[0]-30), 1, 5, 0x00, 4)
+                    (20, self.image.shape[0] - 30), 1, 5, 0x00, 4)
         c = 0
         if self.display:
             # If in manual mode, draw a red rim around the image frame.
@@ -218,6 +218,7 @@ class Graphics:
             if self.save_composition:
                 # Generate the rest of the graphics.
                 values = structure.actuator_positions()
+                values.append(simulator.current_speed)
                 figs = self.plots.save_data(values, self.counter)
                 self.composite_image[self.RoI['video']] = self.image
                 self.composite_image[self.RoI['ac_L1']] = figs[0]

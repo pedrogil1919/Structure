@@ -381,6 +381,24 @@ def compute_instruction(structure, wheel, hor, ver):
     return instruction, actuator
 
 
+def compute_distance(structure, distance):
+    """Compute the instructions needed to cover the given distance.
+
+    For the current state of the structure, the function computes a list of
+    instruction so that the total horizontal distance covered is greater than
+    the distance given.
+
+    Returns a list of consecutive instructions.
+
+    """
+    instructions = []
+    while distance > 0:
+        next_inst, structure = next_instruction(structure)
+        distance -= next_inst.get('advance', 0.0)
+        instructions.append(next_inst)
+    return instructions
+
+
 def null_instruction(instruction):
     """Check if the instruction does nothing."""
     if abs(instruction.get("advance", 0)) > MAX_GAP:

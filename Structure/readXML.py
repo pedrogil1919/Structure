@@ -71,18 +71,18 @@ def read_stairs(xml_file):
 
     return stairs_list, landing
 
-
-def get_dynamics(dynamics, key_value):
-
-    dynamics_data = dynamics.find(key_value)
-    try:
-        data = {
-            'speed': float(dynamics_data.attrib['speed']),
-            'acceleration': float(dynamics_data.attrib(['acceleration'])),
-            'decceleration': float(dynamics_data.attrib(['decceleration']))}
-    except KeyError:
-        data = {'speed': float(dynamics_data.attrib['speed'])}
-    return data
+#
+# def get_dynamics(dynamics, key_value):
+#
+#     dynamics_data = dynamics.find(key_value)
+#     try:
+#         data = {
+#             'speed': float(dynamics_data.attrib['speed']),
+#             'acceleration': float(dynamics_data.attrib(['acceleration'])),
+#             'decceleration': float(dynamics_data.attrib(['decceleration']))}
+#     except KeyError:
+#         data = {'speed': float(dynamics_data.attrib['speed'])}
+#     return data
 
 
 def read_dynamics(xml_file):
@@ -101,13 +101,20 @@ def read_dynamics(xml_file):
     dynamics = element.find('dynamics')
     dynamics_data = {'sample_time': float(dynamics.attrib['sample_time'])}
 
-    dynamics_data['horizontal'] = get_dynamics(dynamics, 'horizontal')
-    dynamics_data['actuator_up'] = get_dynamics(dynamics, 'actuator_up')
-    dynamics_data['actuator_dw'] = get_dynamics(dynamics, 'actuator_dw')
-    dynamics_data['elevate_up'] = get_dynamics(dynamics, 'elevate_up')
-    dynamics_data['elevate_dw'] = get_dynamics(dynamics, 'elevate_dw')
-    dynamics_data['incline_up'] = get_dynamics(dynamics, 'incline_up')
-    dynamics_data['incline_dw'] = get_dynamics(dynamics, 'incline_dw')
+    dynamics_data['actuator_up'] = float(dynamics.attrib['actuator_up'])
+    dynamics_data['actuator_dw'] = float(dynamics.attrib['actuator_dw'])
+    dynamics_data['elevate_up'] = float(dynamics.attrib['elevate_up'])
+    dynamics_data['elevate_dw'] = float(dynamics.attrib['elevate_dw'])
+    dynamics_data['incline_up'] = float(dynamics.attrib['incline_up'])
+    dynamics_data['incline_dw'] = float(dynamics.attrib['incline_dw'])
+
+    dynamics_data['speed'] = float(dynamics.attrib['speed'])
+    try:
+        dynamics_data['acceleration'] = float(dynamics.attrib['acceleration'])
+        dynamics_data['decceleration'] = float(
+            dynamics.attrib['decceleration'])
+    except KeyError:
+        pass
 
     return dynamics_data
 
