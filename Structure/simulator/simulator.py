@@ -8,10 +8,6 @@ Step by step simulator of structure motion.
 
 # from math import floor
 from dynamics.profiles import SpeedProfile, AccelerationProfile
-from dynamics.profiles import MinDistanceError, MaxAccelerationError
-from control.control import next_instruction
-from math import sqrt
-from dis import Instruction
 
 
 class Simulator():
@@ -43,6 +39,8 @@ class Simulator():
         # that is, for the actuators, we consider infinite acceleration /
         # decceleration.
         self.current_speed = 0.0
+        # Current speed at the end of the last instrucion.
+        self.end_speed = 0.0
         # Module to compute speed profiles to take adavance of the structure
         # inertia between instructions.
         try:
@@ -274,6 +272,14 @@ class Simulator():
         the next instructions if possible).
 
         """
+        # Update the current speed with the end speed computed in the previous
+        # iteration.
+        # Note that this variable is normally updated inside the simulation
+        # function, but in some times, the simulationo function is not called
+        # (when the simulation time for the instruction is lower than the
+        # sample time), but also we can use the program without simulating.
+        # For this reason, it is safer to update the current speed here.
+        self.current_speed = self.end_speed
         # For the vertical time, only the current instruction is needed.
         actuator_time = self.compute_actuator_time(instruction)
         # Get the horizontal distance to move from the instruction.
@@ -319,7 +325,7 @@ class Simulator():
             'intervals': intervals}
         # Save the computed end speed, to replace for the computed in
         # simulation, since due to rounding errors, can be slightly different.
-        instruction['end_speed'] = end_speed
+        self.end_speed = end_speed
         return True
 
     def simulate_step(self, structure, instruction):
@@ -466,11 +472,11 @@ class Simulator():
             # first iteration of the instruction. For the rest of the
             # iterations, the sample time must be the system sample time.
             sample_time = self.sample_time
-        # Once the complete instruction has been executed, change the structure
-        # current speed to the one calculated previously. This value can be a
-        # little different to the one after the continuous update done in the
-        # loop, due to rounding effects.
-        self.current_speed = instruction['end_speed']
+        # # Once the complete instruction has been executed, change the structure
+        # # current speed to the one calculated previously. This value can be a
+        # # little different to the one after the continuous update done in the
+        # # loop, due to rounding effects.
+        # self.current_speed = instruction['end_speed2']
         # Check for the end of the trajectory. Return false when is the last
         # instruction. This is marked with the key end in the dictionary.
         yield not instruction.get('end', False)
