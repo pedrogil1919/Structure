@@ -32,6 +32,10 @@ class StructureState(Enum):
     InclinationExit = 3
 
 
+HOR_MARGIN = 0.0
+VER_MARGIN = 0.0
+
+
 class Base:
     """Class to the define the whole structure."""
 
@@ -42,6 +46,7 @@ class Base:
         size -- Dictionary with the dimensions of the structure (see paper):
           - a, d, c: Partial dimensions of the base.
           - d: Height of the structure (and length of actuators).
+          - m: Margin
           - g: Gap between floor and lower base.
         wheels -- Dictionary with the radius of wheels:
           - r1, r2, r3, r4: Wheels radius (can be different).
@@ -59,6 +64,12 @@ class Base:
         # NOTE: The distance g has nothing to do with the control module. It is
         # just for representation purposes.
         g = size['g']
+        # When computing the distance for a wheel to move, sometimes we need to
+        # give a small margin to prevent the wheel to collide with the stair.
+        # This is the meaning of these margins.
+
+        margins = (size['h'], size['v'])
+
         r1 = wheels['r1']
         r2 = wheels['r2']
         r3 = wheels['r3']
@@ -75,14 +86,16 @@ class Base:
         # NOTE: The total length of an actuator is equal to the height of the
         # structure (d), plus the gap between the floor and the lower base of
         # the structure (g), minus the wheel radius (r).
-        self.REAR = ActuatorPair(
-            WheelActuator(0, d, d + g - r1, r1, MAX_GAP, self, stairs),
-            WheelActuator(a, d, d + g - r2, r2, MAX_GAP, self, stairs),
-            True)
-        self.FRNT = ActuatorPair(
-            WheelActuator(a + b, d, d + g - r3, r3, MAX_GAP, self, stairs),
-            WheelActuator(a + b + c, d, d + g - r4, r4, MAX_GAP, self, stairs),
-            False)
+        actuator1 = WheelActuator(
+            0, d, d + g - r1, r1, self, stairs, margins)
+        actuator2 = WheelActuator(
+            a, d, d + g - r2, r2, self, stairs, margins)
+        self.REAR = ActuatorPair(actuator1, actuator2, True)
+        actuator3 = WheelActuator(
+            a + b, d, d + g - r3, r3, self, stairs, margins)
+        actuator4 = WheelActuator(
+            a + b + c, d, d + g - r4, r4, self, stairs, margins)
+        self.FRNT = ActuatorPair(actuator3, actuator4, False)
         # Size of the structure.
         self.LENGTH = d + g
         # Size of the actuators.
@@ -95,7 +108,6 @@ class Base:
         # Set the state of the structure to normal, since the initial
         # inclination is 0, so the structure is not on it inclination limit.
         self.state = StructureState.InclinationNormal
-
     ###########################################################################
     # MOTION FUNCTION
     ###########################################################################

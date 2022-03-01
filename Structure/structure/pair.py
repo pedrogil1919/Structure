@@ -7,8 +7,6 @@ The structure can be considered as a set of two sets of a pairs of wheels.
 This module define the functionality of the two pairs of wheels.
 """
 
-from math import isinf, inf
-
 from control.distance_errors import merge_collision, StabilityErrors
 
 

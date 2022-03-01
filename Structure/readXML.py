@@ -32,6 +32,8 @@ def read_structure(xml_file):
         'b': float(size.attrib['b']),
         'c': float(size.attrib['c']),
         'd': float(size.attrib['d']),
+        'h': float(size.attrib['h']),
+        'v': float(size.attrib['v']),
         'g': float(size.attrib['g'])}
     wheels = element.find('wheels')
     wheels_radius = {

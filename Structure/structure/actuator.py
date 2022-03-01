@@ -11,10 +11,10 @@ from enum import Enum
 from numpy import int as cv_datatype
 import cv2
 
-from physics.wheel_state import MAX_GAP
 from physics.wheel import Wheel
 from structure.joint import Joint
 from control.distance_errors import CollisionErrors
+from physics.wheel_state import MAX_GAP
 
 
 class ActuatorState(Enum):
@@ -35,7 +35,7 @@ class WheelActuator:
     structure.
     """
 
-    def __init__(self, position, length, height, radius, margin, base, stairs):
+    def __init__(self, position, length, height, radius, base, stairs, margin):
         """Constructor:
 
         Arguments:
@@ -46,11 +46,11 @@ class WheelActuator:
             value should be larger than length, otherwhise the wheel would be
             above the bottom of the structure which, in a real case, is not
             possible).
-        radius --Radius of the ending wheel.
-        margin -- See check_actuator function.
+        radius -- Radius of the ending wheel.
         base -- Main structure base that holds the actuator.
         stairs -- Physics structure to check collisions between a wheel and a
           step.
+        margin -- Horizontal and vertical margins (see paper).
         """
         # Current position and state of the linear actuator.
         self.d = 0.0
@@ -60,13 +60,13 @@ class WheelActuator:
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
         # Allowed margin out of the actuator bounds.
-        self.MARGIN = margin
+        self.MARGIN = MAX_GAP
         # Create a joint to join it to the main base.
         self.JOINT = Joint(base, position)
         # and create the ending wheel.
         # NOTE: The wheel construction checks whether the new created wheel is
         # place in a valid position. If false, it raise a ValueError exception.
-        self.WHEEL = Wheel(radius, stairs, self.JOINT.position(height))
+        self.WHEEL = Wheel(radius, margin, stairs, self.JOINT.position(height))
 
     def shift_actuator(self, distance):
         """Shift the actuator and check if the motion is valid.

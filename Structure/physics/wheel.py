@@ -10,9 +10,9 @@ implements the physical interactions with the stairs: collisions and contacts.
 from numpy import int as cv_datatype
 import numpy
 import cv2
-from math import inf
 
-from physics.wheel_state import WheelState, HOR_MARGIN, VER_MARGIN, MAX_GAP
+from physics.wheel_state import WheelState
+# from structure.base import HOR_MARGIN, VER_MARGIN
 
 
 class Wheel:
@@ -23,7 +23,7 @@ class Wheel:
     wheel states.
     """
 
-    def __init__(self, radius, stairs, position=None):
+    def __init__(self, radius, margin, stairs, position=None):
         """Constructor:
 
         Save wheel parameters, and check if the wheel is in a correct starting
@@ -40,6 +40,7 @@ class Wheel:
         stairs -- Physical structure of the stairs (a reference of the stair is
             stored in this object, so that whenever a check must be done, the
             wheel can do it without any other information).
+        margin -- Horizontal and vertical margins (see paper).
         position -- Current position of the center (axis) of the wheel. If it
             is in a forbidden position (collision with a step), raise a
             ValueError exception. If position is None, no checki is performed.
@@ -48,6 +49,8 @@ class Wheel:
 
         self.RADIUS = radius
         self.SIMULATOR = stairs
+        self.HOR_MARGIN = margin[0]
+        self.VER_MARGIN = margin[1]
         if position is None:
             self.state = WheelState.Uncheked
             return
@@ -180,8 +183,8 @@ class Wheel:
             if hl <= hc:
                 # Upstairs:
                 res['up'] = True
-                res['wr'] = -wr + r + HOR_MARGIN
-                res['hr'] = hr + VER_MARGIN
+                res['wr'] = -wr + r + self.HOR_MARGIN
+                res['hr'] = hr + self.VER_MARGIN
             else:
                 # Downstairs:
                 res['up'] = False
@@ -193,11 +196,11 @@ class Wheel:
                 # Note that if the wheel is over the step, we have to take the
                 # distance with respect to the rear edge of the wheel, since
                 # the front edge of the wheel points to the next step.
-                res['wc'] = wl + HOR_MARGIN
+                res['wc'] = wl + self.HOR_MARGIN
                 # Furthermore, the distance wr must be also the distance to
                 # get out of the step, since we can not take the wheel down to
                 # the ground.
-                res['wr'] = wl + HOR_MARGIN
+                res['wr'] = wl + self.HOR_MARGIN
 
         # Check if going upstairs, downstairs or the end of the stairs.
         # TODO: Check if in a change of direction in a double stair.
@@ -212,7 +215,7 @@ class Wheel:
                 # See figures in get_distances folder.
                 # TODO: (update figures 14/05/20):
                 # The value for hr is always the same.
-                res['hr'] = hr + VER_MARGIN
+                res['hr'] = hr + self.VER_MARGIN
                 # But the values for hc and wr depend on the position to the
                 # wheel with respect to the steps.
                 if self.state == WheelState.Air:
@@ -241,7 +244,7 @@ class Wheel:
                 # See figures in get_distances foloder:
                 res['up'] = False
 
-                res['wr'] = -wr + r - HOR_MARGIN
+                res['wr'] = -wr + r - self.HOR_MARGIN
                 if res['wr'] < 0:
                     # However, if wr is negative, it is better to return 0,
                     # since the opposite can make the structure bo backwards,
@@ -257,13 +260,13 @@ class Wheel:
                 # place de wheel some margin further than the edge of the step,
                 # so that the wheel can be taken down to the ground.
                 if self.state == WheelState.Air:
-                    res['wc'] = -wr + 2 * r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + self.HOR_MARGIN
                 elif self.state == WheelState.Contact:
-                    res['wc'] = -wr + 2 * r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + self.HOR_MARGIN
                 elif self.state == WheelState.Corner:
-                    res['wc'] = -wr + 2 * r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + self.HOR_MARGIN
                 elif self.state == WheelState.Ground:
-                    res['wc'] = -wr + 2 * r + HOR_MARGIN
+                    res['wc'] = -wr + 2 * r + self.HOR_MARGIN
                 elif self.state == WheelState.Outer:
                     raise NotImplementedError("It should not happen")
 
