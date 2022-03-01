@@ -9,7 +9,7 @@ Definition of all the elements which composes the structure:
 - Current elevation with respect to the ground.
 """
 
-from math import asin, isinf, sqrt, copysign
+from math import asin, sqrt, copysign
 from enum import Enum
 
 # NOTE: Sometimes opencv changes the data type for drawing function. So it is
@@ -56,7 +56,6 @@ class Base:
         b = size['b']
         c = size['c']
         d = size['d']
-        m = size['m']
         # NOTE: The distance g has nothing to do with the control module. It is
         # just for representation purposes.
         g = size['g']
@@ -77,12 +76,12 @@ class Base:
         # structure (d), plus the gap between the floor and the lower base of
         # the structure (g), minus the wheel radius (r).
         self.REAR = ActuatorPair(
-            WheelActuator(0, d, d + g - r1, r1, m, self, stairs),
-            WheelActuator(a, d, d + g - r2, r2, m, self, stairs),
+            WheelActuator(0, d, d + g - r1, r1, MAX_GAP, self, stairs),
+            WheelActuator(a, d, d + g - r2, r2, MAX_GAP, self, stairs),
             True)
         self.FRNT = ActuatorPair(
-            WheelActuator(a + b, d, d + g - r3, r3, m, self, stairs),
-            WheelActuator(a + b + c, d, d + g - r4, r4, m, self, stairs),
+            WheelActuator(a + b, d, d + g - r3, r3, MAX_GAP, self, stairs),
+            WheelActuator(a + b + c, d, d + g - r4, r4, MAX_GAP, self, stairs),
             False)
         # Size of the structure.
         self.LENGTH = d + g
