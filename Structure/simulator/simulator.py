@@ -17,7 +17,7 @@ class DynamicValueError(ValueError):
 class Simulator():
     """Class to simulate structure motion."""
 
-    def __init__(self, dynamics_data):
+    def __init__(self, dynamics_data, sample_data):
         """
         Constructor:
 
@@ -31,6 +31,10 @@ class Simulator():
                 raise DynamicValueError(
                     "Dynamics values must be positive.")
 
+        if sample_data['sample_time'] < 0:
+            raise DynamicValueError(
+                "Sample time must be positive.")
+
         # Maximum speeds:
         # Actuator speed without load
         self.speed_actuator_up = dynamics_data['actuator_up']
@@ -41,7 +45,8 @@ class Simulator():
         self.speed_incline_up = dynamics_data['incline_up']
         self.speed_incline_dw = dynamics_data['incline_dw']
         # Sample time, for representation purposes.
-        self.sample_time = dynamics_data['sample_time']
+        self.sample_time = sample_data['sample_time']
+        self.time_units = sample_data['time_units']
 
         # Wheel dynamics:
         # Current speed of the structure, in horizontal direction, taking into
@@ -64,7 +69,23 @@ class Simulator():
         # compute the time offset for the next instruction, since the sample
         # time does not coincide generally with the instruction length.
         self.last_time = 0.0
-        self.current_time = 0.0
+        self.next_time = 0.0
+        self.counter = 0
+
+    def get_counter(self):
+        return self.__counter
+
+    def set_counter(self, value):
+        self.__counter = value
+
+    def get_current_speed(self):
+        return self.__current_speed
+
+    def set_current_speed(self, value):
+        self.__current_speed = value
+
+    def print_current_time(self):
+        return "%8.2f %s" % (self.counter * self.sample_time, self.time_units)
 
     def compute_actuator_time(self, instruction):
         """Compute time required by the actuators to complete the instruction.
@@ -304,7 +325,7 @@ class Simulator():
         distance = instruction['advance']
         # Compute inital stimate of the end speed.
         __, end_speed = self.profile.end_speed_range(
-            self.current_speed, distance)
+            self.get_current_speed(), distance)
         # Check collisions and correct end speed.
         collision_speed = self.check_collision(next_instructions, end_speed)
         # If we can not start the next instruction at the computed end speed
@@ -314,7 +335,7 @@ class Simulator():
         # Once the end speed is known, we can compute the total time needed to
         # complete the horizontal motion.
         horizontal_time, __ = self.profile.profile_time_limits(
-            self.current_speed, end_speed, distance)
+            self.get_current_speed(), end_speed, distance)
 
         # Check the one that last more time.
         if horizontal_time > actuator_time:
@@ -337,7 +358,7 @@ class Simulator():
         instruction['time'] = min_time
         # Calculate the speed profile for the horizontal motion.
         accelerations, intervals, speeds = self.profile.compute_profile(
-            self.current_speed, end_speed, distance, min_time)
+            self.get_current_speed(), end_speed, distance, min_time)
         instruction['dynamics'] = {
             'accelerations': accelerations,
             'intervals': intervals,
@@ -377,16 +398,17 @@ class Simulator():
             return True
 
         # Update the time end for the previous instruction.
-        self.last_time = self.current_time
+        self.last_time = self.next_time
+        self.current_time = self.last_time
         # # Get the total time required to complete the current instruction.
         # total_time = self.compute_time(instruction)
         # Update the time end for the current instruction.
-        self.current_time += total_time
+        self.next_time += total_time
         # From the time end, we compute the last instruction simulated.
         prev_iter = int(self.last_time / self.sample_time)
         # And from the current end time, we compute the last iteration we will
         # simulate of this instruction.
-        next_iter = int(self.current_time / self.sample_time)
+        next_iter = int(self.next_time / self.sample_time)
         # With both values, we can get the total iterations we will simulate
         # for this instruction.
         total_iter = next_iter - prev_iter
@@ -439,6 +461,7 @@ class Simulator():
         # iteration without moving.
         # for __ in range(total_iterations):
         for n in range(0, total_iter):
+            self.counter += 1
             # Compute actual steps based on the more restrictive one.
             step_actuator = shift / total_time * sample_time
             step_elevate = elevate / total_time * sample_time
@@ -501,7 +524,6 @@ class Simulator():
             # first iteration of the instruction. For the rest of the
             # iterations, the sample time must be the system sample time.
             sample_time = self.sample_time
-
         yield True
 
     def simulate_instruction(self, structure, instruction):
@@ -564,14 +586,12 @@ class Simulator():
             if not res:
                 print("Can not shift actuator:", res)
         #######################################################################
-        # Check for the end of the trajectory.
-        try:
-            if instruction['end']:
-                yield False
-        except KeyError:
-            pass
-        #######################################################################
         yield True
+
+###############################################################################
+
+    current_speed = property(get_current_speed, set_current_speed, None, None)
+    counter = property(get_counter, set_counter, None, None)
 
 ###############################################################################
 # End of file.

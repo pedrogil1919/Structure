@@ -3,7 +3,7 @@ Created on 31 may. 2021
 
 @author: pedro.gil@uah.es
 
-Plotting variables as a function of time using matplotlib.
+Plotting variables as a function of sample_index using matplotlib.
 """
 
 # TODO: Document this class, if needed.
@@ -21,7 +21,7 @@ class Plots():
 
         """
         self.data = numpy.zeros((6, buffer_len), numpy.float32)
-        self.time = numpy.linspace(-buffer_len, -1, buffer_len)
+        self.sample_index = numpy.linspace(-buffer_len, -1, buffer_len)
         self.size = size
         self.axis = [
             [0, axis["height"] + margin],
@@ -39,22 +39,24 @@ class Plots():
             "Velocity (" + units + "/s)"
         ]
 
-    def save_data(self, values, counter):
+    def save_data(self, values, counter, sample_time):
         position = counter % self.data.shape[1]
         values = numpy.reshape(values, (6,))
         self.data[:, position] = values
-        self.time[position] = counter
-        time_axis = [counter - len(self.time) + 1, counter]
+        self.sample_index[position] = counter
+        time_axis = [sample_time * (counter - len(self.sample_index) + 1),
+                     sample_time * counter]
         figs = []
+        time_signal = numpy.hstack(
+            (sample_time * self.sample_index[position + 1:],
+             sample_time * self.sample_index[:position + 1]))
 #         print("-----------------------------------------------------------")
-#         print(numpy.hstack((self.time[counter+1:], self.time[:counter+1])))
+#         print(numpy.hstack((self.sample_index[counter+1:],
+#                self.sample_index[:counter+1])))
         for signal, text, axis in zip(self.data, self.texts, self.axis):
             plt.figure(figsize=(self.size[0] / 100,
                                 self.size[1] / 100), dpi=100)
-            plt.plot(
-                numpy.hstack(
-                    (self.time[position + 1:], self.time[:position + 1])),
-                numpy.hstack(
+            plt.plot(time_signal, numpy.hstack(
                     (signal[position + 1:], signal[:position + 1])), 'b')
             plt.title(text)
             plt.axis(time_axis + axis)

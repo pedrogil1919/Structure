@@ -108,9 +108,8 @@ def read_dynamics(xml_file):
     except ElementTree.ParseError:
         raise RuntimeError("XML file " + xml_file + " is incorrect.")
 
+    dynamics_data = {}
     dynamics = element.find('dynamics')
-    dynamics_data = {'sample_time': float(dynamics.attrib['sample_time'])}
-
     dynamics_data['actuator_up'] = float(dynamics.attrib['actuator_up'])
     dynamics_data['actuator_dw'] = float(dynamics.attrib['actuator_dw'])
     dynamics_data['elevate_up'] = float(dynamics.attrib['elevate_up'])
@@ -126,7 +125,11 @@ def read_dynamics(xml_file):
     except KeyError:
         pass
 
-    return dynamics_data
+    samples = element.find('samples')
+    sample_data = {'sample_time': float(samples.attrib['sample_time']),
+                   'time_units': samples.attrib['time_units']}
+
+    return dynamics_data, sample_data
 
 
 def read_graphics(xml_file):

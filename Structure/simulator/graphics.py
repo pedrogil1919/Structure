@@ -41,7 +41,7 @@ class Graphics:
                 runtime pressing Space key.
             interval -- When pause is False, and display True, 1/framerate for
                 the sequence displayed on screen.
-                TODO: Document Axis
+
         """
         # Flag to switch between manual mode operation, or automatic.
         self.manual_mode = False
@@ -62,7 +62,7 @@ class Graphics:
 
             self.interval = video_data['interval']
         # Frame counter.
-        self.counter = 0
+        # self.counter = 0
         if video_data['video_dir'] is not None:
             # If an image sequence need to be created:
             # Create directory:
@@ -108,10 +108,9 @@ class Graphics:
                     "veloc": (slice(2 * h, 3 * h, 1), slice(1 * 0, 1 * w, 1)),
                     "incli": (slice(3 * h, 4 * h, 1), slice(1 * 0, 1 * w, 1))
                 }
-                self.plots = Plots((w, h),
-                                   video_data["buffer_size"],
-                                   video_data["units"],
-                                   video_data["margin"], axis)
+                self.plots = Plots((w, h), video_data["buffer_size"],
+                                   video_data["units"], video_data["margin"],
+                                   axis)
             else:
                 self.save_composition = False
         else:
@@ -162,7 +161,7 @@ class Graphics:
         # structure.draw_wheel_trajectory(
         #     self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
-        cv2.putText(self.image, str(self.counter),
+        cv2.putText(self.image, simulator.print_current_time(),
                     (20, self.image.shape[0] - 30), 1, 5, 0x00, 4)
         c = 0
         if self.display:
@@ -212,14 +211,15 @@ class Graphics:
         if self.save_video:
             # Save image in the image sequence directory.
             # Generate image name.
-            aux_name = "image%05i.png" % self.counter
+            aux_name = "image%05i.png" % simulator.counter
             image_name = os.path.join(self.video_dir, aux_name)
             cv2.imwrite(image_name, self.image)
             if self.save_composition:
                 # Generate the rest of the graphics.
                 values = structure.actuator_positions()
-                values.append(simulator.current_speed)
-                figs = self.plots.save_data(values, self.counter)
+                values.append(simulator.get_current_speed())
+                figs = self.plots.save_data(
+                    values, simulator.counter, simulator.sample_time)
                 self.composite_image[self.RoI['video']] = self.image
                 self.composite_image[self.RoI['ac_L1']] = figs[0]
                 self.composite_image[self.RoI['ac_L2']] = figs[1]
@@ -229,7 +229,7 @@ class Graphics:
                 self.composite_image[self.RoI['incli']] = figs[5]
                 composite_name = os.path.join(self.dir_comp, aux_name)
                 cv2.imwrite(composite_name, self.composite_image)
-        self.counter += 1
+        # self.counter += 1
         return True, c
 
 ###############################################################################
