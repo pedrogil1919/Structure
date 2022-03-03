@@ -66,7 +66,7 @@ while continue_loop:
 
     str_aux = structure
     while not graphics.manual_mode and continue_loop:
-        print("Inst", inst_number, ":",  instruction)
+        # print("Inst", inst_number, ":",  instruction)
         #######################################################################
         #  Automatic mode
         #######################################################################

@@ -167,6 +167,8 @@ class Simulator():
         motion, and also on the next instructions.
 
         """
+        # Update current speed (see comment in function compute_time).
+        self.current_speed = self.end_speed
         # Get the horizontal distance to move from the instruction.
         distance = instruction['advance']
         # When considering infinite horizontal acceleration, the total time
@@ -314,7 +316,7 @@ class Simulator():
         # Update the current speed with the end speed computed in the previous
         # iteration.
         # Note that this variable is normally updated inside the simulation
-        # function, but in some times, the simulationo function is not called
+        # function, but in some times, the simulation function is not called
         # (when the simulation time for the instruction is lower than the
         # sample time), but also we can use the program without simulating.
         # For this reason, it is safer to update the current speed here.
@@ -366,7 +368,6 @@ class Simulator():
         # Save the computed end speed, to replace for the computed in
         # simulation, since due to rounding errors, can be slightly different.
         self.end_speed = end_speed
-        return True
 
     def simulate_step(self, structure, instruction):
         """Simulate one instruction step by step.
@@ -524,7 +525,6 @@ class Simulator():
             # first iteration of the instruction. For the rest of the
             # iterations, the sample time must be the system sample time.
             sample_time = self.sample_time
-        yield True
 
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step."""

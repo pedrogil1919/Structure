@@ -11,7 +11,7 @@ intended for the optimization functions.
 
 from structure import base
 from simulator import simulator
-from control.control import next_instruction
+from control.control import next_instruction, compute_distance
 
 
 class ComputeTime:
@@ -37,17 +37,39 @@ class ComputeTime:
         """Return the time required to complete the stairs."""
 
         total_time = 0
-        instructions = []
         for stair in self.stairs:
             # Build the structure.
-            str_aux = base.Base(size, self.wheels, stair)
+            structure = base.Base(size, self.wheels, stair)
             # Make a loop until the structure reaches the end of the stair.
             while True:
-                instruction, str_aux = next_instruction(str_aux)
-                instructions += [instruction]
-                total_time += self.sim.compute_time(instructions[0])
-                instructions = instructions[1:]
-                if instruction.get('end', False):
+                instruction, str_aux = next_instruction(structure)
+                if instruction is None:
                     break
+                stop_distance = self.sim.estimate_end_speed(instruction)
+                next_instr = compute_distance(str_aux, stop_distance)
+                self.sim.compute_time(instruction, next_instr)
+                total_time += instruction['time']
+                # for res in self.sim.simulate_step(structure, instruction):
+                #     pass
+                structure = str_aux
             # Return the total number of iterations needed.
         return total_time
+
+    # def compute(self, size):
+    #     """Return the time required to complete the stairs."""
+    #
+    #     total_time = 0
+    #     instructions = []
+    #     for stair in self.stairs:
+    #         # Build the structure.
+    #         str_aux = base.Base(size, self.wheels, stair)
+    #         # Make a loop until the structure reaches the end of the stair.
+    #         while True:
+    #             instruction, str_aux = next_instruction(str_aux)
+    #             instructions += [instruction]
+    #             total_time += self.sim.compute_time(instructions[0])
+    #             instructions = instructions[1:]
+    #             if instruction.get('end', False):
+    #                 break
+    #         # Return the total number of iterations needed.
+    #     return total_time
