@@ -9,7 +9,7 @@ Definition of all the elements which composes the structure:
 - Current elevation with respect to the ground.
 """
 
-from math import asin, sqrt, copysign
+from math import asin, acos, sqrt, copysign
 from enum import Enum
 
 # NOTE: Sometimes opencv changes the data type for drawing function. So it is
@@ -36,6 +36,10 @@ HOR_MARGIN = 0.0
 VER_MARGIN = 0.0
 
 
+class ConfigurationError(ValueError):
+    pass
+
+
 class Base:
     """Class to the define the whole structure."""
 
@@ -53,7 +57,16 @@ class Base:
         stairs -- Physical structure of the stairs.
         graphics -- Debug option. If given, can be used in any point to draw
             the current state of the structure.
+
+        Raises a ConfigurationError(ValueError) exception if the dimensions
+        does not allow to build a valid structure.
         """
+        # Maximum inclination angle. It is computed 6from both, the structure
+        # dimensions, which gives the maximum inclination allowed before the
+        # wheel collide among them, and the maximum inclination given by the
+        # user, which should be computed from the range of the L9 actuator.
+        self.MAX_INCLINE = self.max_inclination(size, wheels)
+
         self.GRAPHICS = graphics
         self.STAIRS = stairs
         # Main distances of the structure.
@@ -64,10 +77,10 @@ class Base:
         # NOTE: The distance g has nothing to do with the control module. It is
         # just for representation purposes.
         g = size['g']
+
         # When computing the distance for a wheel to move, sometimes we need to
         # give a small margin to prevent the wheel to collide with the stair.
         # This is the meaning of these margins.
-
         margins = (size['h'], size['v'])
 
         r1 = wheels['r1']
@@ -96,18 +109,40 @@ class Base:
         actuator4 = WheelActuator(
             a + b + c, d, d + g - r4, r4, self, stairs, margins)
         self.FRNT = ActuatorPair(actuator3, actuator4, False)
+
+        # Check dimensions:
+        # Restriction 1: The separation between actuators must be greater than
+        # the wheel radius, so that
         # Size of the structure.
         self.LENGTH = d + g
         # Size of the actuators.
         self.HEIGHT = d
         # Total width of the structure.
         self.WIDTH = a + b + c
-        # Maximum inclination angle.
-        # self.MAX_INCLINE = self.WIDTH * sin (max_alpha)
-        self.MAX_INCLINE = 30.0
         # Set the state of the structure to normal, since the initial
         # inclination is 0, so the structure is not on it inclination limit.
         self.state = StructureState.InclinationNormal
+
+    @classmethod
+    def max_inclination(cls,  size, wheels):
+        # Check that all values are positive:
+        for dim in size.values():
+            if dim < 0:
+                raise ConfigurationError(
+                    "Structure dimensions must be positive values.")
+        for dim in wheels.values():
+            if dim < 0:
+                raise ConfigurationError(
+                    "Wheel radius must be positive values.")
+        try:
+            h1 = sqrt(size['a']**2 - (wheels['r1'] + wheels['r2'])**2)
+            h2 = sqrt(size['b']**2 - (wheels['r2'] + wheels['r3'])**2)
+            h3 = sqrt(size['c']**2 - (wheels['r3'] + wheels['r4'])**2)
+            h4 = size['n']
+        except ValueError:
+            raise ConfigurationError(
+                "The dimensions of the structure are incorrect")
+        return min([h1, h2, h3, h4])
     ###########################################################################
     # MOTION FUNCTION
     ###########################################################################

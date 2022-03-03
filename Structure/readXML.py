@@ -34,13 +34,22 @@ def read_structure(xml_file):
         'd': float(size.attrib['d']),
         'h': float(size.attrib['h']),
         'v': float(size.attrib['v']),
-        'g': float(size.attrib['g'])}
+        'g': float(size.attrib['g']),
+        'n': float(size.attrib['n'])}
     wheels = element.find('wheels')
-    wheels_radius = {
-        'r1': float(wheels.attrib['r1']),
-        'r2': float(wheels.attrib['r2']),
-        'r3': float(wheels.attrib['r3']),
-        'r4': float(wheels.attrib['r4'])}
+    try:
+        wheels_radius = {
+            'r1': float(wheels.attrib['r1']),
+            'r2': float(wheels.attrib['r2']),
+            'r3': float(wheels.attrib['r3']),
+            'r4': float(wheels.attrib['r4'])}
+    except KeyError:
+        wheels_radius = {
+            'r1': float(wheels.attrib['r']),
+            'r2': float(wheels.attrib['r']),
+            'r3': float(wheels.attrib['r']),
+            'r4': float(wheels.attrib['r'])}
+
     return structure_size, wheels_radius
 
 

@@ -14,6 +14,10 @@ import cv2
 from physics.wheel_state import WheelState, MAX_GAP
 
 
+class StairDimensionError(ValueError):
+    pass
+
+
 class Stair:
     """Definition of the complete set of steps to form a stair.
 
@@ -49,6 +53,9 @@ class Stair:
         # Horizontal origin.
         x = landing
         y = 0.0
+        if landing < 0:
+            raise StairDimensionError(
+                "Stair dimensions (except height) must be positive.")
 
         for s in stairs:
             # Get stair parameters:
@@ -56,6 +63,10 @@ class Stair:
             c = s['w']
             h = s['h']
             N = int(s['N'])
+            # Check that the dimensions are correct.
+            if d < 0 or c < 0 or N < 0:
+                raise StairDimensionError(
+                    "Stair dimensions (except height) must be positive.")
 
             for __ in range(N):
                 y += h
@@ -139,11 +150,11 @@ class Stair:
             if hr > hl:
                 # For upstairs, return also the distance to place the wheel on
                 # the previous step.
-                return WheelState.Inside, wl-2*r, hc
+                return WheelState.Inside, wl - 2 * r, hc
             else:
                 # For downstairs, return also the distance to place the wheel
                 # on the next step.
-                return WheelState.Inside, -wr+2*r, hc
+                return WheelState.Inside, -wr + 2 * r, hc
         # Check if the right edge of the wheel is inside the next step to the
         # right.
         if wr > MAX_GAP and hr > MAX_GAP:
@@ -275,12 +286,13 @@ class Stair:
         # An value within -MAX_GAP and +MAX_GAP means this point is in contact
         # with the surface of any step.
         # Vertical distances (height)
-        hc = yc-p[1]+r  # Bottom of the wheel.
-        hl = yl-p[1]+r  # Bottom-left of the wheel (Note, wheel is square).
-        hr = yr-p[1]+r  # Bottom-right of the wheel (Note, wheel is square).
+        hc = yc - p[1] + r  # Bottom of the wheel.
+        hl = yl - p[1] + r  # Bottom-left of the wheel (Note, wheel is square).
+        # Bottom-right of the wheel (Note, wheel is square).
+        hr = yr - p[1] + r
         # Horizontal distances (width)
-        wl = xl-p[0]+r  # Left of the wheel.
-        wr = p[0]+r-xr  # Right of the wheel.
+        wl = xl - p[0] + r  # Left of the wheel.
+        wr = p[0] + r - xr  # Right of the wheel.
 
         return hc, hl, hr, wl, wr
 
@@ -307,11 +319,11 @@ class Stair:
 
     def draw(self, origin, image, scale, shift):
         """Draw the stair."""
-        cx1 = cv_datatype(scale*origin[0])
-        cy1 = cv_datatype(scale*origin[1])
+        cx1 = cv_datatype(scale * origin[0])
+        cy1 = cv_datatype(scale * origin[1])
         for p in self.STAIR:
-            cx2 = cv_datatype(scale*(origin[0]+p[0]))
-            cy2 = cv_datatype(scale*(origin[1]-p[1]))
+            cx2 = cv_datatype(scale * (origin[0] + p[0]))
+            cy2 = cv_datatype(scale * (origin[1] - p[1]))
             cv2.line(image, (cx1, cy1), (cx2, cy1), self.GROUND_COLOR,
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             cv2.line(image, (cx2, cy1), (cx2, cy2), self.GROUND_COLOR,

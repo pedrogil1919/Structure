@@ -10,6 +10,10 @@ Step by step simulator of structure motion.
 from dynamics.profiles import SpeedProfile, AccelerationProfile
 
 
+class DynamicValueError(ValueError):
+    pass
+
+
 class Simulator():
     """Class to simulate structure motion."""
 
@@ -21,6 +25,12 @@ class Simulator():
         dynamics_data: see dynamics entry in xml.
 
         """
+        # Check that all the values are positive.
+        for val in dynamics_data.values():
+            if val < 0:
+                raise DynamicValueError(
+                    "Dynamics values must be positive.")
+
         # Maximum speeds:
         # Actuator speed without load
         self.speed_actuator_up = dynamics_data['actuator_up']
