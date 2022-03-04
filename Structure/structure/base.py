@@ -91,8 +91,6 @@ class Base:
         self.elevation = d + g
         # Current horizontal position.
         self.position = 0.0
-        # Previous position, to get control of its speed.
-        self.prev_pos = 0.0
         # Angle of the structure (driven by L9 actuator, see paper).
         self.angle = 0.0
         # Create array of actuators.
@@ -122,6 +120,20 @@ class Base:
         # Set the state of the structure to normal, since the initial
         # inclination is 0, so the structure is not on it inclination limit.
         self.state = StructureState.InclinationNormal
+
+    def reset_position(self):
+        self.elevation = self.LENGTH
+        self.position = 0.0
+        self.angle = 0.0
+        re = self.REAR.get_actuator_position(0)
+        fr = self.REAR.get_actuator_position(1)
+        self.REAR.shift_actuator(-re, -fr, 0.0)
+        re = self.FRNT.get_actuator_position(0)
+        fr = self.FRNT.get_actuator_position(1)
+        self.FRNT.shift_actuator(-re, -fr, 0.0)
+        col, stb = self.check_position()
+        col.add_stability(stb)
+        return col
 
     @classmethod
     def max_inclination(cls,  size, wheels):

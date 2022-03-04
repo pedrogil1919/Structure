@@ -529,6 +529,16 @@ class Simulator():
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step."""
         try:
+            reset = instruction['reset']
+        except KeyError:
+            pass
+        else:
+            # Advance structure
+            res = structure.reset_position()
+            if not res:
+                print("Can not reset structure.", res)
+
+        try:
             distance = instruction['advance']
         except KeyError:
             pass

@@ -46,7 +46,7 @@
 	<stairs landing="250">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="5" w="70" h="30" d="150"/>
+		<dimensions N="5" w="70" h="-30" d="150"/>
 	</stairs>
 	<!--####################################################################-->
 	<graphics>
