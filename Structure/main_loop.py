@@ -66,7 +66,7 @@ while continue_loop:
 
     str_aux = structure
     while not graphics.manual_mode and continue_loop:
-        # print("Inst", inst_number, ":",  instruction)
+        print("Inst", inst_number, ":",  instruction)
         #######################################################################
         #  Automatic mode
         #######################################################################
@@ -86,9 +86,8 @@ while continue_loop:
                 break
             # The simulation has succeeded, so, continue loop.
             continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
-            if not continue_loop:
+            if not continue_loop or graphics.manual_mode:
                 # The user has pressed the Esc key to finish the program.
-                break
                 # Entering manual mode. Finish the inner while loop and
                 # continue with a new iteration of the outermost while loop.
                 # NOTE: At the end of the for loop, we substitute the current
