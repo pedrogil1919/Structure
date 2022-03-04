@@ -527,13 +527,15 @@ def next_instruction(structure):
 def manual_control(key_pressed, simulator):
     """Function to convert a key to a instruction."""
     if key_pressed == ord('4'):
-        command = {'advance': -simulator.speed_wheel}
+        command = {'advance': -simulator.profile.speed}
     elif key_pressed == ord('6'):
-        command = {'advance': +simulator.speed_wheel}
+        command = {'advance': +simulator.profile.speed}
     elif key_pressed == ord('2'):
         command = {'elevate': -simulator.speed_elevate_dw}
     elif key_pressed == ord('8'):
         command = {'elevate': +simulator.speed_elevate_up}
+    elif key_pressed == ord('5'):
+        command = {'reset': True}
     elif key_pressed == ord('q'):
         command = {'wheel': 0, 'height': -simulator.speed_actuator_up}
     elif key_pressed == ord('a'):

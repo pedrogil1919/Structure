@@ -14,6 +14,26 @@ from simulator import simulator
 from control.control import next_instruction, compute_distance
 
 
+def compute_time(structure, simulator):
+    """Compute the time required to complete a stair.
+
+    """
+    total_time = 0
+    while True:
+        instruction, str_aux = next_instruction(structure)
+        if instruction is None:
+            break
+        stop_distance = simulator.estimate_end_speed(instruction)
+        next_instr = compute_distance(str_aux, stop_distance)
+        simulator.compute_time(instruction, next_instr)
+        total_time += instruction['time']
+        # for res in self.sim.simulate_step(structure, instruction):
+        #     pass
+        structure = str_aux
+        # Return the total number of iterations needed.
+    return total_time
+
+
 class ComputeTime:
     """Main class to compute times."""
 
