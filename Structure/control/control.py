@@ -519,7 +519,7 @@ def next_instruction(structure):
     # we do not control this error, the program get hung because the strcture
     # does not move but the program does not finishes.
     if null_instruction(instruction):
-        raise RuntimeError
+        raise ValueError
 
     return instruction, st_aux
 

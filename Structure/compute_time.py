@@ -7,10 +7,12 @@ Module to compute the time required to complete a stair, without simulations.
 
 """
 
-from simulator.time import ComputeTime
-
 # Imports needed for the testing block.
 import sys
+
+from structure.base import Base
+from simulator.simulator import Simulator
+from simulator.time import compute_time
 from physics.stairs import Stair
 import readXML
 
@@ -24,15 +26,14 @@ except Exception:
 stairs_list, landing = readXML.read_stairs(settings_name)
 stair = Stair(stairs_list, landing)
 
-# for st in stairs_list:
-#     st['h'] = -st['h']
-# stair2 = Stair(stairs_list, landing)
-# stair = (stair, stair2)
-
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
+structure = Base(structure_size, wheels_radius, stair)
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)
-compute_time = ComputeTime(wheels_radius, stair, dynamics_data, sample_data)
-total = compute_time.compute(structure_size)
-print("Total:", total, "seconds")
+simulator = Simulator(dynamics_data, sample_data)
+
+total_time = compute_time(structure, simulator)
+# compute_time = ComputeTime(wheels_radius, stair, dynamics_data, sample_data)
+# total = compute_time.compute(structure_size)
+print("Total:", total_time, "seconds")

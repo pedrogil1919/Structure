@@ -7,13 +7,13 @@
 	g: Height between floor and lower case (only useful for representation).
 	n: Maximum inclination (given by L9, compute theoretically).
 	-->
-	<size a="40" b="60" c="40" d="50" h="2" v="4" g="40" n="30"/>
+	<size a="30.0" b="25.0" c="53.0" d="50.0" h="2.0" v="4.0" g="40.0" n="30.0"/>
 	<!--Wheel radius, in the same units than structure dimensions
 	Radius can be given one for each wheel (r1, r2, r3 and r4) or one for
 	all (r).
 	<wheels r="8"/>
 	-->
-	<wheels r1="15" r2="15" r3="10" r4="10"></wheels>
+	<wheels r1="15.0" r2="15.0" r3="10.0" r4="10.0"></wheels>
 	
 	<!--Simulation velocity (in cm/sec):
 		- actuator: Maximim actuator shift speed
@@ -32,7 +32,7 @@
 		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="3.0" 
 		decceleration="0.18" acceleration="0.08">
 	</dynamics>
-	<samples sample_time="0.5" time_units="seconds"></samples>
+	<samples sample_time="0.1" time_units="seconds"></samples>
 	<!--####################################################################-->	
 	<!--Stairs definition. Can define as many as needed (all in the same
 	direction - up or down). If you need different step size, use one line to
@@ -43,10 +43,10 @@
 			- w, h: Width and height
 			- d: posterior landing length, so last step width is w+d
 	-->
-	<stairs landing="250">
+	<stairs landing="250.0">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="5" w="70" h="-30" d="150"/>
+		<dimensions N="5" w="65.0" h="-20.0" d="150.0"/>
 	</stairs>
 	<!--####################################################################-->
 	<graphics>
@@ -98,7 +98,7 @@
 		    program does not ensure this frame rate.
 		- pause: If true, the program stops at start. Press Space to continue.
 		-->
-		<framerate interval="5" pause="True"/>
+		<framerate interval="5" pause="False"/>
 	<!--####################################################################-->
 		<!--
 		Recording to a image sequence. If this tag does not exist, nothing is
