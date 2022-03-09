@@ -23,13 +23,26 @@ import matplotlib.pyplot as plt
 
 # If we want to use limit values, an exception can be raised because of the
 # rounding errors. Use this value to perform the comparisons safely.
-ROUND_ERROR = 1e-6
-
+# NOTE: Keep this value always greater than the EQUAL_SPEED value.
+ROUND_ERROR = 1e-4
 
 # This exception is raised when the pair of initial and end speed can not
 # allow the objet to travel the required distance. In this case, the solution
 # is to modify the initial and / or end speed. Use init_speed_range and
 # end_speed_range to check for the range of valid speed.
+EQUAL_SPEED = 1e-6
+
+
+def equal_speeds(v1, v2):
+    """Compare two velocities
+
+    Since the comparison of two velocities are used in several points
+    throughout the code, and for all points we need to make the same
+    comparison, add here this function.
+    """
+    return fabs(v1 - v2) < EQUAL_SPEED
+
+
 class MinDistanceError(ValueError):
     @classmethod
     def description(cls):
@@ -330,8 +343,20 @@ class AccelerationProfile(SpeedProfile):
         a1 = self.acceleration
         a2 = self.decceleration
         # Compute time for the accelerate and deccelerate sections.
-        t1 = (v_max - v_ini) / a1
-        t2 = (v_max - v_end) / a2
+
+        # First check if the initial speed is equal to the maximum, since in
+        # this case, the profile type is the one section profile (see function
+        # profile_two_sections), since this function must return the same in
+        # both case (here and in that function).
+        if equal_speeds(v_ini, v_max):
+            t1 = 0.0
+        else:
+            t1 = (v_max - v_ini) / a1
+        # Do the same for the final speed.
+        if equal_speeds(v_end, v_max):
+            t2 = 0.0
+        else:
+            t2 = (v_max - v_end) / a2
         # Compute distance traveled in each section.
         d1 = 0.5 * (v_max + v_ini) * t1
         d2 = 0.5 * (v_max + v_end) * t2
@@ -542,7 +567,7 @@ class AccelerationProfile(SpeedProfile):
         # final velocity, this insttruction can be completed with only one
         # section (single acceleration if final velocity is greater than
         # initial velocity, o single decceleration otherwise).
-        if fabs(v_mean2 - v_end) < ROUND_ERROR:
+        if equal_speeds(v_mean2, v_end):
             a1 = v_end / t_tot
             return (a1,), (t_tot,), (v_ini, v_end + v_ini,)
         elif v_mean2 > v_end:
@@ -596,15 +621,21 @@ class AccelerationProfile(SpeedProfile):
             # error (zero division). In this case, use the alternative profile
             # of one section (one acceleration section and other at constant
             # speed).
-            if fabs(v_end - self.speed) < 1e-2:
+            if equal_speeds(v_end, self.speed):
                 # When is the end speed the one that is close to the maximum
                 # use the implemented function.
-                return self.profile_one_section(v_ini, v_end, d_tot, t_tot)
-            if fabs(v_ini - self.speed) < 1e-2:
+                # NOTE: Here, we use self.speed instead of v_end (they are
+                # almost the same, but not the same, and it is possible that
+                # the profile can not be compute if we do not make this change.
+                return self.profile_one_section(
+                    v_ini, self.speed, d_tot, t_tot)
+            if equal_speeds(v_ini, self.speed):
                 # However, if the speed close to the maximum is the initial,
                 # it is enough to "invert" time, and change the order of the
                 # result.
-                a, t, v = self.profile_one_section(v_end, v_ini, d_tot, t_tot)
+                # NOTE: Same as the note above.
+                a, t, v = self.profile_one_section(
+                    v_end, self.speed, d_tot, t_tot)
                 # In this case, change the order of the arrays, but also change
                 # sign of the acceleration.
                 a = (a[1], -a[0])
@@ -613,12 +644,22 @@ class AccelerationProfile(SpeedProfile):
         elif v1 < 0.0:
             return self.profile_three_sections_zero(v_ini, v_end, d_tot, t_tot)
 
+        # # In some cases, it can happen that one of the section is null
+        # if t1 < ROUND_ERROR:
+        #     a = (a2,)
+        #     t = (t2,)
+        #     v = (v_ini, v_end)
+        # elif t2 < ROUND_ERROR:
+        #     a = (a1,)
+        #     t = (t1,)
+        #     v = (v_ini, v_end)
+        # else:
         # Compute final tuplas:
         # Acceleration pairs.
         a = (a1, a2)
         # Time pairs (remember that t1 + t2 = t_total
         t = (t1, t2)
-        # Speeds pairs. Denormalize adding the initial speed to both values.
+        # Speeds pairs.
         v = (v_ini, v1, v_end)
         return a, t, v
 

@@ -5,21 +5,23 @@ Created on 25 nov. 2021
 '''
 
 
-from dynamics.profiles import SpeedProfile
+from dynamics.profiles import AccelerationProfile
 
-v_ini = 6.3242
-v_end = 0.0
+v_ini = 4.0
 d_tot = 5.0
-t_tot = 1.5811388300841898
 
 data = {
     'speed': 10.0,
-    'acceleration': 2.0,
-    'decceleration': 4.0}
+    'acceleration': 1.0,
+    'decceleration': 1.0}
 
-profile = SpeedProfile(data)
+profile = AccelerationProfile(data)
+v_min, v_max = profile.end_speed_range(v_ini, d_tot)
+t_min, t_max = profile.profile_time_limits(v_ini, v_min, d_tot)
 
-tl, sl, pl = profile.plot_dynamics(2.0, (0.0, 0.0), (10.0, 5.0), 0.1, 0.001)
+a, t, v = profile.compute_profile(v_ini, v_min, d_tot, t_min)
+
+tl, sl, pl = profile.plot_dynamics(v_ini, a, t, 0.1, 0.0)
 profile.draw_dynamics(tl, sl, pl, block=True)
 
 # v_min, v_max = profile.init_speed_range(v_end, d_tot)
