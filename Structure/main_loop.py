@@ -14,6 +14,18 @@ from simulator.simulator import Simulator
 from simulator.graphics import Graphics
 import readXML
 
+
+def check_max_size(size, wheels):
+    """Example of ose of limits argument of Base.
+
+    To check any constrain, simple code here all checkings, and raise a
+    ValueError if not valid.
+
+    """
+    if size['a'] + size['b'] + size['c'] > 150.0:
+        raise ValueError
+
+
 # Open and check settings file.
 try:
     settings_name = sys.argv[1]
@@ -25,7 +37,8 @@ stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
+structure = base.Base(structure_size, wheels_radius,
+                      stairs, check_max_size)  # , graphics)
 
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)

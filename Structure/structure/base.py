@@ -43,7 +43,7 @@ class ConfigurationError(ValueError):
 class Base:
     """Class to the define the whole structure."""
 
-    def __init__(self, size, wheels, stairs, graphics=None):
+    def __init__(self, size, wheels, stairs, limits=None, graphics=None):
         """Constructor:
 
         Arguments:
@@ -55,12 +55,25 @@ class Base:
         wheels -- Dictionary with the radius of wheels:
           - r1, r2, r3, r4: Wheels radius (can be different).
         stairs -- Physical structure of the stairs.
+        limits -- Aditional constrains for the mechanical dimensions. It must
+            be a callable functions, whose arguments are the three dictionaries
+            defined above, and raises a ValueError if not fulfill the
+            constrains.
         graphics -- Debug option. If given, can be used in any point to draw
             the current state of the structure.
 
         Raises a ConfigurationError(ValueError) exception if the dimensions
         does not allow to build a valid structure.
         """
+        # Check whether the dimensions given fulfill the restrictions.
+        try:
+            limits(size, wheels)
+        except ValueError:
+            raise ConfigurationError(
+                "Dimensions does not fulfill mechanical restrictions")
+        except TypeError:
+            pass
+
         # Maximum inclination angle. It is computed 6from both, the structure
         # dimensions, which gives the maximum inclination allowed before the
         # wheel collide among them, and the maximum inclination given by the
@@ -122,15 +135,21 @@ class Base:
         self.state = StructureState.InclinationNormal
 
     def reset_position(self):
+        """Place the structure in the initial position.
+
+        """
+        # Set position to the origin of the stair.
         self.elevation = self.LENGTH
         self.position = 0.0
         self.angle = 0.0
+        # Set the actuators to its original position (0).
         re = self.REAR.get_actuator_position(0)
         fr = self.REAR.get_actuator_position(1)
         self.REAR.shift_actuator(-re, -fr, 0.0)
         re = self.FRNT.get_actuator_position(0)
         fr = self.FRNT.get_actuator_position(1)
         self.FRNT.shift_actuator(-re, -fr, 0.0)
+        # Check that everything is ok.
         col, stb = self.check_position()
         col.add_stability(stb)
         return col
