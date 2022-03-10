@@ -21,7 +21,7 @@ def compute_time(structure, simulator):
         instruction, str_aux = next_instruction(structure)
         if instruction is None:
             break
-        stop_distance = simulator.estimate_end_speed(instruction)
+        stop_distance = simulator.stop_distance(instruction)
         next_instr = compute_distance(str_aux, stop_distance)
         simulator.compute_time(instruction, next_instr)
         total_time += instruction['time']

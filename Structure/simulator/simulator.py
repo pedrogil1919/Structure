@@ -158,14 +158,11 @@ class Simulator():
 
         return total_time
 
-    def estimate_end_speed(self, instruction):
-        """Estimation of end speed based only on horizontal distance.
+    def stop_distance(self, instruction):
+        """Stop distance according to the current speed.
 
-        This is a first estimate of the end speed of the instruction. The
-        actual end speed will always be equal or lower than this value, based
-        on the time requirede by the actuators to complete the vertical
-        motion, and also on the next instructions.
-
+        Computes the total distance to travel if we start a uniformly
+        deccelerated motion, and considering the current speed.
         """
         # Update current speed (see comment in function compute_time).
         self.current_speed = self.end_speed
@@ -471,10 +468,10 @@ class Simulator():
             # Compute proportional speeds for the actuator based on the amount
             # of motion when elevating and inclining.
             total_motion = abs(step_elevate) + abs(step_incline)
-            try:
-                proportional_value = abs(step_elevate) / total_motion
-            except ZeroDivisionError:
+            if total_motion == 0.0:
                 proportional_value = 0.0
+            else:
+                proportional_value = abs(step_elevate) / total_motion
 
             # Build the list with all the elements equal to none but the wheel
             # that must move with the structure.
@@ -486,7 +483,7 @@ class Simulator():
                     (1 - proportional_value)
             except TypeError:
                 # In case there is no wheel to move, the exception raises, so
-                # that all tne elements in the list are note, which is what we
+                # that all tne elements in the list are None, which is what we
                 # need.
                 pass
             try:
@@ -495,7 +492,7 @@ class Simulator():
                     (1 - proportional_value)
             except TypeError:
                 # In case there is no wheel to move, the exception raises, so
-                # that all tne elements in the list are note, which is what we
+                # that all tne elements in the list are None, which is what we
                 # need.
                 pass
 
@@ -528,8 +525,10 @@ class Simulator():
 
     def simulate_instruction(self, structure, instruction):
         """Complete a list of instructions in one step."""
+        if instruction is None:
+            return
         try:
-            reset = instruction['reset']
+            __ = instruction['reset']
         except KeyError:
             pass
         else:
@@ -596,7 +595,6 @@ class Simulator():
             if not res:
                 print("Can not shift actuator:", res)
         #######################################################################
-        yield True
 
 ###############################################################################
 
