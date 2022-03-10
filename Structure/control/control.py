@@ -567,7 +567,7 @@ def manual_control(key_pressed, simulator):
                    'elevate_rear': True}
     ###########################################################################
     else:
-        command = {}
+        command = None
     return command
 
 ###############################################################################
