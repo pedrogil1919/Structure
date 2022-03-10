@@ -7,7 +7,7 @@
 	g: Height between floor and lower case (only useful for representation).
 	n: Maximum inclination (given by L9, compute theoretically).
 	-->
-	<size a="30.0" b="25.0" c="53.0" d="50.0" h="2.0" v="4.0" g="40.0" n="30.0"/>
+	<size a="40.0" b="35.0" c="30.0" d="50.0" h="2.0" v="4.0" g="40.0" n="30.0"/>
 	<!--Wheel radius, in the same units than structure dimensions
 	Radius can be given one for each wheel (r1, r2, r3 and r4) or one for
 	all (r).
@@ -43,10 +43,10 @@
 			- w, h: Width and height
 			- d: posterior landing length, so last step width is w+d
 	-->
-	<stairs landing="250.0">
+	<stairs landing="150.0">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="5" w="65.0" h="-20.0" d="150.0"/>
+		<dimensions N="2" w="65.0" h="20.0" d="150.0"/>
 	</stairs>
 	<!--####################################################################-->
 	<graphics>
@@ -98,7 +98,7 @@
 		    program does not ensure this frame rate.
 		- pause: If true, the program stops at start. Press Space to continue.
 		-->
-		<framerate interval="5" pause="False"/>
+		<framerate interval="5" pause="True"/>
 	<!--####################################################################-->
 		<!--
 		Recording to a image sequence. If this tag does not exist, nothing is
@@ -119,7 +119,7 @@
 		<video directory="/home/pedrogil/Videos/WheelChair/con" display="True">
 			<composition directory="comp" buffer_size="100" units="cm" margin="10"/>
 		</video>
-		<video directory="/home/pedrogil/Videos/WheelChair/con" display="True"></video>
+		<video directory="/home/pedrogil/Videos/WheelChair/c2" display="True"></video>
 -->	
 	</graphics>
 </StairsClimbing>

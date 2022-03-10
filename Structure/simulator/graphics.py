@@ -119,6 +119,8 @@ class Graphics:
     def set_manual_mode(self):
         """Set to manual mode, so the user can move the structure manually."""
         self.manual_mode = True
+        if not self.display:
+            raise ValueError
 
     def draw(self, stairs, structure, simulator, pause=False):
         """Generate an image of the actual elements.
