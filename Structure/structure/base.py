@@ -284,6 +284,8 @@ class Base:
         col_aux, stb_aux = self.check_position()
         if col_aux and stb_aux:
             return col
+        # If we place the structure back to its original position, there should
+        # not be any error. If this error happens, it is a run time error.
         raise RuntimeError("Error in advance structure")
 
     def elevate(self, height, wheel=None, check=True, margin=True):
@@ -581,7 +583,7 @@ class Base:
             return self.FRNT.get_actuator_position(0)
         elif index == 3:
             return self.FRNT.get_actuator_position(1)
-        raise RuntimeError
+        raise ValueError("Actuator index are 0 - 3.")
 
     def get_inclination(self):
         """Returns the inclination of the structure."""

@@ -124,7 +124,7 @@ class Stair:
             yc = ys
         # If the code does not reach the return instruction, possibly the
         # wheel is out of the space in which the stairs are defined.
-        raise ValueError
+        raise RuntimeError
 
     def check_collision(self, p, r):
         """Check a possible collision of a wheel with the stairs.

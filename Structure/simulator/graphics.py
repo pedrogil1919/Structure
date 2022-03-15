@@ -120,6 +120,9 @@ class Graphics:
         """Set to manual mode, so the user can move the structure manually."""
         self.manual_mode = True
         if not self.display:
+            # If we are not displaying images, the system can not be set to
+            # manual mode, since the user can not interact with the system.
+            # Raise an error to warm the calliing function.
             raise ValueError
 
     def draw(self, stairs, structure, simulator, pause=False):

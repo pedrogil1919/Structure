@@ -16,6 +16,18 @@ from simulator.time import compute_time
 from physics.stairs import Stair
 import readXML
 
+
+def check_max_size(size, wheels):
+    """Example of ose of limits argument of Base.
+
+    To check any constrain, simple code here all checkings, and raise a
+    ValueError if not valid.
+
+    """
+    if size['a'] + size['b'] + size['c'] > 150.0:
+        raise ValueError
+
+
 # Open and check settings file.
 try:
     settings_name = sys.argv[1]
@@ -28,7 +40,7 @@ stair = Stair(stairs_list, landing)
 
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = Base(structure_size, wheels_radius, stair)
+structure = Base(structure_size, wheels_radius, stair, check_max_size)
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)
 simulator = Simulator(dynamics_data, sample_data)

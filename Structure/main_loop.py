@@ -15,17 +15,6 @@ from simulator.graphics import Graphics
 import readXML
 
 
-def check_max_size(size, wheels):
-    """Example of ose of limits argument of Base.
-
-    To check any constrain, simple code here all checkings, and raise a
-    ValueError if not valid.
-
-    """
-    if size['a'] + size['b'] + size['c'] > 150.0:
-        raise ValueError
-
-
 # Open and check settings file.
 try:
     settings_name = sys.argv[1]
@@ -37,8 +26,7 @@ stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius,
-                      stairs, check_max_size)  # , graphics)
+structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)
@@ -85,8 +73,8 @@ while continue_loop:
             # horizontal motion (if needed).
             # Compute the actual time required to complete the instruction.
             sm.compute_time(instruction, next_instructions)
-        except RuntimeError:
-            # A runtime error is raised when the control does not find any
+        except control.ControlError:
+            # A Control Error is raised when the control does not find any
             # instruction (probably because the wheelchair can not find any
             # instruction to continue). In this case, give the control to the
             # user to finish the program (or to check the situation).

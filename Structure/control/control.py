@@ -9,9 +9,10 @@ List of instructions, along with its arguments:
 
 - advance (float): Horizontal motion. If positive, move forwards.
 - elevate (float): Vertical elevation of the structure. If positive, elevate.
-- incline (foat): Incline structure. If positive, the front is elevated.
+- incline (foat): Incline structure. If positive, the front is elevated with
+    respect to the rear part of the structure.
 - main: (dictionary): Main wheel (wheel closest to its corresponding step,
-    that is, the first wheel that collides with, or get out of the step for
+    that is, the first wheel that collides, or get out of the step for
     negative steps, with the stair if we moved the structure without elevating
     any wheel) with the following keys:
   - wheel (int): Index of the main wheel (0, 1, 2 or 3).
@@ -28,7 +29,7 @@ List of instructions, along with its arguments:
 
 NOTE: height and shift are complementary data. For instance, if the structure
 were elevate 10 cm, and do nothing else, all the wheel must remain in the
-ground. If also height is -8 cm, since the wheel is initally at the ground,
+ground. If also "height" is -8 cm, since the wheel is initally at the ground,
 after the instruction the wheel will be situated at 8 cm.
 For the same case, instead of -8 cm for height, we can set shift to 2 cm,
 meaning that the actuator has actually moved 2 cm from its original position to
@@ -43,19 +44,22 @@ import copy
 from physics.wheel_state import MAX_GAP
 
 
+class ControlError(ValueError):
+    """Error to raise when the control can not find a valid instruction"""
+    pass
+
+
 def last_instruction(structure, distance):
     """Generate the last instruction before finishing the program.
 
     Before finish the program, set the structure to its canonical position,
-    that is, all the wheels in the ground, and all the actuator to their
-    lower position.
-
-    Returns the instruction to finish the program. This instruction includes
-    the key 'end' that informs the simulator that the structure has reached
-    the end of the stair, to be aware of it and finish the program.
+    that is, all the wheels in the ground, and all the actuators to their
+    lower position. It returns the instruction to set the structure to that
+    position.
 
     Arguments:
     structure -- Actual structure for which we need to compute the instruction.
+
     """
     # Check if all the wheels are on the ground.
     re, fr = structure.set_horizontal()
@@ -95,7 +99,7 @@ def last_instruction(structure, distance):
 #     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     col, stb = structure.check_position()
     if not col or not stb:
-        raise RuntimeError
+        raise ControlError
     instruction = {
         "advance": distance,
         "incline": incline,
@@ -120,7 +124,8 @@ def make_room_wheel3(structure, height):
     of the wheels.
     NOTE: Inside the function, there are lines with a call to GRAPHICS. This
     can be used to draw the structure position at any time. To do so, you need
-    to include the graphics in the constructor of the structure.
+    to include the graphics in the constructor of the structure (only for
+    debug purposes).
 
     Arguments:
     height -- additional height the actuator must be shifted and can not be
@@ -137,10 +142,10 @@ def make_room_wheel3(structure, height):
     # structure from the rear to allow the inclination to complete.
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     if not structure.incline(-res_elv.rear, elevate_rear=True, margin=False):
-        raise RuntimeError
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     if not structure.elevate(height, margin=False):
-        raise RuntimeError
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     return -res_elv.rear, height + res_elv.rear
 
@@ -162,7 +167,7 @@ def make_room_wheel2(structure, height):
     res_shf = structure.shift_actuator(2, -total, margin=False)
     if res_shf:
         # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-        raise RuntimeError
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # but the value front indicates the inclination for the structure to get
     # the space requirede.
@@ -183,16 +188,16 @@ def make_room_wheel2(structure, height):
     res_inc = structure.incline(inclination, elevate_rear=True)
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     if not res_inc:
-        raise RuntimeError
+        raise ControlError
     # And elevate the structure to set it back to its actual position. To get
     # the distance to elevate, first elevate a value larger than the required.
     res_elv = structure.elevate(total)
     if res_elv:
-        raise RuntimeError
+        raise ControlError
     # And the distance is the previous value plus the distance of error given
     # in central value.
     if not structure.elevate(total + res_elv.central):
-        raise RuntimeError
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     # Finally, set the actuator to its current position (remember that we
     # elevate this actuator previously).
@@ -215,14 +220,14 @@ def make_room_wheel1(structure, height):
     res_shf = structure.shift_actuator(1, -total, margin=False)
     if res_shf:
         # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-        raise RuntimeError
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     res_inc = structure.incline(-res_shf.rear, elevate_rear=True, margin=False)
     if res_inc:
         return -res_shf.rear, res_shf.rear
     # TODO: The code here must be similar to the one in make_room_wheel2, but
     # on the other side of the structure.
-    raise RuntimeError
+    raise ControlError
 
 
 def make_room_wheel0(structure, height):
@@ -235,15 +240,15 @@ def make_room_wheel0(structure, height):
 
     res_shf = structure.shift_actuator(0, -total, margin=False)
     if res_shf:
-        structure.GRAPHICS.draw(structure.STAIRS, structure, False)
-        raise RuntimeError
+        # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+        raise ControlError
     # structure.GRAPHICS.draw(structure.STAIRS, structure, False)
     res_inc = structure.incline(-res_shf.actuator,
                                 elevate_rear=True, margin=False)
     if res_inc:
         return -res_shf.actuator, res_shf.actuator
 
-    raise RuntimeError
+    raise ControlError
 
 
 def compute_instruction(structure, wheel, hor, ver):
@@ -295,7 +300,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # First, check i fthere is a horizontal collision.
                 instruction["advance"] = res_inc.horizontal
                 if not structure.advance(instruction["advance"]):
-                    raise RuntimeError
+                    raise ControlError
                 res_inc = structure.incline(instruction["incline"],
                                             margin=False)
             if not res_inc:
@@ -304,7 +309,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # actually possible.
                 instruction["incline"] += res_inc.front
                 if not structure.incline(instruction["incline"], margin=False):
-                    raise RuntimeError
+                    raise ControlError
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel3(structure, -res_inc.front)
@@ -322,7 +327,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # actually possible.
                 instruction["elevate"] += res_elv.central
                 if not structure.elevate(instruction["elevate"], margin=False):
-                    raise RuntimeError
+                    raise ControlError
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel2(structure, -res_elv.central)
@@ -340,7 +345,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # actually possible.
                 instruction["elevate"] += res_elv.central
                 if not structure.elevate(instruction["elevate"], margin=False):
-                    raise RuntimeError
+                    raise ControlError
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel1(structure, -res_elv.central)
@@ -358,7 +363,7 @@ def compute_instruction(structure, wheel, hor, ver):
                 # actually possible.
                 instruction["elevate"] += res_elv.central
                 if not structure.elevate(instruction["elevate"], margin=False):
-                    raise RuntimeError
+                    raise ControlError
                 # And try to make more space for the actuator to complete the
                 # motion.
                 inc, elv = make_room_wheel0(structure, -res_elv.central)
@@ -374,13 +379,13 @@ def compute_instruction(structure, wheel, hor, ver):
         # of the sum will be 0.
         instruction["advance"] += res_adv.horizontal
         if not structure.advance(instruction["advance"]):
-            raise RuntimeError
+            raise ControlError
     # Check that the actuator can now be shifted the required height.
     if not res_shf:
         if not structure.shift_actuator(actuator["wheel"],
                                         actuator["height"],
                                         margin=False):
-            raise RuntimeError
+            raise ControlError
 
     return instruction, actuator
 
@@ -519,7 +524,7 @@ def next_instruction(structure):
     # we do not control this error, the program get hung because the strcture
     # does not move but the program does not finishes.
     if null_instruction(instruction):
-        raise ValueError
+        raise ControlError
 
     return instruction, st_aux
 

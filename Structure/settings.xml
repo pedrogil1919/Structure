@@ -7,7 +7,7 @@
 	g: Height between floor and lower case (only useful for representation).
 	n: Maximum inclination (given by L9, compute theoretically).
 	-->
-	<size a="40.0" b="35.0" c="30.0" d="50.0" h="2.0" v="4.0" g="40.0" n="30.0"/>
+	<size a="40.0" b="40.0" c="40.0" d="50.0" h="2.0" v="4.0" g="40.0" n="30.0"/>
 	<!--Wheel radius, in the same units than structure dimensions
 	Radius can be given one for each wheel (r1, r2, r3 and r4) or one for
 	all (r).
@@ -25,7 +25,7 @@
 	<!--####################################################################-->	
 	<!--
 	<dynamics actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
-		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="2.0">
+		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="3.0">
 	</dynamics>
 	-->
 	<dynamics actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
@@ -43,10 +43,10 @@
 			- w, h: Width and height
 			- d: posterior landing length, so last step width is w+d
 	-->
-	<stairs landing="150.0">
+	<stairs landing="250.0">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="2" w="65.0" h="20.0" d="150.0"/>
+		<dimensions N="5" w="65.0" h="-20.0" d="150.0"/>
 	</stairs>
 	<!--####################################################################-->
 	<graphics>

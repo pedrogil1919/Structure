@@ -7,6 +7,12 @@ Module to compute times for the structure to cross a stair. This module
 performs the same instructions as the graphical simulator but without any
 graphics overload, to complete the function in less time. This module is
 intended for the optimization functions.
+
+If the structure can not complete the whole stair, the exception is not caugth
+here. Remenber that all the exceptions returned but the RunTimeError are
+produced because the system can not complete the motion. Only RunTimeError
+exceptions means some error within the code that must be corrected.
+
 """
 
 from control.control import next_instruction, compute_distance
