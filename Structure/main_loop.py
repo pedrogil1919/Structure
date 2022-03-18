@@ -79,7 +79,12 @@ while continue_loop:
             # instruction to continue). In this case, give the control to the
             # user to finish the program (or to check the situation).
             graphics.set_manual_mode()
-        # Simulate instruction:{
+            # NOTE: At this point, we need to finish the iteration and start a
+            # new iteration. This way, we avoid the program to set the
+            # structure to the next state, that is what the code do in the last
+            # instruction of the loop.
+            continue
+        # Simulate instruction:
         instruction_number += 1
         print(instruction_number, instruction)
         for res in sm.simulate_step(structure, instruction):
