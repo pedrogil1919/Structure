@@ -32,7 +32,7 @@
 		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="3.0" 
 		decceleration="0.18" acceleration="0.08">
 	</dynamics>
-	<samples sample_time="0.1" time_units="seconds"></samples>
+	<samples sample_time="1.0" time_units="seconds"></samples>
 	<!--####################################################################-->	
 	<!--Stairs definition. Can define as many as needed (all in the same
 	direction - up or down). If you need different step size, use one line to
@@ -46,7 +46,7 @@
 	<stairs landing="250.0">
 		<!--Stair definition. Simply copy one of the following blocks
 		or create one in your own.-->
-		<dimensions N="5" w="65.0" h="-20.0" d="150.0"/>
+		<dimensions N="5" w="65.0" h="30.0" d="150.0"/>
 	</stairs>
 	<!--####################################################################-->
 	<graphics>

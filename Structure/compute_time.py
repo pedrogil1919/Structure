@@ -10,7 +10,7 @@ Module to compute the time required to complete a stair, without simulations.
 # Imports needed for the testing block.
 import sys
 
-from control.control import ControlError
+from simulator.control import ControlError
 from structure.base import Base
 from simulator.simulator import Simulator
 from simulator.time import compute_time

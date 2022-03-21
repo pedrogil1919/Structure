@@ -15,7 +15,7 @@ exceptions means some error within the code that must be corrected.
 
 """
 
-from control.control import next_instruction, compute_distance
+from simulator.control import next_instruction, compute_distance
 
 
 def compute_time(structure, simulator):

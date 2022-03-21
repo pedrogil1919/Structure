@@ -12,7 +12,7 @@ import numpy
 import cv2
 import os
 
-from simulator.plots import Plots
+from graphics.plots import Plots
 
 
 class Graphics:
@@ -182,6 +182,7 @@ class Graphics:
                 else:
                     wait_time = 0 if self.toggle_pause else self.interval
                 c = cv2.waitKey(int(wait_time)) & 0x7F
+                print("print", c)
                 ###############################################################
                 if c == 27:
                     # Escape key.

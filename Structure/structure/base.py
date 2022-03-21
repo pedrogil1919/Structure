@@ -19,8 +19,8 @@ import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
-from control.distance_errors import merge_collision, merge_stability
-from control.distance_errors import MaxInclinationError
+from simulator.distance_errors import merge_collision, merge_stability
+from simulator.distance_errors import MaxInclinationError
 from physics.wheel_state import MAX_GAP
 
 
