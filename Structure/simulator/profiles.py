@@ -19,7 +19,7 @@ the requirements. However, in some cases the motion can not be completed.
 from math import sqrt, fabs
 from numpy import arange, array, hstack
 from numpy import float64 as data_type
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 # If we want to use limit values, an exception can be raised because of the
 # rounding errors. Use this value to perform the comparisons safely.
@@ -173,27 +173,27 @@ class SpeedProfile():
         # And return all the signals computed.
         return time_list, speed_list, position_list
 
-    def draw_dynamics(self, time_data, speed_data, position_data,
-                      max_time=None, block=False):
-        # Plot figures.
-
-        if max_time is None:
-            max_time = time_data[-1]
-        plt.subplot(2, 1, 1)
-        plt.plot(time_data, speed_data, 'b')
-        plt.title("velocidad")
-        plt.grid(True)
-        plt.xlim([0, max_time])
-
-        plt.subplot(2, 1, 2)
-        plt.plot(time_data, position_data, 'b')
-        plt.title("espacio")
-        plt.grid(True)
-        plt.xlim([0, max_time])
-        plt.show(block=block)
-
-    def clear_figures(self):
-        plt.figure(figsize=(8, 6), dpi=100)
+    # def draw_dynamics(self, time_data, speed_data, position_data,
+    #                   max_time=None, block=False):
+    #     # Plot figures.
+    #
+    #     if max_time is None:
+    #         max_time = time_data[-1]
+    #     plt.subplot(2, 1, 1)
+    #     plt.plot(time_data, speed_data, 'b')
+    #     plt.title("velocidad")
+    #     plt.grid(True)
+    #     plt.xlim([0, max_time])
+    #
+    #     plt.subplot(2, 1, 2)
+    #     plt.plot(time_data, position_data, 'b')
+    #     plt.title("espacio")
+    #     plt.grid(True)
+    #     plt.xlim([0, max_time])
+    #     plt.show(block=block)
+    #
+    # def clear_figures(self):
+    #     plt.figure(figsize=(8, 6), dpi=100)
 
 
 ###############################################################################

@@ -181,11 +181,12 @@ class Graphics:
                     wait_time = 0
                 else:
                     wait_time = 0 if self.toggle_pause else self.interval
+                # NOTE: Just in case it happens again. If you set the
+                # matplotlib library to agg and use cv2.waitKey, if you press
+                # a key other than enter on the opencv window, the program
+                # crashes. So use agg only when you are not going to use
+                # opencv key events.
                 c = cv2.waitKey(int(wait_time)) & 0x7F
-<<<<<<< HEAD
-                print("print", c)
-=======
->>>>>>> refs/heads/change_structure
                 ###############################################################
                 if c == 27:
                     # Escape key.

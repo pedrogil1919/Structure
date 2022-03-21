@@ -7,7 +7,7 @@ Step by step simulator of structure motion.
 """
 
 # from math import floor
-from dynamics.profiles import SpeedProfile, AccelerationProfile
+from simulator.profiles import SpeedProfile, AccelerationProfile
 
 
 class DynamicValueError(ValueError):

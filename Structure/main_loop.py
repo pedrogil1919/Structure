@@ -7,13 +7,12 @@ Created on 28 ene. 2021
 
 import sys
 
+import readXML
 from physics import stairs
 from structure import base
-from simulator import control
 from simulator.simulator import Simulator
 from graphics.graphics import Graphics
-import readXML
-
+from simulator import control
 
 # Open and check settings file.
 try:
