@@ -12,7 +12,7 @@ import numpy
 import cv2
 import os
 
-from simulator.plots import Plots
+from graphics.plots import Plots
 
 
 class Graphics:

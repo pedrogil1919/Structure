@@ -13,7 +13,7 @@ import cv2
 
 from physics.wheel import Wheel
 from structure.joint import Joint
-from control.distance_errors import CollisionErrors
+from simulator.distance_errors import CollisionErrors
 from physics.wheel_state import MAX_GAP
 
 

@@ -9,9 +9,9 @@ import sys
 
 from physics import stairs
 from structure import base
-from control import control
+from simulator import control
 from simulator.simulator import Simulator
-from simulator.graphics import Graphics
+from graphics.graphics import Graphics
 import readXML
 
 
