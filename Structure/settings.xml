@@ -32,7 +32,11 @@
 		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="3.0" 
 		decceleration="0.18" acceleration="0.08">
 	</dynamics>
+<<<<<<< HEAD
 	<samples sample_time="1.0" time_units="seconds"></samples>
+=======
+	<samples sample_time="0.5" time_units="seconds"></samples>
+>>>>>>> refs/heads/change_structure
 	<!--####################################################################-->	
 	<!--Stairs definition. Can define as many as needed (all in the same
 	direction - up or down). If you need different step size, use one line to
@@ -98,7 +102,7 @@
 		    program does not ensure this frame rate.
 		- pause: If true, the program stops at start. Press Space to continue.
 		-->
-		<framerate interval="5" pause="True"/>
+		<framerate interval="5" pause="False"/>
 	<!--####################################################################-->
 		<!--
 		Recording to a image sequence. If this tag does not exist, nothing is

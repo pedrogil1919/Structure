@@ -182,7 +182,10 @@ class Graphics:
                 else:
                     wait_time = 0 if self.toggle_pause else self.interval
                 c = cv2.waitKey(int(wait_time)) & 0x7F
+<<<<<<< HEAD
                 print("print", c)
+=======
+>>>>>>> refs/heads/change_structure
                 ###############################################################
                 if c == 27:
                     # Escape key.
