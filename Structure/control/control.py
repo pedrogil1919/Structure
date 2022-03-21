@@ -390,7 +390,7 @@ def compute_instruction(structure, wheel, hor, ver):
     return instruction, actuator
 
 
-def compute_distance(structure, distance):
+def compute_distance(structure, distance, next_inst=None):
     """Compute the instructions needed to cover the given distance.
 
     For the current state of the structure, the function computes a list of
@@ -399,20 +399,41 @@ def compute_distance(structure, distance):
 
     Returns a list of consecutive instructions.
 
+    Arguments:
+    structure
+    distance
+    next_inst -- If previously computed, it is possible to pass here the
+      precomputed instructions, so we do not have to compute it again. In that
+      case, the list of instructions returned will be equal to this list, plus
+      some additional instructions if needed to cover the total distance. Also,
+      the actual state of the structure is stored for each item of the list.
+
     """
     instructions = []
     # Compute new instructions until the total distance is covered.
     while distance > 0:
-        # Get next instruction.
-        next_inst, structure = next_instruction(structure)
+        try:
+            instruction = next_inst[0]
+            structure = instruction["struct"]
+            next_inst = next_inst[1:]
+        except (IndexError, TypeError):
+            # Get next instruction.
+            instruction, structure = next_instruction(structure)
         # If it is the last instruction, we can not return any more
         # instruction, and so, end here.
-        if next_inst is None:
+        if instruction is None:
             return instructions
+        elif next_inst is not None:
+            # Note that if we get a list of previously computed instructions,
+            # it is likely that they are going to be used instead of compute
+            # the same instructions again. If this is the case, they will also
+            # need the actual state of the structure, and so, store it in the
+            # same instruction.
+            instruction["struct"] = structure
         # Take account of the distance traveled,
-        distance -= next_inst.get('advance', 0.0)
+        distance -= instruction.get('advance', 0.0)
         # and append the instruction to the list.
-        instructions.append(next_inst)
+        instructions.append(instruction)
     return instructions
 
 
