@@ -22,18 +22,64 @@ def compute_time(structure, simulator):
     """Compute the time required to complete a stair.
 
     """
-    total_time = 0
+    total_time = 0.0
+    # List of instructions to complete the stair. This is a FIFO queue. In
+    # general, to execute a instruction, we need more instructions, just for
+    # the control to check if a crash can happen if the speed at the end of the
+    # current instruction is high enogh so that the structure can not stop
+    # before the crash.
+    instructions = []
     while True:
-        instruction, str_aux = next_instruction(structure)
+        try:
+            # Check if we have at least one instruction in the queue.
+            instruction = instructions[0]
+            str_aux = instruction['struct']
+            # And remove this instruction from the list.
+            instructions = instructions[1:]
+        except IndexError:
+            # In case the list is empty, compute just the next instruction.
+            instruction, str_aux = next_instruction(structure)
         if instruction is None:
+            # When the instruction is None, that means that we have complete
+            # the stair.
             break
+        # To fix the end speed for the current instruction, we have to chek for
+        # any possible crash in the following instructions. For that reason, we
+        # need to compute first the stop distance.
         stop_distance = simulator.stop_distance(instruction)
-        next_instr = compute_distance(str_aux, stop_distance)
-        simulator.compute_time(instruction, next_instr)
+        # And now, we compute the instructions to complete that distance.
+        instructions = compute_distance(str_aux, stop_distance, instructions)
+        # And with all these, compute the end speed, and so, the time required
+        # for the current instruction.
+        simulator.compute_time(instruction, instructions)
+        # Add this time to the total time.
         total_time += instruction['time']
+        # And update the state of the structure with the current state.
         structure = str_aux
         # Return the total number of iterations needed.
     return total_time
+
+###############################################################################
+# End of file.
+###############################################################################
+
+# def compute_time1(structure, simulator):
+#     """Similar to above, but without optimization, that is here, the same
+#     instruction is computed many times.
+#
+#     """
+#     total_time = 0
+#     while True:
+#         instruction, str_aux = next_instruction(structure)
+#         if instruction is None:
+#             break
+#         stop_distance = simulator.stop_distance(instruction)
+#         next_instr = compute_distance(str_aux, stop_distance, False)
+#         simulator.compute_time(instruction, next_instr)
+#         total_time += instruction['time']
+#         structure = str_aux
+#         # Return the total number of iterations needed.
+#     return total_time
 
 
 # class ComputeTime:
