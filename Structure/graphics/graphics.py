@@ -109,8 +109,7 @@ class Graphics:
                     "incli": (slice(3 * h, 4 * h, 1), slice(1 * 0, 1 * w, 1))
                 }
                 self.plots = Plots((w, h), video_data["buffer_size"],
-                                   video_data["units"], video_data["margin"],
-                                   axis)
+                                   video_data["units"], axis)
             else:
                 self.save_composition = False
         else:

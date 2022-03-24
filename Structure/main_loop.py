@@ -34,7 +34,7 @@ sm = Simulator(dynamics_data, sample_data)
 # Read graphical variables.
 image_data, video_data = readXML.read_graphics(settings_name)
 axis = {
-    "height": structure_size["d"],
+    "height": structure_size["d"] + video_data['margin'],
     "max_speed": 1.2 * dynamics_data["speed"]}
 graphics = Graphics(image_data, video_data, axis)
 # Draw initial state of the structure.
