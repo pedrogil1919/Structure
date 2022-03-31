@@ -41,6 +41,8 @@ class Graphics:
                 runtime pressing Space key.
             interval -- When pause is False, and display True, 1/framerate for
                 the sequence displayed on screen.
+            units -- String with the name of the dimension units, for instance,
+                m, cm, mm, ...
 
         """
         # Flag to switch between manual mode operation, or automatic.

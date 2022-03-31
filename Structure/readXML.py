@@ -25,6 +25,9 @@ def read_structure(xml_file):
     except ElementTree.ParseError:
         raise RuntimeError("XML file", xml_file, "is incorrect.")
 
+    # Get units:
+    xml_root = element.getroot()
+    units = xml_root.attrib['units']
     # Read structure dimensions:
     size = element.find('size')
     structure_size = {
@@ -50,7 +53,7 @@ def read_structure(xml_file):
             'r3': float(wheels.attrib['r']),
             'r4': float(wheels.attrib['r'])}
 
-    return structure_size, wheels_radius
+    return units, structure_size, wheels_radius
 
 
 def read_stairs(xml_file):

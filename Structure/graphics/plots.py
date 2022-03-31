@@ -30,7 +30,8 @@ class Plots():
         Arguments:
         size -- plot resolution (width x height) pixels.
         buffer_len -- Number of samples to plot in each render.
-        units -- String with the name of the units, for printing.
+        units -- String with the name of the dimension units, for printing,
+            for instance, cm, mm, m, ...
         axis -- axis limits for the plots.
         """
         # Create a 6-dimensional array to store the signal samples (create here

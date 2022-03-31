@@ -24,7 +24,7 @@ except Exception:
 stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
-structure_size, wheels_radius = readXML.read_structure(settings_name)
+__, structure_size, wheels_radius = readXML.read_structure(settings_name)
 structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
