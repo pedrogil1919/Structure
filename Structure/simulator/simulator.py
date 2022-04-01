@@ -545,7 +545,9 @@ class Simulator():
             # Advance structure
             res = structure.advance(distance)
             if not res:
-                print("Can not advance structure.", res)
+                if not structure.advance(
+                        distance + res.horizontal):
+                    print("Can not advance structure.", res)
         #######################################################################
         # Sometimes, the order of first elevate and then incline is
         # not possible, and have to change order. With this instruction
@@ -593,7 +595,12 @@ class Simulator():
             # Shift actuator.
             res = structure.shift_actuator(wheel, height, margin=False)
             if not res:
-                print("Can not shift actuator:", res)
+                # If the wheel collides with the step, or with one of its ends,
+                # modify the height to move so that the actuator is in contact
+                # with the corresponding bound.
+                if not structure.shift_actuator(
+                        wheel, height + res.central, margin=False):
+                    print("Can not shift actuator:", res)
         #######################################################################
 
 ###############################################################################
