@@ -43,7 +43,7 @@ class ConfigurationError(ValueError):
 class Base:
     """Class to the define the whole structure."""
 
-    def __init__(self, size, wheels, stairs, limits=None, graphics=None):
+    def __init__(self, size, wheels, stairs, limits=None, debug=None):
         """Constructor:
 
         Arguments:
@@ -59,8 +59,10 @@ class Base:
             be a callable functions, whose arguments are the three dictionaries
             defined above, and raises a ValueError if not fulfill the
             constrains.
-        graphics -- Debug option. If given, can be used in any point to draw
-            the current state of the structure.
+        debug -- Debug option. If given, can be used in any point to draw
+            the current state of the structure. It is a dictionary with the keys:
+                - graphics: Graphics module.
+                - simulator: Simulator module.
 
         Raises a ConfigurationError(ValueError) exception if the dimensions
         does not allow to build a valid structure.
@@ -80,7 +82,8 @@ class Base:
         # user, which should be computed from the range of the L9 actuator.
         self.MAX_INCLINE = self.max_inclination(size, wheels)
 
-        self.GRAPHICS = graphics
+        if debug is not None:
+            self.DEBUG = debug
         self.STAIRS = stairs
         # Main distances of the structure.
         a = size['a']

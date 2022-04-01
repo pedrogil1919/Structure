@@ -99,7 +99,9 @@ class Wheel:
         Arguments:
         position -- Coordinates (x,y) for the required center of the wheel.
         """
-        if self.state != WheelState.Unstable:
+        if self.state != WheelState.Unstable and \
+                self.state != WheelState.Over and \
+                self.state != WheelState.Outer:
             # If the wheel is not in an unstable position, this value has no
             # sense (is not useful at all).
             return None
@@ -110,16 +112,16 @@ class Wheel:
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
-            return -wr
+            return -wr + self.HOR_MARGIN
         elif hr >= hc and hc > hl:
             # Upstair direction, in the last step.
-            return -wr
+            return -wr + self.HOR_MARGIN
         elif hr < hc and hc <= hl:
             # Downstairs direction.
-            return wl
+            return wl - self.HOR_MARGIN
         elif hr <= hc and hc < hl:
             # Downstairs direction, in the last step.
-            return wl
+            return wl - self.HOR_MARGIN
         return None
 
     def ground(self, position):

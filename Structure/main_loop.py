@@ -25,7 +25,6 @@ stairs_list, landing = readXML.read_stairs(settings_name)
 stairs = stairs.Stair(stairs_list, landing)
 # Read structure dimensions and create structure.
 __, structure_size, wheels_radius = readXML.read_structure(settings_name)
-structure = base.Base(structure_size, wheels_radius, stairs)  # , graphics)
 
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)
@@ -37,6 +36,10 @@ axis = {
     "height": structure_size["d"] + video_data['margin'],
     "max_speed": 1.2 * dynamics_data["speed"]}
 graphics = Graphics(image_data, video_data, axis)
+
+debug = {'graphics': graphics, 'simulator': sm}
+structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
+
 # Draw initial state of the structure.
 continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
 # Continue_loop is a flag to help finish the program. It gets False value when

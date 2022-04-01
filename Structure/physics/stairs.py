@@ -124,7 +124,7 @@ class Stair:
             yc = ys
         # If the code does not reach the return instruction, possibly the
         # wheel is out of the space in which the stairs are defined.
-        raise RuntimeError
+        return yc, xl, xc, yl, ys
 
     def check_collision(self, p, r):
         """Check a possible collision of a wheel with the stairs.
@@ -230,7 +230,7 @@ class Stair:
         if hr > hc and hc >= hl:
             # Case a) Check whether the wheel is above the next step, and the
             # distance to the step is less than its radius.
-            if (wr > -r and hr < 0):
+            if (wr > -r and hr < MAX_GAP):
                 return WheelState.Outer, 0.0, 0.0
         if hr < hc and hc <= hl:
             # Case b) Check whether the wheel is above the previous step.

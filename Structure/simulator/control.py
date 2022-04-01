@@ -65,7 +65,8 @@ def last_instruction(structure, distance):
     re, fr = structure.set_horizontal()
     # In case any wheel is not on the ground, also generate the instruction to
     # take the wheel down to the ground.
-#         structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.DEBUG['graphics'].draw(
+    #     structure.STAIRS, structure, structure.DEBUG['simulator'], False)
     # Instruction for the rear pair.
     if re[0] is not None:
         structure.shift_actuator(re[0], -re[1], check=False)
@@ -74,7 +75,8 @@ def last_instruction(structure, distance):
             "height": re[1]}
     else:
         actuator = {}
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.DEBUG['graphics'].draw(
+    #     structure.STAIRS, structure, structure.DEBUG['simulator'], False)
     # Same as above, for the front pair.
     # NOTE: In this case, there is no differece between the rear and front
     # pair. However, since we have to include this information in the main and
@@ -87,16 +89,19 @@ def last_instruction(structure, distance):
             "height": fr[1]}
     else:
         act_aux = {}
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.DEBUG['graphics'].draw(
+    #     structure.STAIRS, structure, structure.DEBUG['simulator'], False)
     structure.advance(distance, check=False)
     # Get the current inclination of the structure
     # and the current elevation.
     incline = -structure.get_inclination()
     elevate = -structure.get_elevation()
     structure.incline(incline, check=False)
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.DEBUG['graphics'].draw(
+    #     structure.STAIRS, structure, structure.DEBUG['simulator'], False)
     structure.elevate(elevate, check=False)
-#     structure.GRAPHICS.draw(structure.STAIRS, structure, False)
+    # structure.DEBUG['graphics'].draw(
+    #     structure.STAIRS, structure, structure.DEBUG['simulator'], False)
     col, stb = structure.check_position()
     if not col or not stb:
         raise ControlError
@@ -283,8 +288,7 @@ def compute_instruction(structure, wheel, hor, ver):
     actuator = {
         "wheel": wheel,
         "height": -ver}
-    res_shf = structure.shift_actuator(
-        actuator["wheel"], actuator["height"], margin=False)
+    res_shf = structure.shift_actuator(wheel, -ver, margin=False)
     if not res_shf:
         # If the actuator can not be sifted, we have to make room for the
         # actuator to compete the motion. This action depends on the index
@@ -372,13 +376,19 @@ def compute_instruction(structure, wheel, hor, ver):
 
     # Simulate the horizontal motion, to check that it is correct.
     instruction["advance"] += hor
-    res_adv = structure.advance(instruction["advance"])
+    # Note that the the actual horizontal motion has already been performed in
+    # the structure. For that reason, accumulate the horizontal motion in the
+    # "advance" instruction, but only need to move this new distance.
+    res_adv = structure.advance(hor)
     if not res_adv:
         # This error should not happen, but if so, check if it can be complete
         # correcting the error distance detected. In general, the second term
         # of the sum will be 0.
         instruction["advance"] += res_adv.horizontal
-        if not structure.advance(instruction["advance"]):
+        # In this case, the hor motion has not been performed, because it
+        # raises an error. For that reason, here we have to combine both
+        # distances (in fact, is one of then minus the other):
+        if not structure.advance(hor + res_adv.horizontal):
             raise ControlError
     # Check that the actuator can now be shifted the required height.
     if not res_shf:
