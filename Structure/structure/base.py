@@ -166,9 +166,13 @@ class Base:
                 raise ConfigurationError(
                     "Wheel radius must be positive values.")
         try:
+            length = size['a'] + size['b'] + size['c']
             h1 = sqrt(size['a']**2 - (wheels['r1'] + wheels['r2'])**2)
+            h1 *= length / size['a']
             h2 = sqrt(size['b']**2 - (wheels['r2'] + wheels['r3'])**2)
+            h2 *= length / size['b']
             h3 = sqrt(size['c']**2 - (wheels['r3'] + wheels['r4'])**2)
+            h3 *= length / size['c']
             h4 = size['n']
         except ValueError:
             raise ConfigurationError(
