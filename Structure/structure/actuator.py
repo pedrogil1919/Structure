@@ -234,8 +234,10 @@ class WheelActuator:
         ActuatorState.ExitUpperBound: (0x00, 0x00, 0x00),
         ActuatorState.ExitLowerBound: (0x00, 0x00, 0x00)
     }
-    ACT_MIDWIDTH = 1
-    HOUSING_MIDWIDTH = 2
+    # Actuator width (pixels)
+    ACT_MIDWIDTH = 30
+    HOUSING_MIDWIDTH = 70
+    POINT_RADIUS = 60
 
     def draw(self, origin, image, scale, shift):
         """Draw the actuator."""
@@ -252,24 +254,24 @@ class WheelActuator:
         self.WHEEL.draw(origin, image, (hx0, hy3), scale, shift)
 
         # Draw actuator housing:
-        cx1 = cv_datatype(scale * (origin[0] + hx0 - self.HOUSING_MIDWIDTH))
+        cx1 = cv_datatype(scale * (origin[0] + hx0) - self.HOUSING_MIDWIDTH)
         cy1 = cv_datatype(scale * (origin[1] - hy0))
-        cx2 = cv_datatype(scale * (hx0 + origin[0] + self.HOUSING_MIDWIDTH))
+        cx2 = cv_datatype(scale * (hx0 + origin[0]) + self.HOUSING_MIDWIDTH)
         cy2 = cv_datatype(scale * (origin[1] - hy1))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.HOUSING_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
 
         # Draw actuator bar:
-        cx1 = cv_datatype(scale * (origin[0] + hx0 - self.ACT_MIDWIDTH))
+        cx1 = cv_datatype(scale * (origin[0] + hx0) - self.ACT_MIDWIDTH)
         cy1 = cv_datatype(scale * (origin[1] - hy2))
-        cx2 = cv_datatype(scale * (hx0 + origin[0] + self.ACT_MIDWIDTH))
+        cx2 = cv_datatype(scale * (hx0 + origin[0]) + self.ACT_MIDWIDTH)
         cy2 = cv_datatype(scale * (origin[1] - hy3))
         cv2.rectangle(image, (cx1, cy1), (cx2, cy2), self.ACT_COLOR,
                       cv2.FILLED, cv2.LINE_AA, shift)
         # Draw a mark if the actuator is at either end:
         if self.state != ActuatorState.Center:
             px = cv_datatype(scale * (origin[0] + hx0))
-            cv2.circle(image, (px, cy1), int(2 * scale),
+            cv2.circle(image, (px, cy1), self.POINT_RADIUS,
                        self.LIMIT_COLOR[self.state], -1, cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):

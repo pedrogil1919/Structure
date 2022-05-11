@@ -714,23 +714,24 @@ class Base:
         self.REAR.draw(origin, image, scale, shift)
         self.FRNT.draw(origin, image, scale, shift)
 
-    CHAIR_ELEVATION = 4
+    # Chair colors and width (witdh en pixels)
+    CHAIR_ELEVATION = 10
     CHAIR_SHIFT = 10
-    CHAIR_HEIGHT = 20
-    CHAIR_BASE = 15
-    CHAIR_BACK = 2
+    CHAIR_HEIGHT = 400
+    CHAIR_BASE = 300
+    CHAIR_BACK = 40
     CHAIR_COLOR = (0x40, 0x50, 0xA0)
     CHAIR_WIDTH = 15
 
     def draw_chair(self, position, image, scale, shift):
         position[1] -= self.CHAIR_ELEVATION
         position[0] -= self.CHAIR_SHIFT
-        x1 = cv_datatype(scale * (position[0] + self.CHAIR_BASE))
-        y1 = cv_datatype(scale * (position[1]))
-        x2 = cv_datatype(scale * (position[0]))
-        y2 = cv_datatype(scale * (position[1]))
-        x3 = cv_datatype(scale * (position[0] - self.CHAIR_BACK))
-        y3 = cv_datatype(scale * (position[1] - self.CHAIR_HEIGHT))
+        x1 = cv_datatype(scale * position[0] + self.CHAIR_BASE)
+        y1 = cv_datatype(scale * position[1])
+        x2 = cv_datatype(scale * position[0])
+        y2 = cv_datatype(scale * position[1])
+        x3 = cv_datatype(scale * position[0] - self.CHAIR_BACK)
+        y3 = cv_datatype(scale * position[1] - self.CHAIR_HEIGHT)
         cv2.line(image, (x1, y1), (x2, y2), self.CHAIR_COLOR,
                  self.CHAIR_WIDTH, cv2.LINE_AA, shift)
         cv2.line(image, (x2, y2), (x3, y3), self.CHAIR_COLOR,
