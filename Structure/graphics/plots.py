@@ -53,7 +53,7 @@ class Plots():
             [0, axis["height"]],
             [0, axis["height"]],
             [0, axis["height"]],
-            [-axis["height"], axis["height"]],
+            [-axis["max_incline"], axis["max_incline"]],
             [0, axis["max_speed"]]]
         self.texts = [
             "Actuator 1 (" + units + ")",
@@ -71,7 +71,7 @@ class Plots():
         values -- Array of 6 elements, with the new values for the signals.
           The order must be the same as specified above.
 
-        Return a list of six figures, each one is a plot of one of the 
+        Return a list of six figures, each one is a plot of one of the
         variables.
 
         """

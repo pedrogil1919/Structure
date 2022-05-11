@@ -11,8 +11,12 @@ from numpy import int as cv_datatype
 import numpy
 import cv2
 
-from physics.wheel_state import WheelState
+from physics.wheel_state import WheelState, MAX_GAP
 # from structure.base import HOR_MARGIN, VER_MARGIN
+
+
+class MarginConfigError(ValueError):
+    pass
 
 
 class Wheel:
@@ -49,6 +53,14 @@ class Wheel:
 
         self.RADIUS = radius
         self.SIMULATOR = stairs
+        if margin[0] <= MAX_GAP:
+            raise MarginConfigError(
+                "Horizontal and vertical margins must be greater than %.2f" %
+                MAX_GAP)
+        if margin[1] <= MAX_GAP:
+            raise MarginConfigError(
+                "Horizontal and vertical margins must be greater than %.2f" %
+                MAX_GAP)
         self.HOR_MARGIN = margin[0]
         self.VER_MARGIN = margin[1]
         if position is None:

@@ -179,7 +179,6 @@ def read_graphics(xml_file):
         pause = bool(strtobool(rate.attrib['pause']))
     except (AttributeError, KeyError):
         pause = True
-
     ###########################################################################
     # Set display to True. In case video_dir does not exist, display remains
     # to True, as it is the behaviour described in the xml.

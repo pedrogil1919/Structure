@@ -600,6 +600,12 @@ class Base:
         __, __, __, y3 = self.FRNT.position(0)
         return y3 - y0
 
+    @staticmethod
+    def get_actuator_L9(self, tilt):
+        """Translate the structure inclination to actuator L9 position"""
+        L9 = sqrt(self.WIDTH**2 + self.HEIGHT**2 - 2 * self.HEIGHT * tilt)
+        return L9
+
     def get_inclination_central_wheels(self, wheel1, wheel2):
         """Return the inclination between wheel 1 and wheel 2.
 
@@ -708,11 +714,11 @@ class Base:
         self.REAR.draw(origin, image, scale, shift)
         self.FRNT.draw(origin, image, scale, shift)
 
-    CHAIR_ELEVATION = 8
+    CHAIR_ELEVATION = 4
     CHAIR_SHIFT = 10
-    CHAIR_HEIGHT = 40
-    CHAIR_BASE = 30
-    CHAIR_BACK = 3
+    CHAIR_HEIGHT = 20
+    CHAIR_BASE = 15
+    CHAIR_BACK = 2
     CHAIR_COLOR = (0x40, 0x50, 0xA0)
     CHAIR_WIDTH = 15
 

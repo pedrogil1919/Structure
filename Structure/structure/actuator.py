@@ -234,8 +234,8 @@ class WheelActuator:
         ActuatorState.ExitUpperBound: (0x00, 0x00, 0x00),
         ActuatorState.ExitLowerBound: (0x00, 0x00, 0x00)
     }
-    ACT_MIDWIDTH = 2
-    HOUSING_MIDWIDTH = 5
+    ACT_MIDWIDTH = 1
+    HOUSING_MIDWIDTH = 2
 
     def draw(self, origin, image, scale, shift):
         """Draw the actuator."""
@@ -269,7 +269,7 @@ class WheelActuator:
         # Draw a mark if the actuator is at either end:
         if self.state != ActuatorState.Center:
             px = cv_datatype(scale * (origin[0] + hx0))
-            cv2.circle(image, (px, cy1), int(3 * scale),
+            cv2.circle(image, (px, cy1), int(2 * scale),
                        self.LIMIT_COLOR[self.state], -1, cv2.LINE_AA, shift)
 
     def draw_trajectory(self, origin, image, scale, shift):

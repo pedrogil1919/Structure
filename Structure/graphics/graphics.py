@@ -63,6 +63,7 @@ class Graphics:
             self.toggle_pause = video_data['pause']
 
             self.interval = video_data['interval']
+
         # Frame counter.
         # self.counter = 0
         if video_data['video_dir'] is not None:
@@ -126,7 +127,7 @@ class Graphics:
             # Raise an error to warm the calliing function.
             raise ValueError
 
-    def draw(self, stairs, structure, simulator, pause=False):
+    def draw(self, stairs, structure, simulator, csv=None, pause=False):
         """Generate an image of the actual elements.
 
         If the object was configured with display set to True, the program can
@@ -219,6 +220,18 @@ class Graphics:
                     if not self.manual_mode and self.toggle_pause:
                         continue
                 break
+
+        # Get current position of the actuators.
+        values = structure.actuator_positions()
+        values.append(simulator.get_current_speed())
+        if csv is not None:
+            csv.write(str(values[0]) + "," +
+                      str(values[1]) + "," +
+                      str(values[2]) + "," +
+                      str(values[3]) + "," +
+                      str(values[4]) + "," +
+                      str(values[5]) + "\n")
+
         if self.save_video:
             # Save image in the image sequence directory.
             # Generate image name.
@@ -227,8 +240,6 @@ class Graphics:
             cv2.imwrite(image_name, self.image)
             if self.save_composition:
                 # Generate the rest of the graphics.
-                values = structure.actuator_positions()
-                values.append(simulator.get_current_speed())
                 figs = self.plots.save_data(
                     values, simulator.counter, simulator.sample_time)
                 self.composite_image[self.RoI['video']] = self.image
