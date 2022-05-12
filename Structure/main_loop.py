@@ -50,7 +50,6 @@ continue_loop, key_pressed = graphics.draw(stairs, structure, sm, csv_file)
 # the user press the Esc key (see graphics module).
 # Main loop
 instruction_number = 0
-
 while continue_loop:
     if graphics.manual_mode:
         # In manual mode, wait for the user to press a instruction.
