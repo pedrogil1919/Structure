@@ -15,8 +15,6 @@ from graphics.graphics import Graphics
 from simulator import control
 
 
-csv_file = open("/home/pedrogil/Escritorio/data.csv", "w")
-
 # Open and check settings file.
 try:
     settings_name = sys.argv[1]
@@ -34,18 +32,19 @@ dynamics_data, sample_data = readXML.read_dynamics(settings_name)
 sm = Simulator(dynamics_data, sample_data)
 
 # Read graphical variables.
-image_data, video_data = readXML.read_graphics(settings_name)
+image_data, video_data, csv_data = readXML.read_graphics(settings_name)
 axis = {
     "height": structure_size["d"] + video_data['margin'],
     "max_speed": 1.2 * dynamics_data["speed"],
     "max_incline": structure_size['n'] + video_data['margin']}
-graphics = Graphics(image_data, video_data, axis)
+graphics = Graphics(image_data, video_data, csv_data, axis)
 
 debug = {'graphics': graphics, 'simulator': sm}
+debug = None
 structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
 
 # Draw initial state of the structure.
-continue_loop, key_pressed = graphics.draw(stairs, structure, sm, csv_file)
+continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
@@ -96,13 +95,12 @@ while continue_loop:
                 # The simulation has failed: Set to manual mode, to let the
                 # user check the situation.
                 graphics.set_manual_mode()
-                graphics.draw(stairs, structure, sm, csv_file, True)
+                graphics.draw(stairs, structure, sm, True)
                 # Finish the outermost loop.
                 # continue_loop = False
                 break
             # The simulation has succeeded, so, continue loop.
-            continue_loop, key_pressed = graphics.draw(stairs, structure,
-                                                       sm, csv_file)
+            continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
             if not continue_loop or graphics.manual_mode:
                 # The user has pressed the Esc key to finish the program.
                 # Entering manual mode. Finish the inner while loop and
@@ -115,7 +113,7 @@ while continue_loop:
                 # structure is substituted, it is substituted by the same.
                 str_aux = structure
                 break
-    continue_loop, key_pressed = graphics.draw(stairs, structure, sm, csv_file)
+    continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
     # Substitute the simulated structure by the one returned by the control
     # module when computing the instruction in automatic mode. In manual mode,
     # both are just the same object.
@@ -127,8 +125,8 @@ print("End of program.")
 # ##########################################################################
 # while continue_loop:
 #     # To allow the program to enter the for loop at least once to give the
-#     # user the chance to switch again to manual mode without doing nothing, or
-#     # just start automatic mode, send an empty instruction, that allow the for
+#     # user the chance to switch again to manual mode without doing nothing,
+#     # just start automatic mode, send an empty instruction, that allow the fo
 #     # loop to do one iteration without moving the structure.
 #     instruction = {}
 #     while graphics.manual_mode and continue_loop:
@@ -176,7 +174,7 @@ print("End of program.")
 #                 # Entering manual mode. Finish the inner while loop and
 #                 # continue with a new iteration of the outermost while loop.
 #                 # NOTE: At the end of the for loop, we substitute the current
-#                 # structure by the one returned by the control module. However,
+#                 # structure by the one returned by the control module. Howeve
 #                 # if we change mode before the instruction is finished, we
 #                 # have to undo this step. This can easily be done changing
 #                 # the last structure by the current one, so that when the
@@ -203,11 +201,11 @@ print("End of program.")
 #                     str_aux, stop_distance)
 #                 # Compute and initial estimation of the time requirede to
 #                 # complete the instruction, and if dynamics is implemented,
-#                 # compute the instructions that the structure has to suposedly
+#                 # compute the instructions that the structure has to suposedl
 #                 # complete until the structure stop. This is only to check
 #                 # for collisions when computing the actual profile for the
 #                 # horizontal motion (if needed).
-#                 # Compute the actual time required to complete the instruction.
+#                 # Compute the actual time required to complete the instructio
 #                 sm.compute_time(instruction, next_instructions)
 #                 # str_aux2 = str_aux
 #                 # while not sm.compute_time(instruction, next_instructions):
@@ -216,8 +214,8 @@ print("End of program.")
 #                 # next_inst, str_aux = control.next_instruction(str_aux2)
 #                 # next_instructions += [next_inst]
 #             except RuntimeError:
-#                 # A runtime error is raised when the control does not find any
-#                 # instruction (probably because the wheelchair has reached the
+#                 # A runtime error is raised when the control does not find an
+#                 # instruction (probably because the wheelchair has reached th
 #                 # end of the stair). In this case, give the control to the
 #                 # user to finish the program (or to do any other thing).
 #                 graphics.set_manual_mode()
@@ -227,9 +225,9 @@ print("End of program.")
 #             # simulation that follows.
 #             #
 #             # However, due to rounding errors, this could be a little
-#             # different, and can change the next instruction, and in some times
-#             # take one more or one less iteration to complete than if we do not
-#             # simulate. for that reason, to make with or without simulation do
+#             # different, and can change the next instruction, and in some tim
+#             # take one more or one less iteration to complete than if we do n
+#             # simulate. for that reason, to make with or without simulation d
 #             # the same instructions, we capture here the state at the end of
 #             # the instruction, and after the simulation (see end of the
 #             # previous for loop) substitute the simulated structure for this

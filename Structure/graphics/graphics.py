@@ -17,7 +17,7 @@ from graphics.plots import Plots
 
 class Graphics:
 
-    def __init__(self, image_data, video_data, axis=None):
+    def __init__(self, image_data, video_data, csv_data, axis=None):
         """Constructor:
 
         Arguments:
@@ -118,6 +118,23 @@ class Graphics:
         else:
             self.save_video = False
 
+        # Configure files to save data to csv files.
+        if csv_data['csv_dir'] is not None:
+            csv_dir = csv_data['csv_dir']
+            try:
+                os.makedirs(csv_dir)
+            except FileExistsError:
+                # If the directory already exits, do nothing.
+                pass
+            self.save_csv = True
+            self.csv_files = (
+                open(os.path.join(csv_dir, csv_data['actuator1']), "w"),
+                open(os.path.join(csv_dir, csv_data['actuator2']), "w"),
+                open(os.path.join(csv_dir, csv_data['actuator3']), "w"),
+                open(os.path.join(csv_dir, csv_data['actuator4']), "w"),
+                open(os.path.join(csv_dir, csv_data['actuator9']), "w"),
+                open(os.path.join(csv_dir, csv_data['speed']), "w"))
+
     def set_manual_mode(self):
         """Set to manual mode, so the user can move the structure manually."""
         self.manual_mode = True
@@ -127,7 +144,7 @@ class Graphics:
             # Raise an error to warm the calliing function.
             raise ValueError
 
-    def draw(self, stairs, structure, simulator, csv=None, pause=False):
+    def draw(self, stairs, structure, simulator, pause=False):
         """Generate an image of the actual elements.
 
         If the object was configured with display set to True, the program can
@@ -168,7 +185,7 @@ class Graphics:
         # structure.draw_wheel_trajectory(
         #     self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
-        cv2.putText(self.image, simulator.print_current_time(),
+        cv2.putText(self.image, simulator.print_time(),
                     (20, self.image.shape[0] - 30), 1, 5, 0x00, 4)
         c = 0
         if self.display:
@@ -224,13 +241,10 @@ class Graphics:
         # Get current position of the actuators.
         values = structure.actuator_positions()
         values.append(simulator.get_current_speed())
-        if csv is not None:
-            csv.write(str(values[0]) + "," +
-                      str(values[1]) + "," +
-                      str(values[2]) + "," +
-                      str(values[3]) + "," +
-                      str(values[4]) + "," +
-                      str(values[5]) + "\n")
+        cur_time = simulator.time
+        if self.save_csv:
+            for f, v in zip(self.csv_files, values):
+                f.write("%0.10f, %.10f\n" % (cur_time, v))
 
         if self.save_video:
             # Save image in the image sequence directory.

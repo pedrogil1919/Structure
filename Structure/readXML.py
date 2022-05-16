@@ -180,6 +180,23 @@ def read_graphics(xml_file):
     except (AttributeError, KeyError):
         pause = True
     ###########################################################################
+    csv_element = graphics.find('csv_data')
+    try:
+        csv_data = {'csv_dir': csv_element.attrib['directory']}
+        csv_data['actuator1'] = csv_element.attrib['actuator1']
+        csv_data['actuator2'] = csv_element.attrib['actuator2']
+        csv_data['actuator3'] = csv_element.attrib['actuator3']
+        csv_data['actuator4'] = csv_element.attrib['actuator4']
+        csv_data['actuator9'] = csv_element.attrib['actuator9']
+        csv_data['speed'] = csv_element.attrib['speed']
+    except (AttributeError, KeyError):
+        csv_data = {'csv_dir': None}
+    # try:
+    #     pause = bool(strtobool(rate.attrib['pause']))
+    # except (AttributeError, KeyError):
+    #     pause = True
+
+    ###########################################################################
     # Set display to True. In case video_dir does not exist, display remains
     # to True, as it is the behaviour described in the xml.
     display = True
@@ -223,7 +240,7 @@ def read_graphics(xml_file):
         'units': units,
         'margin': margin}
 
-    return image_data, video_data
+    return image_data, video_data, csv_data
 
 ###############################################################################
 # End of file.

@@ -84,8 +84,11 @@ class Simulator():
     def set_current_speed(self, value):
         self.__current_speed = value
 
-    def print_current_time(self):
-        return "%8.2f %s" % (self.counter * self.sample_time, self.time_units)
+    def get_time(self):
+        return self.counter * self.sample_time
+
+    def print_time(self):
+        return "%8.2f %s" % (self.get_time(), self.time_units)
 
     def compute_actuator_time(self, instruction):
         """Compute time required by the actuators to complete the instruction.
@@ -607,6 +610,7 @@ class Simulator():
 
     current_speed = property(get_current_speed, set_current_speed, None, None)
     counter = property(get_counter, set_counter, None, None)
+    time = property(get_time, None, None, None)
 
 ###############################################################################
 # End of file.
