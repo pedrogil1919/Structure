@@ -590,6 +590,8 @@ class Base:
             return self.FRNT.get_actuator_position(0)
         elif index == 3:
             return self.FRNT.get_actuator_position(1)
+        elif index == 9:
+            return self.get_actuator_L9()
         raise ValueError("Actuator index are 0 - 3.")
 
     def get_inclination(self):
@@ -600,10 +602,14 @@ class Base:
         __, __, __, y3 = self.FRNT.position(0)
         return y3 - y0
 
-    @staticmethod
-    def get_actuator_L9(self, tilt):
+    # @staticmethod
+    def get_actuator_L9(self):
         """Translate the structure inclination to actuator L9 position"""
-        L9 = sqrt(self.WIDTH**2 + self.HEIGHT**2 - 2 * self.HEIGHT * tilt)
+        d = 98.00
+        LH = 398.00
+        m = 30.58
+        n = 36.14
+        L9 = sqrt(d**2 + LH**2 - 2 * d * self.get_inclination() - n**2) - m
         return L9
 
     def get_inclination_central_wheels(self, wheel1, wheel2):
@@ -669,7 +675,8 @@ class Base:
             self.get_actuator_position(1),
             self.get_actuator_position(2),
             self.get_actuator_position(3),
-            self.get_inclination()
+            self.get_actuator_position(9)
+            # self.get_inclination()
             # ,
             # self.get_speed()
         ]
