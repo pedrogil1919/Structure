@@ -40,7 +40,7 @@ axis = {
 graphics = Graphics(image_data, video_data, csv_data, axis)
 
 debug = {'graphics': graphics, 'simulator': sm}
-debug = None
+# debug = None
 structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
 
 # Draw initial state of the structure.

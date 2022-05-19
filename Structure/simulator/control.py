@@ -39,6 +39,9 @@ been done, whereas shift in intended for performing the actuator shift at the
 same time as the elevation.
 """
 
+# structure.DEBUG['graphics'].draw(structure.STAIRS, structure, structure.DEBUG['simulator'], False)
+
+
 import copy
 
 from physics.wheel_state import MAX_GAP
@@ -47,6 +50,23 @@ from physics.wheel_state import MAX_GAP
 class ControlError(ValueError):
     """Error to raise when the control can not find a valid instruction"""
     pass
+
+
+def null_instruction(instruction):
+    """Check if the instruction does nothing."""
+    if abs(instruction.get("advance", 0)) > MAX_GAP:
+        return False
+    if abs(instruction.get("incline", 0)) > MAX_GAP:
+        return False
+    if abs(instruction.get("elevate", 0)) > MAX_GAP:
+        return False
+    main = instruction.get("main", {})
+    if abs(main.get("height", 0)) > MAX_GAP:
+        return False
+    second = instruction.get("second", {})
+    if abs(second.get("height", 0)) > MAX_GAP:
+        return False
+    return True
 
 
 def last_instruction(structure, distance):
@@ -105,15 +125,18 @@ def last_instruction(structure, distance):
         return None, None, None
     return instruction, actuator, act_aux
 
+# structure.DEBUG['graphics'].draw(structure.STAIRS, structure, structure.DEBUG['simulator'], False)
+
 
 def make_room_wheel3(structure, height):
     """Make enough space for an actuator to complete its motion.
 
-    When an actuator can not complete its actual motion following the
-    corresponding structure motion (i.e., incline for wheel 3, elevate for the
-    rest), this function computes and additional motion to make more room for
-    the actuator. The function return the combination of inclination/elevation
-    required for the structure.
+    When the actuator have not enough space to complete the required motion,
+    we need to make room for this motion. In the case of the front wheel (4),
+    the main option is incline from the front. This can be enough for most of
+    the cases, but in some cases, the central actuators can collide with the
+    structure. In this case, we need to elevate the structure in the opposite
+    direction to allow the structure to incline the required height.
 
     NOTE: This is for wheel 3. There is a corresponding function for the rest
     of the wheels.
@@ -127,139 +150,261 @@ def make_room_wheel3(structure, height):
         completed with a single motion.
 
     """
-    # For wheel 3, if the motion can not be completed, can only be due to the
-    # second actuator. Try to elevate the structure.
-    res_elv = structure.elevate(height, margin=False)
-    if res_elv:
-        return 0.0, height, 0.0
-    # In this case, the parameter rear indicates the height to incline the
-    # structure from the rear to allow the inclination to complete.
-    # To make the space necessary, we have to simultaneously incline and
-    # elevate in opossite directions. To get that, first make both motions
-    # without checking any collisions, and then check for collisions.
-    structure.incline(-res_elv.rear, elevate_rear=True,
-                      check=False, margin=False)
-    # raise ControlError
-    structure.elevate(height, check=False, margin=False)
-    # Now check any collision. This can be due to two reasons:
-    # It is impossible to make more room with a combination of both motions.
-    # This instruction is impossible, and so, finish the program.
-    # When inclining, the front wheel has collided with the step. In this case,
-    # move the structure in the opossite direction.
-    res_col, __ = structure.check_position()
-    if not res_col:
-        if not structure.advance(res_col.horizontal):
+    # For wheel 3, the first kind of motion is incline fron the front.
+
+    # Try to incline the structure to get the space required.
+    res_inc = structure.incline(height, margin=False)
+    if res_inc:
+        return height, 0.0, 0.0
+    # If the motion failed, check if it is just because when inclining one of
+    # the wheels has move inside a step, that is, check if there is a
+    # horizontal collision.
+    total_advance = res_inc.horizontal
+    if not structure.advance(total_advance):
+        raise ControlError
+    # Try again to incline the structure to get the space required.
+    res_inc = structure.incline(height, margin=False)
+    if res_inc:
+        return height, 0.0, total_advance
+    # In this case, it could be two possible reasons:
+    # - The structure is colliding with the second or third actuator.
+    # - The height of the step is greater than the length of the actuator. In
+    #   this case, there is not possiblity to climb the stair.
+    # Check if it is the first case:
+
+    total_elevate = -res_inc.front
+    res_elv = structure.elevate(total_elevate, margin=False)
+    if not res_elv:
+        total_elevate += res_elv.central
+        if not structure.elevate(total_elevate, margin=False):
             raise ControlError
-    return -res_elv.rear, height + res_elv.rear, res_col.horizontal
+
+    total_incline = height - total_elevate
+    res_inc = structure.incline(total_incline, margin=False)
+    if res_inc:
+        return total_incline, total_elevate, total_advance
+    # Check again if the problem is a horizontal collision.
+    new_advance = res_inc.horizontal
+    if not structure.advance(new_advance):
+        raise ControlError
+    total_advance += new_advance
+    # Try again to incline the structure to get the space required.
+    res_inc = structure.incline(total_incline, margin=False)
+    if res_inc:
+        return total_incline, total_elevate, total_advance
+
+    # In this case, it is possible that the structure can perform the motion,
+    # but an actuator does not let the structure move. In this case, we can
+    # try to do the same action, but withut checking errors when elevating.
+    # Since no errors are checked, the inclination must be controlled by a
+    # try block, otherwise an error can be raised.
+    new_elevate = +res_inc.rear
+    total_elevate += new_elevate
+    structure.elevate(new_elevate, check=False)
+    total_incline -= res_inc.rear
+    try:
+        res_inc = structure.incline(total_incline, margin=False)
+    except RuntimeError:
+        raise ControlError
+    if res_inc:
+        return total_incline, total_elevate, total_advance
+
+    # Check again if the problem is a horizontal collision.
+    new_advance = res_inc.horizontal
+    if not structure.advance(new_advance):
+        raise ControlError
+    total_advance += new_advance
+    # Try again to incline the structure to get the space required.
+    try:
+        res_inc = structure.incline(total_incline, margin=False)
+    except RuntimeError:
+        raise ControlError
+    if res_inc:
+        return total_incline, total_elevate, total_advance
+
+    raise ControlError
 
 
 def make_room_wheel2(structure, height):
-    """See make_room_wheel3"""
-    # To display the actual position of the structure, use this instruction.
-    # Height is the distance we need to obtain. First, compute the total motion
-    # of the actuator, which is the sum of the actual height plus the current
-    # position of the actuator.
-    total = structure.FRNT.REAR.d + height
-    if height < 0:
-        # Also, if the motion is negative (that is, the wheel must be moved
-        # downwards), the total motion is the last value minus the length of
-        # the actuators.
-        total -= structure.HEIGHT
-        # This is a auxiliary distance to prevent this actuator to cause a
-        # collision while making the room. This is a value to move temporarily
-        # the actuator to its lower end, ans thus, never will cause any
-        # problem.
-        aux_motion = structure.FRNT.REAR.d
-    else:
-        # This is equal as above, but when going upstairs, this error is
-        # difficult to happen, and if needed, just with this value is enough.
-        aux_motion = -height
 
-    # If we try to shift the actuator, obviously we get an error,
-    res_shf = structure.shift_actuator(2, -total, margin=False)
-    if res_shf:
+    # Try to incline the structure to get the space required.
+    res_elv = structure.elevate(height, margin=False)
+    if res_elv:
+        return 0.0, height, 0.0
+    # In this case, the problem is a collision with the second actuator.
+    # Elevate the structure the distance that is actually possible.
+    total_elevate = height + res_elv.central
+    if not structure.elevate(total_elevate, margin=False):
         raise ControlError
-    # but the value front indicates the inclination for the structure to get
-    # the space requirede.
-    res_inc = structure.incline(res_shf.front, margin=False)
+    height = -res_elv.central
+
+    # The final inclination can be computed with this auxiliary function of
+    # the structure.
+    total_incline = structure.get_inclination_central_wheels(0, height)
+    # If we try to incline this value, we get the error.
+    res_inc = structure.incline(total_incline, margin=False)
     if res_inc:
-        return res_shf.front, 0
-
-    # If the code gets here, is because the collision is with the second
-    # actuator. In this case, compute the final inclination of the structure
-    # after the third actuator has been shifted.
-    inclination = structure.get_inclination_central_wheels(0, height)
-    # Shift temporarily the third actuator to prevent collision with this
-    # actuator, instead that with the second, which is the actual one with
-    # which the collision will be produced. In this case, move the actuator to
-    # its lower end, and thus, this actuator will never cause any problem.
-    if not structure.shift_actuator(2, -aux_motion):
         raise ControlError
-    # Set the structure to the given inclination. While inclining, fix the
-    # actuator, so that at the end of this function, is in the same position.
-    wheel = [None, None, 0.0,  None]
-    res_inc = structure.incline(inclination, elevate_rear=True, wheel=wheel)
-    if not res_inc:
-        # Just in case if after the inclination, the wheel collides with the
-        # step, move the distance of the collision.
-        structure.advance(res_inc.horizontal)
-        if not structure.incline(inclination, elevate_rear=True):
-            raise ControlError
-
-    # Finally, set the actuator to its current position (remember that we
-    # elevate this actuator previously).
-    if not structure.shift_actuator(2, aux_motion):
+    # And the actuator error will tell us the amount of elevation.
+    new_elevate = res_inc.actuator
+    total_elevate += new_elevate
+    # Elevate the structure, but without checking errors.
+    structure.elevate(new_elevate, check=False)
+    try:
+        # And now incline again, but checking for errors.
+        res_inc = structure.incline(total_incline, margin=False)
+    except RuntimeError:
         raise ControlError
 
-    # And elevate the structure to set it back to its actual position. To get
-    # the distance to elevate, first elevate a value larger than the required.
-    res_elv = structure.elevate(total)
-    # If this is enough, we just has finished.
-    if not res_elv:
-        # If not, we need to substract to the initial elevation the amount that
-        # the structure collides with the second actuator.
-        if not structure.elevate(total + res_elv.central):
-            raise ControlError
+    if res_inc:
+        return total_incline, total_elevate, 0.0
 
-    # And the distance is the previous value plus the distance of error given
-    # in central value.
-    return inclination, +total + res_elv.central - inclination
+    # Check again if the problem is a horizontal collision.
+    total_advance = res_inc.horizontal
+    if not structure.advance(total_advance):
+        raise ControlError
+    # Try again to incline the structure to get the space required.
+    try:
+        res_inc = structure.incline(total_incline, margin=False)
+    except RuntimeError:
+        raise ControlError
+    if res_inc:
+        return total_incline, total_elevate, total_advance
+
+    raise ControlError
+
+
+"""
+st = structure
+st.DEBUG['graphics'].draw(st.STAIRS, st, st.DEBUG['simulator'], False)
+"""
 
 
 def make_room_wheel1(structure, height):
-    """See make_room_wheel3."""
-    # NOTE: This function is not as complete as the one for wheel2 because all
-    # the errors faced in that function would not be produced for this actuator
-    # in a normal structure operation.
-    total = structure.REAR.FRNT.d + height
-    if height < 0:
-        total -= structure.HEIGHT
 
-    res_shf = structure.shift_actuator(1, -total, margin=False)
-    if res_shf:
+    # Try to elevate the structure to get the space required.
+    res_elv = structure.elevate(height, margin=False)
+    if res_elv:
+        return 0.0, height, 0.0
+    # If not possible, elevate just the height allowed by the structure.
+    total_elevate = height + res_elv.central
+    if not structure.elevate(total_elevate, margin=False):
         raise ControlError
-    res_inc = structure.incline(-res_shf.rear, elevate_rear=True, margin=False)
+
+    # And get the rest of the space inclining from the rear side.
+    res_act = structure.shift_actuator(1, -height)
+    if res_act:
+        raise ControlError
+    total_incline = -res_act.rear
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
     if res_inc:
-        return -res_shf.rear, res_shf.rear
-    # TODO: The code here must be similar to the one in make_room_wheel2, but
-    # on the other side of the structure.
+        # Note that, when elevating the rear wheel, the inclination is done
+        # elevating from the rear, but the simulator does not have this option,
+        # only can elevate from the front. To correct this, when returning the
+        # correct elevation, we have to substract the total inclination to
+        # make an equivalent motion.
+        return total_incline, total_elevate - total_incline, 0.0
+    # Check if the collision is due to a horizontal displacement.
+    total_advance = res_inc.horizontal
+    if not structure.advance(total_advance):
+        raise ControlError
+    # Try again to check if it was just a horizontal collision.
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
+
+    # If we reach this line, the problem is a collision with the thrid
+    # actuator. In this case, the final inclination can be computed with this
+    # auxiliary function of t    he structure.
+    height = -res_elv.central
+
+    total_incline = structure.get_inclination_central_wheels(height, 0)
+    # If we try to incline this value, we get the error.
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
+    # And the actuator error will tell us the amount of elevation.
+    new_elevate = res_inc.actuator
+    total_elevate += new_elevate
+    # Elevate the structure, but without checking errors.
+    structure.elevate(new_elevate, check=False)
+    try:
+        # And now incline again, but checking for errors.
+        res_inc = structure.incline(
+            total_incline, elevate_rear=True, margin=False)
+    except RuntimeError:
+        raise ControlError
+
+    if res_inc:
+        return total_incline, total_elevate - total_incline, 0.0
+
+    # Check again if the problem is a horizontal collision.
+    new_advance = res_inc.horizontal
+    total_advance += new_advance
+    if not structure.advance(new_advance):
+        raise ControlError
+    # Try again to incline the structure to get the space required.
+    try:
+        res_inc = structure.incline(
+            total_incline, elevate_rear=True, margin=False)
+    except RuntimeError:
+        raise ControlError
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
+
     raise ControlError
 
 
 def make_room_wheel0(structure, height):
-    """See make_room_whell3"""
 
-    total = structure.REAR.REAR.d + height
-    if height < 0:
-        total -= structure.REAR.REAR.LENGTH
-
-    res_shf = structure.shift_actuator(0, -total, margin=False)
-    if res_shf:
+    # Try to elevate the structure to get the space required.
+    res_elv = structure.elevate(height, margin=False)
+    if res_elv:
+        return 0.0, height, 0.0
+    # If not possible, elevate just the height allowed by the structure.
+    total_elevate = height + res_elv.central
+    if not structure.elevate(total_elevate, margin=False):
         raise ControlError
-    res_inc = structure.incline(-res_shf.actuator,
-                                elevate_rear=True, margin=False)
+
+    # And get the rest of the space inclining from the rear side.
+    total_incline = res_elv.central
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
     if res_inc:
-        return -res_shf.actuator, res_shf.actuator
+        # Note that, when elevating the rear wheel, the inclination is done
+        # elevating from the rear, but the simulator does not have this option,
+        # only can elevate from the front. To correct this, when returning the
+        # correct elevation, we have to substract the total inclination to
+        # make an equivalent motion.
+        return total_incline, total_elevate - total_incline, 0.0
+    # Check if the collision is due to a horizontal displacement.
+    total_advance = res_inc.horizontal
+    if not structure.advance(total_advance):
+        raise ControlError
+    # Try again to check if it was just a horizontal collision.
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
+    # If we reach this line, the problem is a collision with the thrid
+    # actuator. We have to elevate the distance given in the parameter front
+    elevate_front = res_inc.front
+    if not structure.elevate(elevate_front, margin=False):
+        raise ControlError
+    total_elevate += elevate_front
+    # And incline the height needed, plus the distance elevated (in general,
+    # each distance will be of opposite signs).
+    total_incline += elevate_front
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
+    # Check again if the collision is due to a horizontal displacement.
+    advance_front = res_inc.horizontal
+    if not structure.advance(advance_front):
+        raise ControlError
+    total_advance += advance_front
+    # And try again.
+    res_inc = structure.incline(total_incline, elevate_rear=True, margin=False)
+    if res_inc:
+        return total_incline, total_elevate - total_incline, total_advance
 
     raise ControlError
 
@@ -289,7 +434,14 @@ def compute_instruction(structure, wheel, hor, ver):
       - wheel.
       - height.
     """
-    instruction = {"advance": 0}
+    instruction = {
+        "advance": hor,
+        "incline": 0.0,
+        "elevate": 0.0}
+
+    res_adv = structure.advance(hor)
+    if not res_adv:
+        raise ControlError
     # Simulate elevation of the actuator. Note that the vertical distance is
     # positive downwards, but the actuator position is measured in the opposite
     # direction. For that reason, we change the sign of the vertical distance.
@@ -298,122 +450,112 @@ def compute_instruction(structure, wheel, hor, ver):
         "height": -ver}
     res_shf = structure.shift_actuator(wheel, -ver, margin=False)
     if not res_shf:
+        act = res_shf.actuator
+        if not structure.shift_actuator(wheel, -ver + act, margin=False):
+            raise ControlError
+        ver = act
+
         # If the actuator can not be sifted, we have to make room for the
         # actuator to compete the motion. This action depends on the index
         # of the actuator. The height to consider is given by parameter
-        # "central". Continue reading the code:
+        # "actuator". Continue reading the code:
         #######################################################################
+        height = res_shf.actuator
+        # Height is the space we have to make in the structure to allow
+        # the required motion for the actuator.
         if wheel == 3:
-            # Front actuator. In this case, the algorithm incline the
-            # structure.
-            instruction['incline'] = res_shf.central
-            res_inc = structure.incline(instruction["incline"], margin=False)
-
-            if not res_inc:
-                # First, check i fthere is a horizontal collision.
-                instruction["advance"] = res_inc.horizontal
-                if not structure.advance(instruction["advance"]):
-                    raise ControlError
-                res_inc = structure.incline(instruction["incline"],
-                                            margin=False)
-                if not res_inc:
-                    # Not enough space for the actuator:
-                    # First step: elevate the structure the height that is
-                    # actually possible.
-                    instruction["incline"] += res_inc.front
-                    if not structure.incline(instruction["incline"],
-                                             margin=False):
-                        raise ControlError
-                    # And try to make more space for the actuator to complete
-                    # the motion.
-                    inc, elv, adv = make_room_wheel3(structure, -res_inc.front)
-
-                    instruction["incline"] += inc
-                    instruction["elevate"] = elv
-                    instruction["advance"] += adv
+            inc, elv, adv = make_room_wheel3(structure, height)
         elif wheel == 2:
-            # Second actuator. I this case, the algorithm elevate the
-            # structure.
-            instruction["elevate"] = res_shf.central
-            res_elv = structure.elevate(instruction["elevate"], margin=False)
-            if not res_elv:
-                # Not enough space for the actuator:
-                # First step: elevate the structure the height that is
-                # actually possible.
-                instruction["elevate"] += res_elv.central
-                if not structure.elevate(instruction["elevate"], margin=False):
-                    raise ControlError
-                # And try to make more space for the actuator to complete the
-                # motion.
-                inc, elv = make_room_wheel2(structure, -res_elv.central)
-                instruction["incline"] = inc
-                instruction["elevate"] += elv
+            inc, elv, adv = make_room_wheel2(structure, height)
         elif wheel == 1:
-            # Same as wheel 2.
-            # Second actuator. I this case, the algorithm elevate the
-            # structure. In this case, the algorithm elevate the structure.
-            instruction["elevate"] = res_shf.central
-            res_elv = structure.elevate(instruction["elevate"], margin=False)
-            if not res_elv:
-                # Not enough space for the actuator:
-                # First step: elevate the structure the height that is
-                # actually possible.
-                instruction["elevate"] += res_elv.central
-                if not structure.elevate(instruction["elevate"], margin=False):
-                    raise ControlError
-                # And try to make more space for the actuator to complete the
-                # motion.
-                inc, elv = make_room_wheel1(structure, -res_elv.central)
-                instruction["incline"] = inc
-                instruction["elevate"] += elv
+            inc, elv, adv = make_room_wheel1(structure, height)
         elif wheel == 0:
-            # Same as wheel 1.
-            # Second actuator. I this case, the algorithm elevate the
-            # structure. In this case, the algorithm elevate the structure.
-            instruction["elevate"] = res_shf.central
-            res_elv = structure.elevate(instruction["elevate"], margin=False)
-            if not res_elv:
-                # Not enough space for the actuator:
-                # First step: elevate the structure the height that is
-                # actually possible.
-                instruction["elevate"] += res_elv.central
-                if not structure.elevate(instruction["elevate"], margin=False):
-                    raise ControlError
-                # And try to make more space for the actuator to complete the
-                # motion.
-                inc, elv = make_room_wheel0(
-                    structure, instruction['advance'] - res_elv.central)
-                instruction["incline"] = inc
-                instruction["elevate"] += elv
+            inc, elv, adv = make_room_wheel0(structure, height)
 
-    # Simulate the horizontal motion, to check that it is correct.
-    # Note that the previous code could have moved the structure due to
-    # collisions when inclining the structure. However, we add the original
-    # motion to the total motion, and check if there is any other collision.
-    instruction["advance"] += hor
+        instruction["incline"] += inc
+        instruction["elevate"] += elv
+        instruction["advance"] += adv
 
-    # Note that the the actual horizontal motion has already been performed in
-    # the structure. For that reason, accumulate the horizontal motion in the
-    # "advance" instruction, but only need to move this new distance.
-    res_adv = structure.advance(hor)
-    if not res_adv:
-        # This error should not happen, but if so, check if it can be complete
-        # correcting the error distance detected. In general, the second term
-        # of the sum will be 0.
-        instruction["advance"] += res_adv.horizontal
-        # In this case, the hor motion has not been performed, because it
-        # raises an error. For that reason, here we have to combine both
-        # distances (in fact, is one of then minus the other):
-        if not structure.advance(hor + res_adv.horizontal):
-            raise ControlError
     # Check that the actuator can now be shifted the required height.
     if not res_shf:
-        if not structure.shift_actuator(actuator["wheel"],
-                                        actuator["height"],
-                                        margin=False):
+        res_shf = structure.shift_actuator(wheel, -ver, margin=False)
+        if not res_shf:
             raise ControlError
 
     return instruction, actuator
+
+
+def next_instruction(structure):
+    """Generate the next instruction for the structure to take the next step.
+
+    The function gets the distances from each wheel of the struct    ure to the
+    stair (which is stores in the own structure), and generate the list of
+    instructions to take the next step of the stair.
+
+    Arguments:
+    structure -- Actual structure for which we need to compute the instruction.
+
+    Return a dictionary with the instructions to perform.
+    """
+    # Get the distances each wheel is with respect to its closest step.
+    wheel, hor, ver, w_aux, h_aux, v_aux, end \
+        = structure.get_wheels_distances()
+
+    # Create a deep copy of the structure, to simulate all the motions computed
+    # without modifying the actual structure.
+    st_aux = copy.deepcopy(structure)
+    # A value equal to inf is returned when the wheel reaches the end of the
+    # stair. Here, we check whether we have already reached the end of the
+    # structure, and so, we have to finish the program.
+    if end:
+        # Computing the las instruction before finishing the program.
+        instruction, actuator, act_aux = last_instruction(st_aux, hor)
+        if instruction is None:
+            return None, None
+        wheel = actuator.get("wheel", 0)
+        w_aux = act_aux.get("wheel", 2)
+    else:
+        # Get the next instruction for the main wheel.
+        instruction, actuator = compute_instruction(st_aux, wheel, hor, ver)
+        # And the next instruction for the wheel in the other pair.
+        # NOTE: The height to shift the second actuator must be proportional
+        # to the horizontal distance this wheel must move compared with the
+        # horizontal distance for the main wheel. This ensure that the motion
+        # for the second actuator is more regular.
+        # To prevent for a zero division, add a small amount to both horizontal
+        # distances. To make it invariant to system scale, add a value
+        # proportional to the size of the structure.
+        k = structure.WIDTH / 1000
+        v_total = v_aux * (hor + k) / (h_aux + k)
+        # Now, we check if we can shift the actuator the distance requirede.
+        res_act = st_aux.shift_actuator(w_aux, -v_total)
+        if not res_act:
+            v_total -= res_act.actuator
+            if not st_aux.shift_actuator(w_aux, -v_total):
+                raise ControlError
+        act_aux = {
+            "wheel": w_aux,
+            "height": -v_total}
+
+    # Get the shift of each actuator. This value is needed in case we have to
+    # return the actual shift of the actuator, not the shift after the
+    # elevation/inclination.
+    # This value con be computed from the diference in shift for the actuator
+    # at the current position minus the same shift in the initial position.
+    actuator["shift"] = \
+        st_aux.get_actuator_position(wheel) - \
+        structure.get_actuator_position(wheel)
+    instruction["main"] = actuator
+    act_aux["shift"] = st_aux.get_actuator_position(
+        w_aux) - structure.get_actuator_position(w_aux)
+    instruction["second"] = act_aux
+    # Check if the control has generated an instruction that does nothing. If
+    # we do not control this error, the program get hung because the strcture
+    # does not move but the program does not finishes.
+    if null_instruction(instruction):
+        raise ControlError
+
+    return instruction, st_aux
 
 
 def compute_distance(structure, distance, next_inst=None):
@@ -463,118 +605,333 @@ def compute_distance(structure, distance, next_inst=None):
     return instructions
 
 
-def null_instruction(instruction):
-    """Check if the instruction does nothing."""
-    if abs(instruction.get("advance", 0)) > MAX_GAP:
-        return False
-    if abs(instruction.get("incline", 0)) > MAX_GAP:
-        return False
-    if abs(instruction.get("elevate", 0)) > MAX_GAP:
-        return False
-    main = instruction.get("main", {})
-    if abs(main.get("height", 0)) > MAX_GAP:
-        return False
-    second = instruction.get("second", {})
-    if abs(second.get("height", 0)) > MAX_GAP:
-        return False
-    return True
+###############################################################################
+# def make_room_wheel3(structure, height):
+#     """Make enough space for an actuator to complete its motion.
+#
+#     When an actuator can not complete its actual motion following the
+#     corresponding structure motion (i.e., incline for wheel 3, elevate for the
+#     rest), this function computes and additional motion to make more room for
+#     the actuator. The function return the combination of inclination/elevation
+#     required for the structure.
+#
+#     NOTE: This is for wheel 3. There is a corresponding function for the rest
+#     of the wheels.
+#     NOTE: Inside the function, there are lines with a call to GRAPHICS. This
+#     can be used to draw the structure position at any time. To do so, you need
+#     to include the graphics in the constructor of the structure (only for
+#     debug purposes).
+#
+#     Arguments:
+#     height -- additional height the actuator must be shifted and can not be
+#         completed with a single motion.
+#
+#     """
+#     # For wheel 3, if the motion can not be completed, can only be due to the
+#     # second actuator. Try to elevate the structure.
+#     res_elv = structure.elevate(height, margin=False)
+#     if res_elv:
+#         return 0.0, height, 0.0
+#     # In this case, the parameter rear indicates the height to incline the
+#     # structure from the rear to allow the inclination to complete.
+#     # To make the space necessary, we have to simultaneously incline and
+#     # elevate in opossite directions. To get that, first make both motions
+#     # without checking any collisions, and then check for collisions.
+#     structure.incline(-res_elv.rear, elevate_rear=True,
+#                       check=False, margin=False)
+#     # raise ControlError
+#     structure.elevate(height, check=False, margin=False)
+#     # Now check any collision. This can be due to two reasons:
+#     # It is impossible to make more room with a combination of both motions.
+#     # This instruction is impossible, and so, finish the program.
+#     # When inclining, the front wheel has collided with the step. In this case,
+#     # move the structure in the opossite direction.
+#     res_col, __ = structure.check_position()
+#     if not res_col:
+#         if not structure.advance(res_col.horizontal):
+#             raise ControlError
+#     return -res_elv.rear, height + res_elv.rear, res_col.horizontal
+#
+#
+# def make_room_wheel2(structure, height):
+#     """See make_room_wheel3"""
+#     # To display the actual position of the structure, use this instruction.
+#     # Height is the distance we need to obtain. First, compute the total motion
+#     # of the actuator, which is the sum of the actual height plus the current
+#     # position of the actuator.
+#     total = structure.FRNT.REAR.d + height
+#     if height < 0:
+#         # Also, if the motion is negative (that is, the wheel must be moved
+#         # downwards), the total motion is the last value minus the length of
+#         # the actuators.
+#         total -= structure.HEIGHT
+#         # This is a auxiliary distance to prevent this actuator to cause a
+#         # collision while making the room. This is a value to move temporarily
+#         # the actuator to its lower end, ans thus, never will cause any
+#         # problem.
+#         aux_motion = structure.FRNT.REAR.d
+#     else:
+#         # This is equal as above, but when going upstairs, this error is
+#         # difficult to happen, and if needed, just with this value is enough.
+#         aux_motion = -height
+#
+#     # If we try to shift the actuator, obviously we get an error,
+#     res_shf = structure.shift_actuator(2, -total, margin=False)
+#     if res_shf:
+#         raise ControlError
+#     # but the value front indicates the inclination for the structure to get
+#     # the space requirede.
+#     res_inc = structure.incline(res_shf.front, margin=False)
+#     if res_inc:
+#         return res_shf.front, 0
+#
+#     # If the code gets here, is because the collision is with the second
+#     # actuator. In this case, compute the final inclination of the structure
+#     # after the third actuator has been shifted.
+#     inclination = structure.get_inclination_central_wheels(0, height)
+#     # Shift temporarily the third actuator to prevent collision with this
+#     # actuator, instead that with the second, which is the actual one with
+#     # which the collision will be produced. In this case, move the actuator to
+#     # its lower end, and thus, this actuator will never cause any problem.
+#     if not structure.shift_actuator(2, -aux_motion):
+#         raise ControlError
+#     # Set the structure to the given inclination. While inclining, fix the
+#     # actuator, so that at the end of this function, is in the same position.
+#     wheel = [None, None, 0.0,  None]
+#     res_inc = structure.incline(inclination, elevate_rear=True, wheel=wheel)
+#     if not res_inc:
+#         # Just in case if after the inclination, the wheel collides with the
+#         # step, move the distance of the collision.
+#         structure.advance(res_inc.horizontal)
+#         if not structure.incline(inclination, elevate_rear=True):
+#             raise ControlError
+#
+#     # Finally, set the actuator to its current position (remember that we
+#     # elevate this actuator previously).
+#     if not structure.shift_actuator(2, aux_motion):
+#         raise ControlError
+#
+#     # And elevate the structure to set it back to its actual position. To get
+#     # the distance to elevate, first elevate a value larger than the required.
+#     res_elv = structure.elevate(total)
+#     # If this is enough, we just has finished.
+#     if not res_elv:
+#         # If not, we need to substract to the initial elevation the amount that
+#         # the structure collides with the second actuator.
+#         if not structure.elevate(total + res_elv.central):
+#             raise ControlError
+#
+#     # And the distance is the previous value plus the distance of error given
+#     # in central value.
+#     return inclination, +total + res_elv.central - inclination
+#
+#
+# def make_room_wheel1(structure, height):
+#     """See make_room_wheel3."""
+#     # NOTE: This function is not as complete as the one for wheel2 because all
+#     # the errors faced in that function would not be produced for this actuator
+#     # in a normal structure operation.
+#     total = structure.REAR.FRNT.d + height
+#     if height < 0:
+#         total -= structure.HEIGHT
+#
+#     res_shf = structure.shift_actuator(1, -total, margin=False)
+#     if res_shf:
+#         raise ControlError
+#     res_inc = structure.incline(-res_shf.rear, elevate_rear=True, margin=False)
+#     if res_inc:
+#         return -res_shf.rear, res_shf.rear
+#     # TODO: The code here must be similar to the one in make_room_wheel2, but
+#     # on the other side of the structure.
+#     raise ControlError
+#
+#
+# def make_room_wheel0(structure, height):
+#     """See make_room_whell3"""
+#
+#     total = structure.REAR.REAR.d + height
+#     if height < 0:
+#         total -= structure.REAR.REAR.LENGTH
+#
+#     res_shf = structure.shift_actuator(0, -total, margin=False)
+#     if res_shf:
+#         raise ControlError
+#     res_inc = structure.incline(-res_shf.actuator,
+#                                 elevate_rear=True, margin=False)
+#     if res_inc:
+#         return -res_shf.actuator, res_shf.actuator
+#
+#     raise ControlError
+#
+#
+# def compute_instruction(structure, wheel, hor, ver):
+#     """Generate the values for the next instruction.
+#
+#     The function computes the horizontal motion, elevation and inclination of
+#     the structure to get the motion indicaded by the arguments. Note that the
+#     structure is modified inside this function, so, a copy of the original one
+#     is needed if we need to keep it.
+#
+#     Parameters:
+#     structure -- The structure in its current position. The function need the
+#         structure to use its geometric function to compute distances of error.
+#     wheel -- Wheel we need to move and ensure enough space for it to move.
+#     hor, ver -- Horizontal and vertical distance that the wheel need to move to
+#         get to its next state.
+#
+#     Return two dictionaries:
+#     instruction: A dictionary with the following keys (see key definition
+#     above):
+#       - advance.
+#       - incline.
+#       - elevate.
+#     actuator: A dictionary with the following keys (see key definition above):
+#       - wheel.
+#       - height.
+#     """
+#     instruction = {"advance": 0}
+#     # Simulate elevation of the actuator. Note that the vertical distance is
+#     # positive downwards, but the actuator position is measured in the opposite
+#     # direction. For that reason, we change the sign of the vertical distance.
+#     actuator = {
+#         "wheel": wheel,
+#         "height": -ver}
+#     res_shf = structure.shift_actuator(wheel, -ver, margin=False)
+#     if not res_shf:
+#         # If the actuator can not be sifted, we have to make room for the
+#         # actuator to compete the motion. This action depends on the index
+#         # of the actuator. The height to consider is given by parameter
+#         # "central". Continue reading the code:
+#         #######################################################################
+#         if wheel == 3:
+#             # Front actuator. In this case, the algorithm incline the
+#             # structure.
+#             instruction['incline'] = res_shf.actuator
+#             res_inc = structure.incline(instruction["incline"], margin=False)
+#
+#             if not res_inc:
+#                 # First, check if there is a horizontal collision.
+#                 instruction["advance"] = res_inc.horizontal
+#                 if not structure.advance(instruction["advance"]):
+#                     raise ControlError
+#                 # Try to incline again, to see if the problem is that, when
+#                 # inclining, there is a horizontal collision with one wheel.
+#                 res_inc = structure.incline(instruction["incline"],
+#                                             margin=False)
+#             if not res_inc:
+#                 # Not enough space for the actuator:
+#                 # First step: incline the structure the height that is
+#                 # actually possible.
+#                 instruction["incline"] += res_inc.front
+#                 if not structure.incline(instruction["incline"], margin=False):
+#                     # Here, the problem is that the structure can not incline
+#                     # more. Return just the inclination the structure can
+#                     # perform, although in the next instruction the structure
+#                     # can not move anymore, and finish the program.
+#                     instruction["incline"] += res_inc.central
+#                     if not structure.incline(instruction["incline"],
+#                                              margin=False):
+#                         raise ControlError
+#                 else:
+#                     # And try to make more space for the actuator to complete
+#                     # the motion.
+#                     inc, elv, adv = make_room_wheel3(
+#                         structure, -res_inc.central)
+#
+#                     instruction["incline"] += inc
+#                     instruction["elevate"] = elv
+#                     instruction["advance"] += adv
+#         elif wheel == 2:
+#             # Second actuator. I this case, the algorithm elevate the
+#             # structure.
+#             instruction["elevate"] = res_shf.central
+#             res_elv = structure.elevate(instruction["elevate"], margin=False)
+#             if not res_elv:
+#                 # Not enough space for the actuator:
+#                 # First step: elevate the structure the height that is
+#                 # actually possible.
+#                 instruction["elevate"] += res_elv.central
+#                 if not structure.elevate(instruction["elevate"], margin=False):
+#                     raise ControlError
+#                 # And try to make more space for the actuator to complete the
+#                 # motion.
+#                 inc, elv = make_room_wheel2(structure, -res_elv.central)
+#                 instruction["incline"] = inc
+#                 instruction["elevate"] += elv
+#         elif wheel == 1:
+#             # Same as wheel 2.
+#             # Second actuator. I this case, the algorithm elevate the
+#             # structure. In this case, the algorithm elevate the structure.
+#             instruction["elevate"] = res_shf.central
+#             res_elv = structure.elevate(instruction["elevate"], margin=False)
+#             if not res_elv:
+#                 # Not enough space for the actuator:
+#                 # First step: elevate the structure the height that is
+#                 # actually possible.
+#                 instruction["elevate"] += res_elv.central
+#                 if not structure.elevate(instruction["elevate"], margin=False):
+#                     raise ControlError
+#                 # And try to make more space for the actuator to complete the
+#                 # motion.
+#                 inc, elv = make_room_wheel1(structure, -res_elv.central)
+#                 instruction["incline"] = inc
+#                 instruction["elevate"] += elv
+#         elif wheel == 0:
+#             # Same as wheel 1.
+#             # Second actuator. I this case, the algorithm elevate the
+#             # structure. In this case, the algorithm elevate the structure.
+#             instruction["elevate"] = res_shf.central
+#             res_elv = structure.elevate(instruction["elevate"], margin=False)
+#             if not res_elv:
+#                 # Not enough space for the actuator:
+#                 # First step: elevate the structure the height that is
+#                 # actually possible.
+#                 instruction["elevate"] += res_elv.central
+#                 if not structure.elevate(instruction["elevate"], margin=False):
+#                     raise ControlError
+#                 # And try to make more space for the actuator to complete the
+#                 # motion.
+#                 inc, elv = make_room_wheel0(
+#                     structure, instruction['advance'] - res_elv.central)
+#                 instruction["incline"] = inc
+#                 instruction["elevate"] += elv
+#
+#     # Simulate the horizontal motion, to check that it is correct.
+#     # Note that the previous code could have moved the structure due to
+#     # collisions when inclining the structure. However, we add the original
+#     # motion to the total motion, and check if there is any other collision.
+#     instruction["advance"] += hor
+#
+#     # Note that the the actual horizontal motion has already been performed in
+#     # the structure. For that reason, accumulate the horizontal motion in the
+#     # "advance" instruction, but only need to move this new distance.
+#     res_adv = structure.advance(hor)
+#     if not res_adv:
+#         # This error should not happen, but if so, check if it can be complete
+#         # correcting the error distance detected. In general, the second term
+#         # of the sum will be 0.
+#         instruction["advance"] += res_adv.horizontal
+#         # In this case, the hor motion has not been performed, because it
+#         # raises an error. For that reason, here we have to combine both
+#         # distances (in fact, is one of then minus the other):
+#         if not structure.advance(hor + res_adv.horizontal):
+#             raise ControlError
+#     # Check that the actuator can now be shifted the required height.
+#     if not res_shf:
+#         res_shf = structure.shift_actuator(actuator["wheel"],
+#                                            actuator["height"],
+#                                            margin=False)
+#         if not res_shf:
+#             actuator["height"] += res_shf.actuator
+#         if not structure.shift_actuator(actuator["wheel"],
+#                                         actuator["height"],
+#                                         margin=False):
+#             raise ControlError
+#
+#     return instruction, actuator
 
 
-def next_instruction(structure):
-    """Generate the next instruction for the structure to take the next step.
-
-    The function gets the distances from each wheel of the struct    ure to the
-    stair (which is stores in the own structure), and generate the list of
-    instructions to take the next step of the stair.
-
-    Arguments:
-    structure -- Actual structure for which we need to compute the instruction.
-
-    Return a dictionary with the instructions to perform.
-    """
-    # Get the distances each wheel is with respect to its closest step.
-    wheel, hor, ver, w_aux, h_aux, v_aux, end \
-        = structure.get_wheels_distances()
-
-    # Create a deep copy of the structure, to simulate all the motions computed
-    # without modifying the actual structure.
-    st_aux = copy.deepcopy(structure)
-    # A value equal to inf is returned when the wheel reaches the end of the
-    # stair. Here, we check whether we have already reached the end of the
-    # structure, and so, we have to finish the program.
-    inst_aux = {}
-    act_aux = {}
-    if end:
-        # Computing the las instruction before finishing the program.
-        instruction, actuator, act_aux = last_instruction(st_aux, hor)
-        if instruction is None:
-            return None, None
-    else:
-        # Get the next instruction for the main wheel.
-        instruction, actuator = compute_instruction(st_aux, wheel, hor, ver)
-        # And the next instruction for the wheel in the other pair.
-        # NOTE: The height to shift the second actuator must be proportional
-        # to the horizontal distance this wheel must move compared with the
-        # horizontal distance for the main wheel. This ensure that the motion
-        # for the second actuator is more regular.
-        # To prevent for a zero division, add a small amount to both horizontal
-        # distances. To make it invariant to system scale, add a value
-        # proportional to the size of the structure.
-        k = structure.WIDTH / 1000
-        v_total = v_aux * (hor + k) / (h_aux + k)
-        inst_aux, act_aux = compute_instruction(st_aux, w_aux, 0.0, v_total)
-        # Just if the second wheel need an additional motion for the
-        # structure, add this motion to the original one needed by the main
-        # wheel.
-        try:
-            # If the second wheel does not need any additional elevation, do
-            # nothing.
-            elv_aux = inst_aux["elevate"]
-            try:
-                instruction["elevate"] += elv_aux
-            except KeyError:
-                # And if the main wheel does not need any elevation, but does
-                # the second, set the elevation to this value.
-                instruction["elevate"] = elv_aux
-        except KeyError:
-            pass
-        try:
-            # Same comment than for elevation.
-            inc_aux = inst_aux["incline"]
-            try:
-                instruction["incline"] += inc_aux
-            except KeyError:
-                instruction["incline"] = inc_aux
-        except KeyError:
-            pass
-
-    # Get the shift of each actuator. This value is needed in case we have to
-    # return the actual shift of the actuator, not the shift after the
-    # elevation/inclination.
-    # This value con be computed from the diference in shift for the actuator
-    # at the current position minus the same shift in the initial position.
-    try:
-        actuator["shift"] = \
-            st_aux.get_actuator_position(actuator["wheel"]) - \
-            structure.get_actuator_position(actuator["wheel"])
-        instruction["main"] = actuator
-    except KeyError:
-        pass
-    try:
-        act_aux["shift"] = \
-            st_aux.get_actuator_position(act_aux["wheel"]) - \
-            structure.get_actuator_position(act_aux["wheel"])
-        instruction["second"] = act_aux
-    except KeyError:
-        pass
-    # Check if the control has generated an instruction that does nothing. If
-    # we do not control this error, the program get hung because the strcture
-    # does not move but the program does not finishes.
-    if null_instruction(instruction):
-        raise ControlError
-
-    return instruction, st_aux
-
+###############################################################################
 
 def manual_control(key_pressed, simulator):
     """Function to convert a key to a instruction."""

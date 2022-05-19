@@ -134,6 +134,8 @@ class Graphics:
                 open(os.path.join(csv_dir, csv_data['actuator4']), "w"),
                 open(os.path.join(csv_dir, csv_data['actuator9']), "w"),
                 open(os.path.join(csv_dir, csv_data['speed']), "w"))
+        else:
+            self.save_csv = False
 
     def set_manual_mode(self):
         """Set to manual mode, so the user can move the structure manually."""
