@@ -564,7 +564,9 @@ class Simulator():
             # Elevate structure
             res = structure.elevate(height, margin=False)
             if not res:
-                elevate_post = True
+                if not structure.elevate(height + res.central,
+                                         margin=False):
+                    elevate_post = True
         #######################################################################
         try:
             height = instruction['incline']
@@ -586,7 +588,9 @@ class Simulator():
                 # Elevate structure
                 res = structure.elevate(height, margin=False)
                 if not res:
-                    print("Can not elevate structure:", res)
+                    if not structure.elevate(height + res.central,
+                                             margin=False):
+                        print("Can not elevate structure:", res)
         #######################################################################
 
         try:
