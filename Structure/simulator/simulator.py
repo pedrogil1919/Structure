@@ -538,7 +538,7 @@ class Simulator():
             # Advance structure
             res = structure.reset_position()
             if not res:
-                print("Can not reset structure.", res)
+                print("Can not reset structure.")
 
         try:
             distance = instruction['advance']
@@ -548,9 +548,10 @@ class Simulator():
             # Advance structure
             res = structure.advance(distance)
             if not res:
-                if not structure.advance(
-                        distance + res.horizontal):
-                    print("Can not advance structure.", res)
+                horizontal = res.horizontal()
+                if not structure.advance(distance + horizontal):
+                    raise RuntimeError
+                print("Can not advance structure.")
         #######################################################################
         # Sometimes, the order of first elevate and then incline is
         # not possible, and have to change order. With this instruction
@@ -564,9 +565,10 @@ class Simulator():
             # Elevate structure
             res = structure.elevate(height, margin=False)
             if not res:
-                if not structure.elevate(height + res.central,
-                                         margin=False):
-                    elevate_post = True
+                elevation = res.elevation()
+                if not structure.elevate(height + elevation, margin=False):
+                    raise RuntimeError
+                elevate_post = True
         #######################################################################
         try:
             height = instruction['incline']
@@ -577,7 +579,11 @@ class Simulator():
             # Incline structure
             res = structure.incline(height, None, rear, margin=False)
             if not res:
-                print("Can not incline structure:", res)
+                incline = res.inclination(rear)
+                if not structure.incline(height + incline,
+                                         None, rear, margin=False):
+                    raise RuntimeError
+                print("Can not incline structure:")
         #######################################################################
         if elevate_post:
             try:
@@ -588,9 +594,10 @@ class Simulator():
                 # Elevate structure
                 res = structure.elevate(height, margin=False)
                 if not res:
-                    if not structure.elevate(height + res.central,
-                                             margin=False):
-                        print("Can not elevate structure:", res)
+                    if not structure.elevate(
+                            height + res.elevation(), margin=False):
+                        raise RuntimeError
+                print("Can not elevate structure:")
         #######################################################################
 
         try:
@@ -606,8 +613,10 @@ class Simulator():
                 # modify the height to move so that the actuator is in contact
                 # with the corresponding bound.
                 if not structure.shift_actuator(
-                        wheel, height + res.central, margin=False):
-                    print("Can not shift actuator:", res)
+                        wheel, height + res.shift_actuator(wheel),
+                        margin=False):
+                    raise RuntimeError
+                print("Can not shift actuator:")
         #######################################################################
 
 ###############################################################################

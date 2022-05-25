@@ -12,6 +12,7 @@ import numpy
 import cv2
 
 from physics.wheel_state import WheelState, MAX_GAP
+from simulator.error_distance import HorVerError
 # from structure.base import HOR_MARGIN, VER_MARGIN
 
 
@@ -106,35 +107,53 @@ class Wheel:
         Compute the distance between the bottom of the wheel and the outer
         corner of a step. If the structure is moved this distance, the wheel
         will be stable. This function works only when the wheel is in
-        unstable state. If it is already stable, return None.
+        unstable state.
+
+        Return a HorVerError object, with the following values:
+        - If the wheel is already stable, the object is set to True.
+        - If the wheel is inside the stair, the object is also set to True
+            (non-sense, only to prevent runtime errors).
+        - If the wheel is unstable, the object is set to False, the horizontal
+            value is set to the distance to place the wheel in a stable
+            position, and the vertical distance is None.
+        - If the wheel is over the step, the vertical distance is set to the
+            distance from the wheel to the step, and the horizontal distance
+            is None.
+        - If the wheel is over the edge of the step, both the horizontal and
+            vertical distances are set equal to the values described above.
 
         Arguments:
         position -- Coordinates (x,y) for the required center of the wheel.
         """
-        if self.state != WheelState.Unstable and \
-                self.state != WheelState.Over and \
-                self.state != WheelState.Outer:
-            # If the wheel is not in an unstable position, this value has no
-            # sense (is not useful at all).
-            return None
-
+        if self.ground(position):
+            return HorVerError()
         # Compute the distance for a radius equal 0. With this trick, the
         # function returns the desired distance.
         hc, hl, hr, wl, wr = self.SIMULATOR.get_distances(position, 0)
         if hr > hc and hc >= hl:
             # Upstairs direction. The comparison hc = hl happens at the
             # beginning of the stair.
-            return -wr + self.HOR_MARGIN
+            horizontal = -wr
         elif hr >= hc and hc > hl:
             # Upstair direction, in the last step.
-            return -wr + self.HOR_MARGIN
+            horizontal = -wr
         elif hr < hc and hc <= hl:
             # Downstairs direction.
-            return wl - self.HOR_MARGIN
+            horizontal = +wl
         elif hr <= hc and hc < hl:
             # Downstairs direction, in the last step.
-            return wl - self.HOR_MARGIN
-        return None
+            horizontal = +wl
+        else:
+            raise RuntimeError
+
+        if self.state == WheelState.Unstable:
+            return HorVerError(horizontal, None)
+        elif self.state == WheelState.Over or self.state == WheelState.Outer:
+            return HorVerError(horizontal, -hr - self.RADIUS)
+        elif self.state == WheelState.Air or self.state == WheelState.Contact:
+            return HorVerError(None, -hc - self.RADIUS)
+
+        return HorVerError(None, None)
 
     def ground(self, position):
         """Check whether the wheel is lying in a horizontal place."""

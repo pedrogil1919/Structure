@@ -7,7 +7,8 @@ The structure can be considered as a set of two sets of a pairs of wheels.
 This module define the functionality of the two pairs of wheels.
 """
 
-from simulator.distance_errors import merge_collision, StabilityErrors
+from simulator.error_distance import InternalActuatorError, FrontActuatorError
+from simulator.error_distance import PairError
 
 
 class ActuatorPair:
@@ -82,28 +83,50 @@ class ActuatorPair:
         margin -- See WheelActuator.check_actuator function.
 
         Return:
-          - False if any of the wheels have collided, True otherwise.
-          - If True, returns the distance the pair need to be moved to place
-            it in a safe position, both in horizontal and in vertical, and for
-            the actuator.
+          - ActuatorError object for the external actuator.
+          - InternalActuatorError object for the internal actuator.
+          - PairError object.
         """
         # Check for possible wheel collisions.
-        fr_res = self.FRNT.check_actuator(margin)
-        re_res = self.REAR.check_actuator(margin)
+        re_col = self.REAR.check_actuator(margin)
+        fr_col = self.FRNT.check_actuator(margin)
 
-        # Merge both data. See merge_collision function for details.
-        res = merge_collision(fr_res, re_res)
+        # Check if the pair of wheels are in a stable position.
+        # NOTE: This checking must be done here, to have the info available
+        # for the next part of the function, that is, check for inclination
+        # errors.
+        re_pair = self.check_stable()
         # Add the inclination data to complete the information.
         if self.REAR_PAIR:
             # If this is the rear pair, only the front actuator is needed,
-            # since the rear actuator is one of the exterior actuator.
-            res.add_inclination_errors(
-                self.FRNT.get_inverse_lift(fr_res.actuator))
+            # since the rear actuator is the exterior actuator.
+            if not fr_col:
+                # Add rear and front heights.
+                rear, front = self.FRNT.get_inverse_lift(fr_col.vertical)
+                # And add the inclination height.
+                __, incline = self.FRNT.get_inverse_lift(
+                    self.FRNT.get_lift_from_horizontal_motion(
+                        fr_col.horizontal))
+                # Create a new object from the appropriate class.
+                fr_col = InternalActuatorError(fr_col, rear, front, incline)
         else:
-            # And the opposite.
-            res.add_inclination_errors(
-                self.REAR.get_inverse_lift(re_res.actuator))
-        return res
+            # For the front pair, we have to add:
+            if not re_col:
+                # the rear and front heights, plus the inclination height to
+                # the rear actuator, since this is the internal one.
+                rear, front = self.REAR.get_inverse_lift(re_col.vertical)
+                __, incline = self.REAR.get_inverse_lift(
+                    self.REAR.get_lift_from_horizontal_motion(
+                        re_col.horizontal))
+                re_col = InternalActuatorError(re_col, rear, front, incline)
+            if not fr_col:
+                # And for the front actuator, only have to include the
+                # inclination height.
+                incline = self.FRNT.get_lift_from_horizontal_motion(
+                    fr_col.horizontal)
+                fr_col = FrontActuatorError(fr_col, incline)
+
+        return re_col, fr_col, re_pair
 
     def check_stable(self):
         """Check the stability of the pair of wheels.
@@ -118,22 +141,33 @@ class ActuatorPair:
             opposite of the distance given.
         """
         # Check if either wheel is in a stable position.
-        fr_grd = self.REAR.ground()
-        re_grd = self.FRNT.ground()
-
-        if not fr_grd and not re_grd:
-            # Both wheels are not on stable:
-            # Get the minimum distance the pair has to be moved to place one of
-            # the wheels back to a stable position.
-            fr_stb = self.FRNT.distance_to_stable()
-            re_stb = self.REAR.distance_to_stable()
-            # Create a new StabilityErrors object, setting its state to False.
-            # Note that if both errors are None, means that None of then are
-            # in an unstable position, but rather both has been lifted at the
-            # same time, and this is not possible.
-            res = StabilityErrors(False, fr_stb, re_stb)
-            return res
-        return StabilityErrors()
+        # Check possible pair unstability:
+        re_stb = self.REAR.check_stable()
+        fr_stb = self.FRNT.check_stable()
+        if not re_stb and not fr_stb:
+            if self.REAR_PAIR:
+                if fr_stb.horizontal is not None:
+                    __, fr_inc = self.FRNT.get_inverse_lift(
+                        self.FRNT.get_lift_from_horizontal_motion(
+                            fr_stb.horizontal))
+                else:
+                    fr_inc = None
+                re_inc = None
+            else:
+                if re_stb.horizontal is not None:
+                    __, re_inc = self.REAR.get_inverse_lift(
+                        self.REAR.get_lift_from_horizontal_motion(
+                            re_stb.horizontal))
+                else:
+                    re_inc = None
+                if fr_stb.horizontal is not None:
+                    fr_inc = self.FRNT.get_lift_from_horizontal_motion(
+                        fr_stb.horizontal)
+                else:
+                    fr_inc = None
+            return PairError(re_stb, fr_stb, re_inc, fr_inc)
+        else:
+            return PairError(re_stb, fr_stb)
 
     # =========================================================================
     # Control functions.

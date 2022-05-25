@@ -19,7 +19,8 @@ import cv2
 
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
-from simulator.distance_errors import merge_collision, merge_stability
+from simulator.error_distance import \
+    InclinationError, StructureError, PairError
 from simulator.distance_errors import MaxInclinationError
 from physics.wheel_state import MAX_GAP
 
@@ -182,7 +183,7 @@ class Base:
                 "The dimensions of the structure are incorrect")
         return min([h1, h2, h3, h4])
     ###########################################################################
-    # MOTION FUNCTION
+    # MOTION FUNCTIONS
     ###########################################################################
     # Note for all motion functions:
     # When a given motion can not be completed for any cause (wheel collision
@@ -229,9 +230,11 @@ class Base:
         margin -- See WheelActuator.check_actuator function.
         """
         # Check if any wheel has collided with the stairs.
-        re_col = self.REAR.check_collision(margin)
-        fr_col = self.FRNT.check_collision(margin)
-        col = merge_collision(re_col, fr_col)
+        re_re, re_fr, re_pair = self.REAR.check_collision(margin)
+        fr_re, fr_fr, fr_pair = self.FRNT.check_collision(margin)
+
+        # Check for possible collisions due to inclinations.
+
         # Check if the maximum inclination (positive or negative) has been
         # reached.
         # Get differences in height between rear and front actuators.
@@ -242,17 +245,16 @@ class Base:
         # If the limit has been reached, include this value in the collision
         # object.
         if y0 - y3 > self.MAX_INCLINE + MAX_GAP:
-            inclination_error = y0 - y3 - self.MAX_INCLINE
-            col.add_inclination_limit(inclination_error)
+            error = y0 - y3 - self.MAX_INCLINE
         elif y3 - y0 > self.MAX_INCLINE + MAX_GAP:
-            inclination_error = y0 - y3 + self.MAX_INCLINE
-            col.add_inclination_limit(inclination_error)
-        # Check if any pair of wheels are not stable.
-        re_stb = self.REAR.check_stable()
-        fr_stb = self.FRNT.check_stable()
-        stb = merge_stability(re_stb, fr_stb)
+            error = y0 - y3 + self.MAX_INCLINE
+        else:
+            error = None
+        inclination = InclinationError(error)
 
-        return col, stb
+        actuators = (re_re, re_fr, fr_re, fr_fr)
+        pairs = (re_pair, fr_pair)
+        return StructureError(actuators, pairs, inclination)
 
     def advance(self, distance, check=True):
         """Advance the structure horizontally.
@@ -277,20 +279,16 @@ class Base:
             return
 
         # From here on, check the validity of the motion.
-        col, stb = self.check_position()
-
-        col.add_stability(stb)
-        if col:
-            return col
-
+        structure_position = self.check_position()
+        if structure_position:
+            return True
         # Set the structure back to its original position.
         # NOTE: When check is set to False, the function does not return any
         # value, so leave the call without receiving any value.
         self.advance(-distance, False)
         # Check that everything is OK again.
-        col_aux, stb_aux = self.check_position()
-        if col_aux and stb_aux:
-            return col
+        if self.check_position():
+            return structure_position
         # If we place the structure back to its original position, there should
         # not be any error. If this error happens, it is a run time error.
         raise RuntimeError("Error in advance structure")
@@ -325,10 +323,10 @@ class Base:
             return
 
         # Check if any of the actuators has reached one of its bounds.
-        col, __ = self.check_position(margin)
-        if col:
+        structure_position = self.check_position(margin)
+        if structure_position:
             # Everything is OK.
-            return col
+            return True
 
         # Leave the structure in its original position.
         # For the actuator motion, we have to change also the sign of the
@@ -339,9 +337,9 @@ class Base:
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
-        col_aux, __ = self.check_position(margin)
-        if col_aux:
-            return col
+        if self.check_position(margin):
+            return structure_position
+
         raise RuntimeError("Error in elevate")
 
     def shift_actuator(self, index, height, check=True, margin=True):
@@ -369,31 +367,20 @@ class Base:
             return
 
         # Check if the actuator has reached one of its bounds.
-        col, stb = self.check_position(margin)
+        structure_position = self.check_position(margin)
 
         # The variable col is for possible collisions with the steps, or an
         # actuator reaching one of its bounds.
         # The variable stb is for checking that, after elevating one wheel,
         # the other wheel of the pair is still in a stable position.
-        if not stb:
-            # We can not shift the actuator, because the other wheel is not
-            # in the ground. For this, the error distance is the whole distance
-            # required, because we can not move the actuator at all.
-            col.actuator = -height
-            col.central = -height
-            col.correct = False
-
-        if col:
-            # Everything is OK.
-            return col
+        if structure_position:
+            return True
 
         # Leave the actuator in its original position.
         self.shift_actuator(index, -height, False)
         # Check that everything is OK again.
-        col_aux, stb_aux = self.check_position(margin)
-
-        if col_aux and stb_aux:
-            return col
+        if self.check_position(margin):
+            return structure_position
         raise RuntimeError("Error in shift actuator.")
 
     def incline(self, height, wheel=None,
@@ -489,19 +476,18 @@ class Base:
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
-        col, stb = self.check_position(margin)
-        col.add_stability(stb)
+        structure_position = self.check_position(margin)
 
-        if col:
-            return col
+        if structure_position:
+            return True
 
         # Leave the structure in its original position.
         wheel_aux = [-w if (w is not None) else w for w in wheel]
         self.incline(-height, wheel_aux, elevate_rear, False)
         # Check that everything is OK again.
-        col_aux, stb_aux = self.check_position(margin)
-        if col_aux and stb_aux:
-            return col
+        if self.check_position(margin):
+            return structure_position
+
         raise RuntimeError("Error in incline function")
 
     # =========================================================================

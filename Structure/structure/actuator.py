@@ -13,7 +13,7 @@ import cv2
 
 from physics.wheel import Wheel
 from structure.joint import Joint
-from simulator.distance_errors import CollisionErrors
+from simulator.error_distance import ActuatorError
 from physics.wheel_state import MAX_GAP
 
 
@@ -132,7 +132,7 @@ class WheelActuator:
         # Move the actuator.
         self.shift_actuator(prop_height)
 
-    def distance_to_stable(self):
+    def check_stable(self):
         """Return the distance to place the wheel in a stable position.
 
         See wheel.distance_to_stable for more info.
@@ -169,7 +169,7 @@ class WheelActuator:
         """
         # Check if the wheel is in a valid position.
         position = self.JOINT.position(self.HEIGHT + self.d)
-        check, h_err, v_err = self.WHEEL.check_wheel(position)
+        correct, h_err, v_err = self.WHEEL.check_wheel(position)
         # Change the sign to the vertical error, since wheel error is measured
         # upwards, while actuator error is downwards (see
         # actuator_sign_criteria.svg):
@@ -180,19 +180,19 @@ class WheelActuator:
         if self.state == ActuatorState.ExitLowerBound or \
                 (not margin and self.state == ActuatorState.MarginLowerBound):
             # The actuator has gone out of its lower bound.
-            check = False
+            correct = False
             a_err = -self.d
-            v_err = a_err
         elif self.state == ActuatorState.ExitUpperBound or \
                 (not margin and self.state == ActuatorState.MarginUpperBound):
             # The actuator has gone out if its upper bound. In this case, we
             # have to check also if the wheel is in a valid position with
             # respect to the stair, and get the maximum of both.
-            check = False
+            correct = False
             a_err = self.LENGTH - self.d
-            v_err = min([v_err, a_err])
 
-        return CollisionErrors(check, h_err, a_err, v_err)
+        if correct:
+            return ActuatorError()
+        return ActuatorError(a_err, v_err, h_err)
 
     def ground(self):
         """Return True if its ending wheel is lying on the ground."""
@@ -217,8 +217,11 @@ class WheelActuator:
         The function computes the shift for an outer actuator when this
         actuator is shfited the given distances when inclining the structure.
         """
-        return self.JOINT.inverse_prop_lift(height)
+        rear, front = self.JOINT.inverse_prop_lift(height)
+        return rear, front
 
+    def get_lift_from_horizontal_motion(self, distance):
+        return self.JOINT.lift_from_horizontal_motion(distance)
     # =========================================================================
     # Drawing functions.
     # =========================================================================

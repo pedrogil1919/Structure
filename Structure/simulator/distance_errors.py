@@ -204,7 +204,7 @@ class StabilityErrors():
             self.correct = False
             self.horizontal = rear
         elif front is not None and rear is None:
-            # The same than above, 666666666for the rear wheel.
+            # The same than above, for the rear wheel.
             self.correct = False
             self.horizontal = front
         else:
