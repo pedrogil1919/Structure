@@ -342,47 +342,6 @@ class Base:
 
         raise RuntimeError("Error in elevate")
 
-    def shift_actuator(self, index, height, check=True, margin=True):
-        """Shift one actuator independently.
-
-        Arguments:
-        index -- Index of actuator (0-3)
-        height -- Distance to shift (positive, move downwards).
-        check -- See advance function.
-        margin -- see advance function.
-
-        Return (see note above).
-        """
-        # Select the actuator to shift.
-        if index == 0:
-            self.REAR.shift_actuator(None, 0.0, height)
-        elif index == 1:
-            self.REAR.shift_actuator(0.0, None, height)
-        elif index == 2:
-            self.FRNT.shift_actuator(None, 0.0, height)
-        elif index == 3:
-            self.FRNT.shift_actuator(0.0, None, height)
-
-        if not check:
-            return
-
-        # Check if the actuator has reached one of its bounds.
-        structure_position = self.check_position(margin)
-
-        # The variable col is for possible collisions with the steps, or an
-        # actuator reaching one of its bounds.
-        # The variable stb is for checking that, after elevating one wheel,
-        # the other wheel of the pair is still in a stable position.
-        if structure_position:
-            return True
-
-        # Leave the actuator in its original position.
-        self.shift_actuator(index, -height, False)
-        # Check that everything is OK again.
-        if self.check_position(margin):
-            return structure_position
-        raise RuntimeError("Error in shift actuator.")
-
     def incline(self, height, wheel=None,
                 elevate_rear=False, check=True, margin=True):
         """Incline the base of the structure.
@@ -489,6 +448,47 @@ class Base:
             return structure_position
 
         raise RuntimeError("Error in incline function")
+
+    def shift_actuator(self, index, height, check=True, margin=True):
+        """Shift one actuator independently.
+
+        Arguments:
+        index -- Index of actuator (0-3)
+        height -- Distance to shift (positive, move downwards).
+        check -- See advance function.
+        margin -- see advance function.
+
+        Return (see note above).
+        """
+        # Select the actuator to shift.
+        if index == 0:
+            self.REAR.shift_actuator(None, 0.0, height)
+        elif index == 1:
+            self.REAR.shift_actuator(0.0, None, height)
+        elif index == 2:
+            self.FRNT.shift_actuator(None, 0.0, height)
+        elif index == 3:
+            self.FRNT.shift_actuator(0.0, None, height)
+
+        if not check:
+            return
+
+        # Check if the actuator has reached one of its bounds.
+        structure_position = self.check_position(margin)
+
+        # The variable col is for possible collisions with the steps, or an
+        # actuator reaching one of its bounds.
+        # The variable stb is for checking that, after elevating one wheel,
+        # the other wheel of the pair is still in a stable position.
+        if structure_position:
+            return True
+
+        # Leave the actuator in its original position.
+        self.shift_actuator(index, -height, False)
+        # Check that everything is OK again.
+        if self.check_position(margin):
+            return structure_position
+        raise RuntimeError("Error in shift actuator.")
 
     # =========================================================================
     # Control functions.
