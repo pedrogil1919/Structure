@@ -14,7 +14,7 @@ class ErrorDistance():
     """
 
     # This class save the state of the measures. If every thing is OK, this
-    # object set correct equal True, and does not store any other data.
+    # object sets correct equal True, and does not store any other data.
     def __init__(self, correct=True):
         self.correct = correct
 
@@ -41,8 +41,8 @@ class ActuatorError(ErrorDistance):
     - wheel: Not None when the wheel is inside the stair, meaning that the
       actuator must be lifted to get the wheel out of the stair.
     - horizontal: Not None when the wheel is inside the stair, meaning that
-      the structure must move in the opposite direction to get to a valid
-      position.
+      the structure must move horizontally in the opposite direction to get to
+      a valid position.
 
     """
 
@@ -59,23 +59,6 @@ class ActuatorError(ErrorDistance):
         self.horizontal = horizontal
         self.vertical = vertical
         self.wheel = wheel
-
-    # def set_inclination(self, height):
-    #     self.inclination = height
-    #
-    # def get_inclination(self):
-    #     return self.inclination
-    #
-    # inclination = property(get_inclination, set_inclination, None, None)
-    # TODO: Comment this.
-    # def get_front(self):
-    #     return self.horizontal
-    #
-    # def get_rear(self):
-    #     return self.horizontal
-    #
-    # front = property(get_front, None, None, None)
-    # rear = property(get_rear, None, None, None)
 
 
 class FrontActuatorError(ActuatorError):
@@ -108,7 +91,9 @@ class InternalActuatorError(ActuatorError):
       - rear: similar to front, but the other way around.
       - incline: if a wheel collides with the stair, or is set in an unstable
             position, this value indicates the height the structure must
-            incline to take the wheel back to a valid position.
+            incline to move the wheel horizontally to place it back to a valid
+            position. Remember that all the wheels but the rear one moves
+            horizontally when inclining the structure.
     """
 
     def __init__(self, actuator, rear=None, front=None, incline=None):
@@ -142,9 +127,9 @@ class HorVerError(ErrorDistance):
 
 class PairError(ErrorDistance):
     """
-    This class evaluate if the pair of wheels is in a stable position. That
-    means that at any time at least one of the wheels must be in contact with
-    the ground.
+    This class evaluate whether the pair of wheels is in a stable position.
+    That means that at any time at least one of the wheels must be in contact
+    with the ground.
 
     """
 
@@ -187,9 +172,9 @@ class PairError(ErrorDistance):
                 self.horizontal = rear.horizontal
                 self.vertical = rear.vertical
                 self.index = 0
-            # raise RuntimeError
         # Finally, actuator stores the values each actuator need to shift to
-        # place the wheel back to the stair.
+        # place the wheel back to the stair. It is the raw information given
+        # above.
         self.actuator = (rear.vertical, front.vertical)
         self.incline = (incline_rear, incline_front)
 
@@ -234,6 +219,11 @@ class StructureError():
         if not self.incline:
             return False
         return True
+
+    def __str__(self):
+        if bool(self):
+            return "OK"
+        return "Error"
 
     def horizontal(self):
         """
@@ -283,6 +273,7 @@ class StructureError():
         This function returns the distance the structure has to elevate to
         place the structure in a valid position. This function must be called
         when there is a collision with any of the actuators.
+
         """
         pos_height = 0.0
         neg_height = 0.0
@@ -315,6 +306,7 @@ class StructureError():
         """
         This function returns the shift for an actuator to place it to a valid
         position.
+
         """
         # Get the actuator from the actuators array.
         actuator = self.actuators[index]
@@ -332,6 +324,7 @@ class StructureError():
             # If the wheel is in a valid position, return the error for the
             # actuator.
             return actuator.vertical
+
         # If we reach this code, means that the actuator is in a correct
         # position, and the problem can be the pair stability.
         # Get the pair index, and the actuator index inside the pair from the
@@ -425,6 +418,8 @@ class StructureError():
             if self.actuators[1].incline < neg_incline:
                 neg_incline = self.actuators[1].incline
 
+        # And also check if after the motion due to the inclination, any pair
+        # of wheels are in a unstable position.
         if not self.pairs[0]:
             if self.pairs[0].incline[self.pairs[0].index] > pos_incline:
                 pos_incline = self.pairs[0].incline[self.pairs[0].index]
@@ -436,5 +431,27 @@ class StructureError():
             if self.pairs[1].incline[self.pairs[1].index] < neg_incline:
                 neg_incline = self.pairs[1].incline[self.pairs[1].index]
 
+        # Return the greater of both measures.
         return pos_incline if \
             abs(pos_incline) > abs(neg_incline) else neg_incline
+
+    def push_actuator(self, index):
+        """
+        This function return the height the structure must be pushed to allow
+        an actuator to complete a motion.
+        """
+        # Get the actuator from the actuators array.
+        actuator = self.actuators[index]
+        # Check if the actuator is in a non-valid position.
+        if not actuator:
+            if actuator.vertical > 0:
+                # If the error is positive, means that the actuator has gone
+                # out from the upper bound. In this case, just return this
+                # value.
+                return actuator.vertical
+            # However, if the value is negative, the error can be due to the
+            # actuator going out from the lower bound, or the wheel colliding
+            # with the ground.
+            height = actuator.vertical - actuator.wheel
+            return height if height < 0 else 0.0
+        return 0.0

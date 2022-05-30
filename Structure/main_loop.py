@@ -43,12 +43,31 @@ debug = {'graphics': graphics, 'simulator': sm}
 # debug = None
 structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
 
+instruction = {
+    'wheel': 3, 'height': -120, 'advance': 300}
+sm.simulate_instruction(structure, instruction)
+instruction = {'advance': 150}
+sm.simulate_instruction(structure, instruction)
+instruction = {'incline': -120, 'elevate_rear': True}
+sm.simulate_instruction(structure, instruction)
+instruction = {
+    'wheel': 1, 'height': -50}
+sm.simulate_instruction(structure, instruction)
+instruction = {
+    'wheel': 2, 'height': -150}
+sm.simulate_instruction(structure, instruction)
+# instruction = {
+#     'wheel': 2, 'height': -10}
+# sm.simulate_instruction(structure, instruction)
+
+
 # Draw initial state of the structure.
 continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
 instruction_number = 0
+
 while continue_loop:
     if graphics.manual_mode:
         # In manual mode, wait for the user to press a instruction.

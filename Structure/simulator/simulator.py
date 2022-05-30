@@ -513,8 +513,8 @@ class Simulator():
             structure.incline(step_incline, actuator_incline, check=False)
             structure.elevate(step_elevate, actuator_elevate, check=False)
             # Is here when we must check the validity of the position.
-            col, stb = structure.check_position(False)
-            if not col or not stb:
+            structure_position = structure.check_position(False)
+            if not structure_position:
                 raise RuntimeError("Can not move structure.")
             total_iter -= 1
             # Check for the end of the instruction.
