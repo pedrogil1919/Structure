@@ -14,18 +14,18 @@ from math import cos, sin
 class Joint:
     """Define the joint of an actuator with the structure."""
 
-    def __init__(self, base, x):
+    def __init__(self, structure_position, position):
         """Constructor:
 
         Arguments:
-        base -- Reference to the actual base that hold the joint. Used to
-          compute absolute coordinates from the offset of the joint with
-          respect to the base origin.
-        x -- Horizontal distance of the actuator to the back side of the
-        structure.
+        structure_position -- Reference to the actual position of the base that
+          hold the joint. Used to compute absolute coordinates from the offset
+          of the joint with respect to the base origin.
+        relative_position -- Horizontal distance of the actuator to the back
+            side of the structure with respect to its width.
         """
-        self.base = base
-        self.x = x
+        self.structure_position = structure_position
+        self.relative_position = position / structure_position.WIDTH
 
     def position(self, height=0):
         """Return the (x, y) position of a given point along the actuator.
@@ -33,13 +33,12 @@ class Joint:
         Arguments:
         height -- Vertical distance from the required point to the joint.
         """
-        # Copy global variables of the structure.
-        shift = self.base.position
-        elevation = self.base.elevation
-        angle = self.base.angle
         # Get actual coordinates.
-        x = shift + self.x*cos(angle)
-        y = elevation - height + self.x*sin(angle)
+        angle = self.structure_position.angle
+        x = self.structure_position.horizontal + \
+            self.structure_position.WIDTH * self.relative_position * cos(angle)
+        y = self.structure_position.vertical - height + \
+            self.structure_position.WIDTH * self.relative_position * sin(angle)
 
         return x, y
 
@@ -57,7 +56,7 @@ class Joint:
         height -- Height for the outer actuator, needed to compute the
             proportional height for this actuator.
         """
-        return height*self.x/self.base.WIDTH
+        return height * self.relative_position
 
     def inverse_prop_lift(self, height):
         """Compute an inverse height when inclining the structure.
@@ -71,8 +70,8 @@ class Joint:
         This function can only be called for the interior actuators. For the
         exterior actuators this value will be 0 and infinity.
         """
-        fr_height = height*self.base.WIDTH / self.x
-        re_height = height*self.base.WIDTH / (self.base.WIDTH-self.x)
+        fr_height = height / self.relative_position
+        re_height = height / (1 - self.relative_position)
         return fr_height, re_height
 
 ###############################################################################
