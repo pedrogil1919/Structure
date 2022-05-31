@@ -573,9 +573,9 @@ class Simulator():
         except KeyError:
             pass
         else:
-            rear = instruction.get('elevate_rear', False)
+            fixed = instruction.get('fixed', 0)
             # Incline structure
-            res = structure.incline(height, None, rear, margin=False)
+            res = structure.incline(height, None, fixed, margin=False)
             if not res:
                 print("Can not incline structure:", res)
         #######################################################################

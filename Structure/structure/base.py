@@ -452,8 +452,7 @@ class Base:
             return col
         raise RuntimeError("Error in shift actuator.")
 
-    def incline(self, height, wheel=None,
-                elevate_rear=False, check=True, margin=True):
+    def incline(self, height, wheel=None, fixed=0, check=True, margin=True):
         """Incline the base of the structure.
 
         Arguments:
@@ -461,8 +460,10 @@ class Base:
             0 or 3). The angle can be computed from this value and the length
             of the structure.
         wheel -- See elevate function.
-        elevate_rear -- If True, when inclining, the rear edge of the structure
-            is elevated, while the front remains fixed, an vice versa.
+        fixed -- When rotating the structure, the point that remains fixed,
+            that must be one of the joint of any of the actuators. For
+            instance, if 0, the structure incline fixing the rear corner, and
+            so elevating the front corner.
         check -- See advance function.
         margin -- see advance function.
 
@@ -495,22 +496,30 @@ class Base:
             wheel = 4 * [None]
 
         # Current computations keep fixed the rear edge of the structure. To
-        # change this and elevate the front edge instead, we simply have to
-        # elevate the whole structure the same distance in the opposite way.
-        if elevate_rear:
-            self.elevation -= height
-            # Set the actuators to its new position before inclining. Note
-            # that we need not check whether they are in a valid position
-            # since it can happen that, even in an invalid position at this
-            # step, the actuator can return back to a valid position after
-            # the inclination.
-            # For the actuator to position independently, in this previous
-            # step, we need to fix it to the elevation of the structure, as
-            # opposed of the rest, that need to be shifted so that the wheels
-            # remains in the same position.
-            wheel_aux = [0 if (w is not None) else None for w in wheel]
-            self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -height)
-            self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -height)
+        # change this to leave fixed one of the other actuators, we have to
+        # elevate the structure in the opposite direction.
+        if fixed == 0:
+            prop_height = self.REAR.REAR.JOINT.proportional_lift(height)
+        elif fixed == 1:
+            prop_height = self.REAR.FRNT.JOINT.proportional_lift(height)
+        elif fixed == 2:
+            prop_height = self.FRNT.REAR.JOINT.proportional_lift(height)
+        elif fixed == 3:
+            prop_height = self.FRNT.FRNT.JOINT.proportional_lift(height)
+
+        self.position.add_vertical(-prop_height)
+        # Set the actuators to its new position before inclining. Note
+        # that we need not check whether they are in a valid position
+        # since it can happen that, even in an invalid position at this
+        # step, the actuator can return back to a valid position after
+        # the inclination.
+        # For the actuator to position independently, in this previous
+        # step, we need to fix it to the elevation of the structure, as
+        # opposed of the rest, that need to be shifted so that the wheels
+        # remains in the same position.
+        wheel_aux = [0 if (w is not None) else None for w in wheel]
+        self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -prop_height)
+        self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -prop_height)
 
         # Check inclination state:
         new_inclination = abs(current_inclination + height)
@@ -553,7 +562,7 @@ class Base:
 
         # Leave the structure in its original position.
         wheel_aux = [-w if (w is not None) else w for w in wheel]
-        self.incline(-height, wheel_aux, elevate_rear, False)
+        self.incline(-height, wheel_aux, fixed, False)
         # Check that everything is OK again.
         col_aux, stb_aux = self.check_position(margin)
         if col_aux and stb_aux:
