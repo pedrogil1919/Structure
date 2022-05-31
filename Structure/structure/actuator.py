@@ -35,7 +35,8 @@ class WheelActuator:
     structure.
     """
 
-    def __init__(self, position, length, height, radius, base, stairs, margin):
+    def __init__(self, position, length, height, radius,
+                 structure_position, stairs, margin):
         """Constructor:
 
         Arguments:
@@ -47,7 +48,8 @@ class WheelActuator:
             above the bottom of the structure which, in a real case, is not
             possible).
         radius -- Radius of the ending wheel.
-        base -- Main structure base that holds the actuator.
+        structure_position -- Horizontal, vertical and inclination of the
+            structure.
         stairs -- Physics structure to check collisions between a wheel and a
           step.
         margin -- Horizontal and vertical margins (see paper).
@@ -62,7 +64,7 @@ class WheelActuator:
         # Allowed margin out of the actuator bounds.
         self.MARGIN = MAX_GAP
         # Create a joint to join it to the main base.
-        self.JOINT = Joint(base, position)
+        self.JOINT = Joint(structure_position, position)
         # and create the ending wheel.
         # NOTE: The wheel construction checks whether the new created wheel is
         # place in a valid position. If false, it raise a ValueError exception.

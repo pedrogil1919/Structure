@@ -963,17 +963,21 @@ def manual_control(key_pressed, simulator):
         command = {'wheel': 3, 'height': +simulator.speed_actuator_dw}
     ###########################################################################
     elif key_pressed == ord('t'):
-        command = {'incline': +simulator.speed_incline_up,
-                   'elevate_rear': False}
+        command = {'incline': +simulator.speed_incline_up, 'fixed': 0}
     elif key_pressed == ord('g'):
-        command = {'incline': -simulator.speed_incline_dw,
-                   'elevate_rear': False}
+        command = {'incline': -simulator.speed_incline_dw, 'fixed': 0}
     elif key_pressed == ord('y'):
-        command = {'incline': +simulator.speed_incline_dw,
-                   'elevate_rear': True}
+        command = {'incline': +simulator.speed_incline_up, 'fixed': 1}
     elif key_pressed == ord('h'):
-        command = {'incline': -simulator.speed_incline_up,
-                   'elevate_rear': True}
+        command = {'incline': -simulator.speed_incline_dw, 'fixed': 1}
+    elif key_pressed == ord('u'):
+        command = {'incline': +simulator.speed_incline_up, 'fixed': 2}
+    elif key_pressed == ord('j'):
+        command = {'incline': -simulator.speed_incline_dw, 'fixed': 2}
+    elif key_pressed == ord('i'):
+        command = {'incline': +simulator.speed_incline_dw, 'fixed': 3}
+    elif key_pressed == ord('k'):
+        command = {'incline': -simulator.speed_incline_up, 'fixed': 3}
     ###########################################################################
     else:
         command = None

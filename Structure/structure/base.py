@@ -41,6 +41,60 @@ class ConfigurationError(ValueError):
     pass
 
 
+class Pose():
+    """Class to store the current position of the structure.
+
+    """
+
+    def __init__(self, horizontal, vertical, inclination, width):
+        """Initial position:
+
+        Arguments:
+        horizontal -- Horizontal position
+        vertical -- Vertical position
+        inclination -- Inclination as the difference between front and rear part
+        width -- Width of the structure.
+
+        """
+        self.__horizontal = horizontal
+        self.__vertical = vertical
+        self.__inclination = inclination
+        # Note that the width is a constant.
+        self.__WIDTH = width
+
+    def get_horizontal(self):
+        return self.__horizontal
+
+    def get_vertical(self):
+        return self.__vertical
+
+    def get_inclination(self):
+        return self.__inclination
+
+    def get_angle(self):
+        return asin(self.__inclination / self.__WIDTH)
+
+    def get_width(self):
+        return self.__WIDTH
+
+    # NOTE: The properties of the object can not be modified directly, but
+    # only by adding a new value to the current one.
+    def add_horizontal(self, value):
+        self.__horizontal += value
+
+    def add_vertical(self, value):
+        self.__vertical += value
+
+    def add_inclination(self, value):
+        self.__inclination += value
+
+    horizontal = property(get_horizontal, None, None, None)
+    vertical = property(get_vertical, None, None, None)
+    inclination = property(get_inclination, None, None, None)
+    angle = property(get_angle, None, None, None)
+    WIDTH = property(get_width, None, None, None)
+
+
 class Base:
     """Class to the define the whole structure."""
 
@@ -68,6 +122,7 @@ class Base:
 
         Raises a ConfigurationError(ValueError) exception if the dimensions
         does not allow to build a valid structure.
+
         """
         # Check whether the dimensions given fulfill the restrictions.
         try:
@@ -105,27 +160,6 @@ class Base:
         r2 = wheels['r2']
         r3 = wheels['r3']
         r4 = wheels['r4']
-        # Current vertical position.
-        self.elevation = d + g
-        # Current horizontal position.
-        self.position = 0.0
-        # Angle of the structure (driven by L9 actuator, see paper).
-        self.angle = 0.0
-        # Create array of actuators.
-        # NOTE: The total length of an actuator is equal to the height of the
-        # structure (d), plus the gap between the floor and the lower base of
-        # the structure (g), minus the wheel radius (r).
-        actuator1 = WheelActuator(
-            0, d, d + g - r1, r1, self, stairs, margins)
-        actuator2 = WheelActuator(
-            a, d, d + g - r2, r2, self, stairs, margins)
-        self.REAR = ActuatorPair(actuator1, actuator2, True)
-        actuator3 = WheelActuator(
-            a + b, d, d + g - r3, r3, self, stairs, margins)
-        actuator4 = WheelActuator(
-            a + b + c, d, d + g - r4, r4, self, stairs, margins)
-        self.FRNT = ActuatorPair(actuator3, actuator4, False)
-
         # Check dimensions:
         # Restriction 1: The separation between actuators must be greater than
         # the wheel radius, so that
@@ -133,8 +167,29 @@ class Base:
         self.LENGTH = d + g
         # Size of the actuators.
         self.HEIGHT = d
-        # Total width of the structure.
-        self.WIDTH = a + b + c
+
+        # Current position of the structure.
+        self.position = Pose(0.0, d + g, 0.0, a + b + c)
+        # self.elevation = d + g
+        # # Current horizontal position.
+        # self.position = 0.0
+        # # Angle of the structure (driven by L9 actuator, see paper).
+        # self.angle = 0.0
+        # Create array of actuators.
+        # NOTE: The total length of an actuator is equal to the height of the
+        # structure (d), plus the gap between the floor and the lower base of
+        # the structure (g), minus the wheel radius (r).
+        actuator1 = WheelActuator(
+            0, d, d + g - r1, r1, self.position, stairs, margins)
+        actuator2 = WheelActuator(
+            a, d, d + g - r2, r2, self.position, stairs, margins)
+        self.REAR = ActuatorPair(actuator1, actuator2, True)
+        actuator3 = WheelActuator(
+            a + b, d, d + g - r3, r3, self.position, stairs, margins)
+        actuator4 = WheelActuator(
+            a + b + c, d, d + g - r4, r4, self.position, stairs, margins)
+        self.FRNT = ActuatorPair(actuator3, actuator4, False)
+
         # Set the state of the structure to normal, since the initial
         # inclination is 0, so the structure is not on it inclination limit.
         self.state = StructureState.InclinationNormal
@@ -272,7 +327,7 @@ class Base:
         # Get previous position for speed computation.
         self.prev_pos = self.position
         # Update structure position
-        self.position += distance
+        self.position.add_horizontal(distance)
         if not check:
             # This option is called inside this function, so do not need to
             # return any value as long as we take this into account bellow,
@@ -314,7 +369,7 @@ class Base:
         if wheel is None:
             wheel = 4 * [None]
         # Elevate the structure,
-        self.elevation += height
+        self.position.add_vertical(height)
         # and place the actuators in the correct position.
         self.REAR.shift_actuator(wheel[0], wheel[1], height)
         self.FRNT.shift_actuator(wheel[2], wheel[3], height)
@@ -343,8 +398,7 @@ class Base:
 
         raise RuntimeError("Error in elevate")
 
-    def incline(self, height, wheel=None,
-                elevate_rear=False, check=True, margin=True):
+    def incline(self, height, wheel=None, fixed=0, check=True, margin=True):
         """Incline the base of the structure.
 
         Arguments:
@@ -352,8 +406,10 @@ class Base:
             0 or 3). The angle can be computed from this value and the length
             of the structure.
         wheel -- See elevate function.
-        elevate_rear -- If True, when inclining, the rear edge of the structure
-            is elevated, while the front remains fixed, an vice versa.
+        fixed -- When rotating the structure, the point that remains fixed,
+            that must be one of the joint of any of the actuators. For
+            instance, if 0, the structure incline fixing the rear corner, and
+            so elevating the front corner.
         check -- See advance function.
         margin -- see advance function.
 
@@ -362,13 +418,11 @@ class Base:
 
         # Get vertical coordinates of the outer joints to update structure
         # angle.
-        __, y0 = self.REAR.REAR.JOINT.position(0)
-        __, y3 = self.FRNT.FRNT.JOINT.position(0)
-#         x3, y3 = self.FRNT.FRNT.JOINT.position(0)
-        h = y3 - y0
+        current_inclination = self.position.inclination
         try:
             # Update the angle taking into account the new height to lift.
-            self.angle = asin((h + height) / self.WIDTH)
+            self.position.add_inclination(height)
+            # self.angle = asin((h + height) / self.WIDTH)
         except ValueError:
             # In case we pretend to elevate a height larger than the maximum
             # allowed, that is, in the previous instruction we try to compute
@@ -377,34 +431,44 @@ class Base:
             # Note that, although this instruction also raises an error because
             # it overpass the maximum inclination, this error is raised before,
             # and so, it must be detected here.
-            if h + height > 0:
-                return MaxInclinationError(+self.MAX_INCLINE - h - height)
+            if current_inclination + height > 0:
+                return MaxInclinationError(+self.MAX_INCLINE -
+                                           current_inclination - height)
             else:
-                return MaxInclinationError(-self.MAX_INCLINE - h - height)
+                return MaxInclinationError(-self.MAX_INCLINE -
+                                           current_inclination - height)
 
         if wheel is None:
             wheel = 4 * [None]
 
         # Current computations keep fixed the rear edge of the structure. To
-        # change this and elevate the front edge instead, we simply have to
-        # elevate the whole structure the same distance in the opposite way.
-        if elevate_rear:
-            self.elevation -= height
-            # Set the actuators to its new position before inclining. Note
-            # that we need not check whether they are in a valid position
-            # since it can happen that, even in an invalid position at this
-            # step, the actuator can return back to a valid position after
-            # the inclination.
-            # For the actuator to position independently, in this previous
-            # step, we need to fix it to the elevation of the structure, as
-            # opposed of the rest, that need to be shifted so that the wheels
-            # remains in the same position.
-            wheel_aux = [0 if (w is not None) else None for w in wheel]
-            self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -height)
-            self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -height)
+        # change this to leave fixed one of the other actuators, we have to
+        # elevate the structure in the opposite direction.
+        if fixed == 0:
+            prop_height = self.REAR.REAR.JOINT.proportional_lift(height)
+        elif fixed == 1:
+            prop_height = self.REAR.FRNT.JOINT.proportional_lift(height)
+        elif fixed == 2:
+            prop_height = self.FRNT.REAR.JOINT.proportional_lift(height)
+        elif fixed == 3:
+            prop_height = self.FRNT.FRNT.JOINT.proportional_lift(height)
+
+        self.position.add_vertical(-prop_height)
+        # Set the actuators to its new position before inclining. Note
+        # that we need not check whether they are in a valid position
+        # since it can happen that, even in an invalid position at this
+        # step, the actuator can return back to a valid position after
+        # the inclination.
+        # For the actuator to position independently, in this previous
+        # step, we need to fix it to the elevation of the structure, as
+        # opposed of the rest, that need to be shifted so that the wheels
+        # remains in the same position.
+        wheel_aux = [0 if (w is not None) else None for w in wheel]
+        self.REAR.shift_actuator(wheel_aux[0], wheel_aux[1], -prop_height)
+        self.FRNT.shift_actuator(wheel_aux[2], wheel_aux[3], -prop_height)
 
         # Check inclination state:
-        new_inclination = abs(h + height)
+        new_inclination = abs(current_inclination + height)
         if new_inclination < self.MAX_INCLINE:
             self.state = StructureState.InclinationNormal
         elif new_inclination < self.MAX_INCLINE + MAX_GAP:
@@ -443,7 +507,7 @@ class Base:
 
         # Leave the structure in its original position.
         wheel_aux = [-w if (w is not None) else w for w in wheel]
-        self.incline(-height, wheel_aux, elevate_rear, False)
+        self.incline(-height, wheel_aux, fixed, False)
         # Check that everything is OK again.
         if self.check_position(margin):
             return structure_position
