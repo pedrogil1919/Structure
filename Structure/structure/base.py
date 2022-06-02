@@ -522,7 +522,7 @@ class Base:
 
         raise RuntimeError("Error in incline function")
 
-    def shift_actuator2(self, index, height, check=True, margin=True):
+    def shift_actuator(self, index, height, check=True, margin=True):
         """Shift one actuator independently.
 
         Arguments:
@@ -563,12 +563,12 @@ class Base:
             return structure_position
         raise RuntimeError("Error in shift actuator.")
 
-    def make_room_wheel3(self, height):
+    def make_room_wheel3(self, front_incline):
         """Generate aditional vertical space for actuator 3.
 
         Arguments:
-        height -- distance the actuator has collided with the structure, and
-            so, is the space we need to make to allow the actuator to shift
+        front_incline -- distance the actuator has collided with the structure,
+            and so, is the space we need to make to allow the actuator to shift
             the required distance.
 
         In this case, the first option is incline the structure from the front
@@ -582,13 +582,36 @@ class Base:
 
         """
         # Try to incline the required distance.
-        structure_position = self.incline(height, margin=False)
+        structure_position = self.incline(front_incline, margin=False)
         if structure_position:
             # If success, the actuator can alreay be shifted.
-            return structure_position
+            return True
+
+        # If not, try make more space inclining and elevating from the rear in
+        # the opposite direction.
+        rear_incline = structure_position.inclination(3)
+        structure_position = self.incline(rear_incline, fixed=3, margin=False)
+        if not structure_position:
+            # If not success, incline just the height that is already possible.
+            rear_incline += structure_position.inclination(3)
+            if not self.incline(rear_incline, fixed=3, margin=False):
+                raise RuntimeError
+
+        # Try to incline the structure again.
+        structure_position = self.incline(front_incline, margin=False)
+        if structure_position:
+            # If success, the actuator can alreay be shifted.
+            return True
+        # If not success, incline just the height that is already possible.
+        front_incline += structure_position.inclination(0)
+        if not self.incline(front_incline, fixed=0, margin=False):
+            raise RuntimeError
+        return False
+
+        """
         # Otherwise, get the height we have to incline from the rear to
         # achieve the required inclination.
-        rear_height = structure_position.inclination(True)
+        rear_height = structure_position.inclination(0)
         # Try to incline.
         structure_position = self.incline(rear_height,
                                           elevate_rear=True, margin=False)
@@ -610,13 +633,15 @@ class Base:
                 # possible.
                 elevate_height += structure_position.elevation()
                 structure_position = self.elevate(elevate_height, margin=False)
-        return structure_position
+        """
 
-    def make_room_wheel2(self, height):
-        """Generate aditional vertical space for actuator 2.
+    def make_room_wheelN(self, actuator, elevate):
+        """Generate aditional vertical space for actuator 0, 1 or 2.
 
         Arguments:
-        height -- distance the actuator has collided with the structure, and
+        actuator -- index of the actuator which is actually pushing the
+            structure.
+        elevate -- distance the actuator has collided with the structure, and
             so, is the space we need to make to allow the actuator to shift
             the required distance.
 
@@ -626,81 +651,48 @@ class Base:
               can use the function for actuator 3 to complete the motion.
         """
         # Try to elevate the required distance.
-        structure_position = self.elevate(height, margin=False)
+        structure_position = self.elevate(elevate, margin=False)
         if structure_position:
             # If success, the actuator can alreay be shifted.
-            return structure_position
-        # height += structure_position.elevate()
-        # if not self.elevate(height, margin=False):
-        #     raise RuntimeError
-        elevate_height = structure_position.elevation()
-        if not self.elevate(height + elevate_height, margin=False):
-            raise RuntimeError
+            return True
+        # If not possible:
 
-        structure_position = self.shift_actuator2(2, elevate_height)
+        # Get the height that the structure has collided with one of the
+        # actuators (the actuator can be any but the currentactuator, since
+        # this is the actuator that is pushing the structure), see Note 1.
+        elevate += structure_position.elevation()
+
+        # Now, find the actuator that is actually colliding with the structure
+        # (the one that is most colliding, if more than one).
+        fix_actuator = structure_position.colliding_actuator(actuator)
+        # And get the inclination that must be done if we incline fixing the
+        # most colliding actuator.
+        incline = structure_position.inclination(actuator)
+        # And try to incline.
+        structure_position = self.incline(incline, fixed=fix_actuator,
+                                          margin=False)
+        if not structure_position:
+            # If not success, incline just the height that is already possible.
+            incline += structure_position.inclination(fix_actuator)
+            if not self.incline(incline, fixed=fix_actuator, margin=False):
+                raise RuntimeError
+
+        # (Note 1) Note that when inclining fixing one of the wheels, we are
+        # actualy elevating the structure at the position of the current
+        # actuator. For this reason, the height to elevate is less that the one
+        # given in the argument.
+
+        # Try to elevate the structure again.
+        structure_position = self.elevate(elevate, margin=False)
         if structure_position:
+            # If success, the actuator can alreay be shifted.
+            return True
+        elevate += structure_position.elevation()
+        if not self.elevate(elevate, margin=False):
             raise RuntimeError
-        incline_height = structure_position.inclination()
-        if not self.shift_actuator(2, incline_height):
-            raise RuntimeError
-        structure_position = self.make_room_wheel3(incline_height)
-        if not self.shift_actuator(2, -incline_height):
-            raise RuntimeError
-        # structure_position = self.elevate(height, margin=False)
-        return structure_position
-
-    def make_room_wheel1(self, height):
-
-        res = self.elevate(height, margin=False)
-        if res:
-            return res
-        height += res.elevation()
-        if not self.elevate(height, margin=False):
-            raise RuntimeError
-
         return False
 
-    def make_room_wheel0(self, height):
-        """Generate aditional vertical space for actuator 0
-
-        Arguments:
-        height -- distance the actuator has collided with the structure, and
-            so, is the space we need to make to allow the actuator to shift
-            the required distance.
-
-        In this case, the first option is elevate the structure to gain enough
-        space to shift the actuator. If not possible, this can be due to:
-            - the structure has collided with the front actuator. In this case,
-              we need to incline front the rear the remaining height.
-            - the structure has collided with the internal actuators. In this
-              case, we need to incline from the front the amount of space of
-              collision, and then elevate the reamining space.
-            - the structure has reached its limit. In this case, the motion is
-              not possible.
-
-        """
-        # Try to elevate the required distance.
-        structure_position = self.elevate(height, margin=False)
-        if structure_position:
-            return structure_position
-        # Otherwise, try to incline the structure from the front to make enough
-        # space to elevate the structure the remaining distance.
-        incline_height = structure_position.inclination()
-        structure_position = self.incline(incline_height, margin=False)
-        if not structure_position:
-            # If not possible, try to incline just the height that is actually
-            # possible.
-            incline_height += structure_position.inclination()
-            structure_position = self.incline(incline_height, margin=False)
-        # Check whether we can elevate the required distance.
-        structure_position = self.elevate(height, margin=False)
-        if not structure_position:
-            # If not, just elevate the height that is already possible.
-            height += structure_position.elevation()
-            structure_position = self.elevate(height, margin=False)
-        return structure_position
-
-    def shift_actuator(self, index, height, check=True, margin=True):
+    def push_actuator(self, index, height, check=True, margin=True):
         """Shift an actuator, and push the structure in not enough room.
 
         This function is similar to shift actuator, but if the whole motion is
@@ -723,26 +715,23 @@ class Base:
         previous dictionary is returned always.
 
         """
-        # Try to shift the actuator and check if the motion can be completed.
-        structure_position = self.shift_actuator2(index, height)
+        # Try to shift the actuator and cheeck if the motion can be completed.
+        structure_position = self.shift_actuator(index, height)
         if structure_position:
-            return True
+            return structure_position
 
         distance = structure_position.push_actuator(index)
         if index == 3:
-            structure_position = self.make_room_wheel3(distance)
+            self.make_room_wheel3(distance)
         elif index == 2:
-            structure_position = self.make_room_wheel2(distance)
+            self.make_room_wheelN(2, distance)
         elif index == 1:
-            structure_position = self.make_room_wheel1(distance)
+            self.make_room_wheelN(1, distance)
         elif index == 0:
-            structure_position = self.make_room_wheel0(distance)
+            self.make_room_wheelN(0, distance)
 
-        structure_position = self.shift_actuator2(index, height)
-        if not structure_position:
-            return structure_position
-
-        return True
+        structure_position = self.shift_actuator(index, height)
+        return structure_position
 
     # =========================================================================
     # Control functions.

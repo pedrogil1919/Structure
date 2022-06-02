@@ -104,7 +104,8 @@ class ActuatorPair:
                 self.REAR.get_lift_from_horizontal_motion(
                     re_col.horizontal))
             # Create a new object from the appropriate class.
-            re_col = InclineActuatorError(re_col, re_inc_error, re_adv_error)
+            re_col = InclineActuatorError(re_col, re_inc_error,
+                                          re_adv_error[0])
         if not fr_col:
             fr_inc_error = self.FRNT.get_inverse_prop_lift(fr_col.vertical)
             # And add the inclination height.
@@ -112,7 +113,8 @@ class ActuatorPair:
                 self.FRNT.get_lift_from_horizontal_motion(
                     fr_col.horizontal))
             # Create a new object from the appropriate class.
-            fr_col = InclineActuatorError(fr_col, fr_inc_error, fr_adv_error)
+            fr_col = InclineActuatorError(fr_col, fr_inc_error,
+                                          fr_adv_error[0])
 
         return re_col, fr_col, re_pair
 

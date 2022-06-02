@@ -6,6 +6,7 @@ Created on 20 may. 2022
 Definition of classes to return the list of distances errors when checking the
 position of the structure with respect to the stairs.
 '''
+from magic.compat import NONE
 
 
 class ErrorDistance():
@@ -107,54 +108,6 @@ class InclineActuatorError(ActuatorError):
             actuator.vertical, actuator.wheel, actuator.horizontal)
         self.incline = incline
         self.advance = advance
-
-
-# class FrontActuatorError(ActuatorError):
-#     """
-#     For the front actuator, apart from collisions for the actuator, it also
-#     can have errors for collisions when incline. This class includes this value
-#
-#     """
-#
-#     def __init__(self, actuator, incline=None):
-#         # In this case, if actuator is correct, the other two values MUST be
-#         # correct also.
-#         if actuator:
-#             super().__init()
-#         # Otherwise, save all the values of the internat actuator.
-#         super().__init__(
-#             actuator.vertical, actuator.wheel, actuator.horizontal)
-#         self.incline = incline
-#
-#
-# class InternalActuatorError(ActuatorError):
-#     """
-#     For internal actuators, when the base collides with one of these two
-#     actuators, this class combines all this information:
-#     - Normal actuators (see ActuatorError).
-#     - For internal actuators, if the structure base collides with one of the
-#       internal actuators, these values means (see inv_proportional_shift.svg):
-#       - front: distance to elevate from the front so that the rear end of the
-#             base can get to its desired position.
-#       - rear: similar to front, but the other way around.
-#       - incline: if a wheel collides with the stair, or is set in an unstable
-#             position, this value indicates the height the structure must
-#             incline to move the wheel horizontally to place it back to a valid
-#             position. Remember that all the wheels but the rear one moves
-#             horizontally when inclining the structure.
-#     """
-#
-#     def __init__(self, actuator, rear=None, front=None, incline=None):
-#         # In this case, if actuator is correct, the other two values MUST be
-#         # correct also.
-#         if actuator:
-#             super().__init()
-#         # Otherwise, save all the values of the internat actuator.
-#         super().__init__(
-#             actuator.vertical, actuator.wheel, actuator.horizontal)
-#         self.rear = rear
-#         self.front = front
-#         self.incline = incline
 
 
 class HorVerError(ErrorDistance):
@@ -333,22 +286,21 @@ class StructureError():
                 if a.vertical < neg_height:
                     neg_height = a.vertical
 
-        if pos_height == 0.0:
-            if neg_height == 0.0:
-                # There is no collision with any actuator (this must not
-                # happens, but leave here to prevent errors).
-                return 0.0
-            else:
-                # The structure must be taken down.
-                return neg_height
-        else:
-            if neg_height == 0.0:
-                # The structure must be elevated.
-                return pos_height
-            else:
-                # Some actuators are collided from the upper bound, and other
-                # from the lower. This must not happens.
-                raise RuntimeError
+        return pos_height \
+            if abs(pos_height) > abs(neg_height) \
+            else neg_height
+        # # If there are two errors in opposite directions, this is caused by
+        # # a internal actuator colliding with an actuator at each side. In this
+        # # return 0, since no one value is better than the other
+        # # TODO: Check if we can do it better.
+        # if pos_height > 0 and neg_height < 0:
+        #     return 0.0
+        #
+        # if pos_height > 0:
+        #     return pos_height
+        # if neg_height < 0:
+        #     return neg_height
+        # return 0.0
 
     def shift_actuator(self, index):
         """
@@ -385,6 +337,24 @@ class StructureError():
             return self.pairs[pair_index].actuator[act_index]
         raise RuntimeError
 
+    def colliding_actuator(self, fixed):
+        """Return index of the actuator that is colliding with the structure
+
+        """
+        # The actuator can be colliding from the upper or the lower bound. So,
+        # we have to record which actuator is colliding, and from which bound
+        # the actuator has colllided.
+        actuator_index = None
+        max_value = 0.0
+        for n in range(4):
+            if not self.actuators[n]:
+                error = abs(self.actuators[n].incline[fixed])
+                if error > max_value:
+                    max_value = error
+                    actuator_index = n
+
+        return actuator_index
+
     def inclination(self, fixed=0):
         """
         This function returns the height the structure has to incline to
@@ -404,7 +374,7 @@ class StructureError():
                 neg_incline = self.incline.inclination
 
         # Check if there is a collision with any of the actuators. To
-        # understand the value stores in actuators array, see function
+        # understand the value stored in actuators array, see function
         # joint.inverse_prop_lift().
         for n in range(4):
             if n == fixed:
@@ -416,10 +386,15 @@ class StructureError():
                 if error < neg_incline:
                     neg_incline = error
 
-        # But also we have to check if there is a collision with any of the
-        # actuators.
-        # # Apart from the inclination, we also have to check whether any wheel
-        # # has collided with the stair.
+        # Apart from the inclination, we also have to check whether any wheel
+        # has collided with the stair.tt
+        for actuator in self.actuators[1:]:
+            if not actuator:
+                if actuator.advance > pos_incline:
+                    pos_incline = actuator.advance
+                if actuator.advance < neg_incline:
+                    neg_incline = actuator.advance
+
         # if not self.actuators[3]:
         #     # For the frontal actuator, we only have to check the distance
         #     # error of this actuator.
@@ -439,9 +414,11 @@ class StructureError():
         #         pos_incline = self.actuators[1].incline
         #     if self.actuators[1].incline < neg_incline:
         #         neg_incline = self.actuators[1].incline
-        #
-        # # And also check if after the motion due to the inclination, any pair
-        # # of wheels are in a unstable position.
+
+        # for pair in self.pairs:
+        #     if pair.incline[]
+        # And also check if after the motion due to the inclination, any pair
+        # of wheels are in a unstable position.
         # if not self.pairs[0]:
         #     if self.pairs[0].incline[self.pairs[0].index] > pos_incline:
         #         pos_incline = self.pairs[0].incline[self.pairs[0].index]
@@ -452,18 +429,33 @@ class StructureError():
         #         pos_incline = self.pairs[1].incline[self.pairs[1].index]
         #     if self.pairs[1].incline[self.pairs[1].index] < neg_incline:
         #         neg_incline = self.pairs[1].incline[self.pairs[1].index]
-        #
 
-        # Return the greater of both measures (I do not know the meaning of
-        # this when we have both positive and negative value, but do this to
-        # prevent any possible exception.
-        return pos_incline if \
-            abs(pos_incline) > abs(neg_incline) else neg_incline
+        return pos_incline \
+            if abs(pos_incline) > abs(neg_incline) \
+            else neg_incline
+        # # If there are two errors in opposite directions, this is caused by
+        # # a internal actuator colliding with an actuator at each side. In this
+        # # return 0, since no one value is better than the other
+        # # TODO: Check if we can do it better.
+        # if pos_incline > 0 and neg_incline < 0:
+        #     return 0.0
+        #
+        # if pos_incline > 0:
+        #     return pos_incline
+        # if neg_incline < 0:
+        #     return neg_incline
+        # return 0.0
 
     def push_actuator(self, index):
         """
         This function return the height the structure must be pushed to allow
         an actuator to complete a motion.
+
+        NOTE: This function is not the same than shift_actuator. This is
+        intended to compute the height the structure must be pushed, while the
+        other function is just to compute the height the actuator must be
+        shift to place it in a valid position.
+
         """
         # Get the actuator from the actuators array.
         actuator = self.actuators[index]

@@ -607,12 +607,12 @@ class Simulator():
             pass
         else:
             # Shift actuator.
-            res = structure.shift_actuator(wheel, height, margin=False)
+            res = structure.push_actuator(wheel, height, margin=False)
             if not res:
                 # If the wheel collides with the step, or with one of its ends,
                 # modify the height to move so that the actuator is in contact
                 # with the corresponding bound.
-                if not structure.shift_actuator(
+                if not structure.push_actuator(
                         wheel, height + res.shift_actuator(wheel),
                         margin=False):
                     raise RuntimeError
