@@ -7,7 +7,7 @@ The structure can be considered as a set of two sets of a pairs of wheels.
 This module define the functionality of the two pairs of wheels.
 """
 
-from simulator.error_distance import InternalActuatorError, FrontActuatorError
+from simulator.error_distance import InclineActuatorError
 from simulator.error_distance import PairError
 
 
@@ -96,37 +96,55 @@ class ActuatorPair:
         # for the next part of the function, that is, check for inclination
         # errors.
         re_pair = self.check_stable()
-        # Add the inclination data to complete the information.
-        if self.REAR_PAIR:
-            # If this is the rear pair, only the front actuator is needed,
-            # since the rear actuator is the exterior actuator.
-            if not fr_col:
-                # Add rear and front heights.
-                rear, front = self.FRNT.get_inverse_lift(fr_col.vertical)
-                # And add the inclination height.
-                __, incline = self.FRNT.get_inverse_lift(
-                    self.FRNT.get_lift_from_horizontal_motion(
-                        fr_col.horizontal))
-                # Create a new object from the appropriate class.
-                fr_col = InternalActuatorError(fr_col, rear, front, incline)
-        else:
-            # For the front pair, we have to add:
-            if not re_col:
-                # the rear and front heights, plus the inclination height to
-                # the rear actuator, since this is the internal one.
-                rear, front = self.REAR.get_inverse_lift(re_col.vertical)
-                __, incline = self.REAR.get_inverse_lift(
-                    self.REAR.get_lift_from_horizontal_motion(
-                        re_col.horizontal))
-                re_col = InternalActuatorError(re_col, rear, front, incline)
-            if not fr_col:
-                # And for the front actuator, only have to include the
-                # inclination height.
-                incline = self.FRNT.get_lift_from_horizontal_motion(
-                    fr_col.horizontal)
-                fr_col = FrontActuatorError(fr_col, incline)
+
+        if not re_col:
+            re_inc_error = self.REAR.get_inverse_prop_lift(re_col.vertical)
+            # And add the inclination height.
+            re_adv_error = self.REAR.get_inverse_prop_lift(
+                self.REAR.get_lift_from_horizontal_motion(
+                    re_col.horizontal))
+            # Create a new object from the appropriate class.
+            re_col = InclineActuatorError(re_col, re_inc_error, re_adv_error)
+        if not fr_col:
+            fr_inc_error = self.FRNT.get_inverse_prop_lift(fr_col.vertical)
+            # And add the inclination height.
+            fr_adv_error = self.FRNT.get_inverse_prop_lift(
+                self.FRNT.get_lift_from_horizontal_motion(
+                    fr_col.horizontal))
+            # Create a new object from the appropriate class.
+            fr_col = InclineActuatorError(fr_col, fr_inc_error, fr_adv_error)
 
         return re_col, fr_col, re_pair
+
+        # # Add the inclination data to complete the information.
+        # if self.REAR_PAIR:
+        #     if not fr_col:
+        #         # Add rear and front heights.
+        #         incline_error = self.FRNT.get_inverse_lift(fr_col.vertical)
+        #         # And add the inclination height.
+        #         __, incline = self.FRNT.get_inverse_lift(
+        #             self.FRNT.get_lift_from_horizontal_motion(
+        #                 fr_col.horizontal))
+        #         # Create a new object from the appropriate class.
+        #         fr_col = InclineActuatorError(fr_col, incline_error, incline)
+        # else:
+        #     # For the front pair, we have to add:
+        #     if not re_col:
+        #         # the rear and front heights, plus the inclination height to
+        #         # the rear actuator, since this is the internal one.
+        #         rear, front = self.REAR.get_inverse_lift(re_col.vertical)
+        #         __, incline = self.REAR.get_inverse_lift(
+        #             self.REAR.get_lift_from_horizontal_motion(
+        #                 re_col.horizontal))
+        #         re_col = InclineActuatorError(re_col, rear, front, incline)
+        #     if not fr_col:
+        #         # And for the front actuator, only have to include the
+        #         # inclination height.
+        #         incline = self.FRNT.get_lift_from_horizontal_motion(
+        #             fr_col.horizontal)
+        #         fr_col = InclineActuatorError(fr_col, incline)
+        #
+        # return re_col, fr_col, re_pair
 
     def check_stable(self):
         """Check the stability of the pair of wheels.

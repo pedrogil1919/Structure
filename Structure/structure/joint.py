@@ -57,6 +57,7 @@ class Joint:
         Arguments:
         height -- Height for the outer actuator, needed to compute the
             proportional height for this actuator.
+
         """
         return height * self.relative_position
 
@@ -72,9 +73,14 @@ class Joint:
         This function can only be called for the interior actuators. For the
         exterior actuators this value will be 0 and infinity.
         """
-        fr_height = height / self.relative_position
-        re_height = height / (1 - self.relative_position)
-        return fr_height, re_height
+        inclination_heights = []
+        for position in self.structure_position.INTERNAL:
+            try:
+                inclination_heights += \
+                    [-height / (position - self.relative_position)]
+            except ZeroDivisionError:
+                inclination_heights += [None]
+        return inclination_heights
 
     def lift_from_horizontal_motion(self, distance):
         """ Computes the inclination height to get a horizontal distance.
@@ -98,8 +104,8 @@ class Joint:
         d1, h1 = self.position(0.0)
         # The actual coordinates are obtained substracting the actual
         # coordinates of the origin of the structure.
-        h1 -= self.base.elevation
-        d1 -= self.base.position
+        h1 -= self.structure_position.vertical
+        d1 -= self.structure_position.horizontal
         # The distance d2, that is, the position where we want to move the
         # actuator by inclining the structure, is obtaining adding the distance
         # we want to move the actuator.

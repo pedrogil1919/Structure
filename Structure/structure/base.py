@@ -22,7 +22,6 @@ from structure.pair import ActuatorPair
 from simulator.error_distance import InclinationError, StructureError
 from simulator.distance_errors import MaxInclinationError
 from physics.wheel_state import MAX_GAP
-import structure
 
 
 # State of the structure acording to its maximum inclination.
@@ -46,7 +45,7 @@ class Pose():
 
     """
 
-    def __init__(self, horizontal, vertical, inclination, width):
+    def __init__(self, horizontal, vertical, inclination, width, internal):
         """Initial position:
 
         Arguments:
@@ -54,6 +53,7 @@ class Pose():
         vertical -- Vertical position
         inclination -- Inclination as the difference between front and rear part
         width -- Width of the structure.
+        internal -- Relative horizontal position of the internal actuators.
 
         """
         self.__horizontal = horizontal
@@ -61,6 +61,7 @@ class Pose():
         self.__inclination = inclination
         # Note that the width is a constant.
         self.__WIDTH = width
+        self.__INTERNAL = internal
 
     def get_horizontal(self):
         return self.__horizontal
@@ -76,6 +77,9 @@ class Pose():
 
     def get_width(self):
         return self.__WIDTH
+
+    def get_internal(self):
+        return self.__INTERNAL
 
     # NOTE: The properties of the object can not be modified directly, but
     # only by adding a new value to the current one.
@@ -93,6 +97,7 @@ class Pose():
     inclination = property(get_inclination, None, None, None)
     angle = property(get_angle, None, None, None)
     WIDTH = property(get_width, None, None, None)
+    INTERNAL = property(get_internal, None, None, None)
 
 
 class Base:
@@ -169,7 +174,10 @@ class Base:
         self.HEIGHT = d
 
         # Current position of the structure.
-        self.position = Pose(0.0, d + g, 0.0, a + b + c)
+        w = a + b + c
+        internal = (0.0, a / w, (a + b) / w, 1.0)
+        self.position = Pose(0.0, d + g, 0.0, w, internal)
+
         # self.elevation = d + g
         # # Current horizontal position.
         # self.position = 0.0

@@ -194,6 +194,7 @@ class WheelActuator:
 
         if correct:
             return ActuatorError()
+
         return ActuatorError(a_err, v_err, h_err)
 
     def ground(self):
@@ -213,16 +214,17 @@ class WheelActuator:
         position = self.JOINT.position(self.HEIGHT + self.d)
         return self.WHEEL.get_distances(position)
 
-    def get_inverse_lift(self, height):
+    def get_inverse_prop_lift(self, height):
         """Return the proportional shift for an outer actuator.
 
         The function computes the shift for an outer actuator when this
         actuator is shfited the given distances when inclining the structure.
         """
-        rear, front = self.JOINT.inverse_prop_lift(height)
-        return rear, front
+        return self.JOINT.inverse_prop_lift(height)
 
     def get_lift_from_horizontal_motion(self, distance):
+        """See joint.lift_from_horizontal_motion
+        """
         return self.JOINT.lift_from_horizontal_motion(distance)
     # =========================================================================
     # Drawing functions.
