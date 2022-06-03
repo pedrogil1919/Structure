@@ -14,18 +14,16 @@ from simulator.error_distance import PairError
 class ActuatorPair:
     """Define the behaviour of a pair of actuators."""
 
-    def __init__(self, rear, front, rear_pair):
+    def __init__(self, rear, front):
         """Constructor:
 
         Arguments:
         rear -- Rear actuator.
         front -- Front actuator.
-        # rear_pair -- If true, this is the pair placed in the rear part of the
-        #    structure, the front pair otherwise.
+
         """
         self.REAR = rear
         self.FRNT = front
-        self.REAR_PAIR = rear_pair
 
     def shift_actuator(self, rear, front, height):
         """Shift the given actuator.
@@ -172,13 +170,21 @@ class ActuatorPair:
         if not re_stb and not fr_stb:
             # In this case, the pair is unstable.
             if re_stb.horizontal is not None:
+                # Compute the inclination needed to place the wheel back to a
+                # stable position.
                 re_incline = self.REAR.get_lift_from_horizontal_motion(
                     re_stb.horizontal)
+                # And compute the proportional inclination for all the
+                # actuators.
                 re_inc_error = self.REAR.get_inverse_prop_lift(re_incline)
+                # Take into account that only the inclination from the rear
+                # actuator (or from the front actuator changing sign) is
+                # needed. So, we choose the firt value of the array.
                 re_inc_inc = re_inc_error[0]
             else:
                 re_inc_inc = None
             if fr_stb.horizontal is not None:
+                # Do the same for the front actuator.
                 fr_incline = self.FRNT.get_lift_from_horizontal_motion(
                     fr_stb.horizontal)
                 fr_inc_error = self.FRNT.get_inverse_prop_lift(fr_incline)

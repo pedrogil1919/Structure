@@ -191,12 +191,12 @@ class Base:
             0, d, d + g - r1, r1, self.position, stairs, margins)
         actuator2 = WheelActuator(
             a, d, d + g - r2, r2, self.position, stairs, margins)
-        self.REAR = ActuatorPair(actuator1, actuator2, True)
+        self.REAR = ActuatorPair(actuator1, actuator2)
         actuator3 = WheelActuator(
             a + b, d, d + g - r3, r3, self.position, stairs, margins)
         actuator4 = WheelActuator(
             a + b + c, d, d + g - r4, r4, self.position, stairs, margins)
-        self.FRNT = ActuatorPair(actuator3, actuator4, False)
+        self.FRNT = ActuatorPair(actuator3, actuator4)
 
         # Set the state of the structure to normal, since the initial
         # inclination is 0, so the structure is not on it inclination limit.
