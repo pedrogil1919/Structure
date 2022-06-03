@@ -387,33 +387,25 @@ class StructureError():
                     neg_incline = error
 
         # Apart from the inclination, we also have to check whether any wheel
-        # has collided with the stair.tt
+        # has collided with the stair.
         for actuator in self.actuators[1:]:
+            # Only need to check actuators 1 to 3. The first one not need to
+            # be checked, since this actuator does not move when inclining.
             if not actuator:
                 if actuator.advance > pos_incline:
                     pos_incline = actuator.advance
                 if actuator.advance < neg_incline:
                     neg_incline = actuator.advance
 
-        # if not self.actuators[3]:
-        #     # For the frontal actuator, we only have to check the distance
-        #     # error of this actuator.
-        #     if self.actuators[3].incline > pos_incline:
-        #         pos_incline = self.actuators[3].incline
-        #     if self.actuators[3].incline < neg_incline:
-        #         neg_incline = self.actuators[3].incline
-        # if not self.actuators[2]:
-        #     # But for the actuator 2, we have to check the frontal value.
-        #     if self.actuators[2].incline > pos_incline:
-        #         pos_incline = self.actuators[2].incline
-        #     if self.actuators[2].incline < neg_incline:
-        #         neg_incline = self.actuators[2].incline
-        # if not self.actuators[1]:
-        #     # And the same for the actuator 1.
-        #     if self.actuators[1].incline > pos_incline:
-        #         pos_incline = self.actuators[1].incline
-        #     if self.actuators[1].incline < neg_incline:
-        #         neg_incline = self.actuators[1].incline
+        # Also check if after the inclination any pair has been placed in an
+        # unstable position.
+        for pair in self.pairs:
+            if not pair:
+                stb_incline = pair.incline[pair.index]
+                if stb_incline > pos_incline:
+                    pos_incline = stb_incline
+                if stb_incline < neg_incline:
+                    neg_incline = stb_incline
 
         # for pair in self.pairs:
         #     if pair.incline[]

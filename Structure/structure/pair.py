@@ -20,8 +20,8 @@ class ActuatorPair:
         Arguments:
         rear -- Rear actuator.
         front -- Front actuator.
-        rear_pair -- If true, this is the pair placed in the rear part of the
-            structure, the front pair otherwise.
+        # rear_pair -- If true, this is the pair placed in the rear part of the
+        #    structure, the front pair otherwise.
         """
         self.REAR = rear
         self.FRNT = front
@@ -103,18 +103,21 @@ class ActuatorPair:
             re_adv_error = self.REAR.get_inverse_prop_lift(
                 self.REAR.get_lift_from_horizontal_motion(
                     re_col.horizontal))
+            # Remember that the funcion get_inverse_prop_lift return a value
+            # for each actuator, but in this case, we only need the value for
+            # the actuator 0.
+            re_adv_inc = re_adv_error[0]
             # Create a new object from the appropriate class.
-            re_col = InclineActuatorError(re_col, re_inc_error,
-                                          re_adv_error[0])
+            re_col = InclineActuatorError(re_col, re_inc_error, re_adv_inc)
         if not fr_col:
             fr_inc_error = self.FRNT.get_inverse_prop_lift(fr_col.vertical)
             # And add the inclination height.
             fr_adv_error = self.FRNT.get_inverse_prop_lift(
                 self.FRNT.get_lift_from_horizontal_motion(
                     fr_col.horizontal))
+            fr_adv_inc = fr_adv_error[0]
             # Create a new object from the appropriate class.
-            fr_col = InclineActuatorError(fr_col, fr_inc_error,
-                                          fr_adv_error[0])
+            fr_col = InclineActuatorError(fr_col, fr_inc_error, fr_adv_inc)
 
         return re_col, fr_col, re_pair
 
@@ -164,31 +167,63 @@ class ActuatorPair:
         # Check possible pair unstability:
         re_stb = self.REAR.check_stable()
         fr_stb = self.FRNT.check_stable()
+        # Take into account that a pair is unstable when both wheels are not
+        # in a stable position in the ground.
         if not re_stb and not fr_stb:
-            if self.REAR_PAIR:
-                if fr_stb.horizontal is not None:
-                    __, fr_inc = self.FRNT.get_inverse_lift(
-                        self.FRNT.get_lift_from_horizontal_motion(
-                            fr_stb.horizontal))
-                else:
-                    fr_inc = None
-                re_inc = None
+            # In this case, the pair is unstable.
+            if re_stb.horizontal is not None:
+                re_incline = self.REAR.get_lift_from_horizontal_motion(
+                    re_stb.horizontal)
+                re_inc_error = self.REAR.get_inverse_prop_lift(re_incline)
+                re_inc_inc = re_inc_error[0]
             else:
-                if re_stb.horizontal is not None:
-                    __, re_inc = self.REAR.get_inverse_lift(
-                        self.REAR.get_lift_from_horizontal_motion(
-                            re_stb.horizontal))
-                else:
-                    re_inc = None
-                if fr_stb.horizontal is not None:
-                    fr_inc = self.FRNT.get_lift_from_horizontal_motion(
-                        fr_stb.horizontal)
-                else:
-                    fr_inc = None
-            return PairError(re_stb, fr_stb, re_inc, fr_inc)
+                re_inc_inc = None
+            if fr_stb.horizontal is not None:
+                fr_incline = self.FRNT.get_lift_from_horizontal_motion(
+                    fr_stb.horizontal)
+                fr_inc_error = self.FRNT.get_inverse_prop_lift(fr_incline)
+                fr_inc_inc = fr_inc_error[0]
+            else:
+                fr_inc_inc = None
+            return PairError(re_stb, fr_stb, re_inc_inc, fr_inc_inc)
         else:
             return PairError(re_stb, fr_stb)
 
+        # TODO: He sustituido este código por que el hay arriba, ya que antes
+        # tenía que diferenciar si se trataba del par de atrás o el par de
+        # delante, pero ahora ya no es necesario.
+        """
+            if self.REAR_PAIR:
+                # If the wheel is horizontally unstable (that is, is over the
+                # corner of the step), compute the inclination we have to do
+                # to move the wheel back to a stable position (this is not
+                # always possible).
+                if fr_stb.horizontal is not None:
+                    fr_inc_error = self.FRNT.get_inverse_prop_lift(
+                        self.FRNT.get_lift_from_horizontal_motion(
+                            fr_stb.horizontal))
+                    fr_inc_inc = fr_inc_error[0]
+                else:
+                    fr_inc_inc = None
+                re_inc_inc = None
+            else:
+                if re_stb.horizontal is not None:
+                    re_inc_error = self.REAR.get_inverse_prop_lift(
+                        self.REAR.get_lift_from_horizontal_motion(
+                            re_stb.horizontal))
+                    re_inc_inc = re_inc_error[0]
+                else:
+                    re_inc_inc = None
+                if fr_stb.horizontal is not None:
+                    fr_inc_error = self.FRNT.get_lift_from_horizontal_motion(
+                        fr_stb.horizontal)
+                    fr_inc_inc = fr_inc_error[0]
+                else:
+                    fr_inc_inc = None
+            return PairError(re_stb, fr_stb, re_inc_inc, fr_inc_inc)
+        else:
+            return PairError(re_stb, fr_stb)
+        """
     # =========================================================================
     # Control functions.
     # =========================================================================

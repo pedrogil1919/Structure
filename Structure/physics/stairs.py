@@ -107,13 +107,13 @@ class Stair:
             # incorrect step.
             if ys > yc:
                 # Going upstairs:
-                if xs > xc:
+                if xs > xc + MAX_GAP:
                     yr = ys
                     xr = xs
                     return yc, xl, xr, yl, yr
             else:
                 # Going downstairs:
-                if xs >= xc:
+                if xs > xc - MAX_GAP:
                     yr = ys
                     xr = xs
                     return yc, xl, xr, yl, yr

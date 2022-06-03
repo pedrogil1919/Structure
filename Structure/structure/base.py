@@ -655,12 +655,24 @@ class Base:
         if structure_position:
             # If success, the actuator can alreay be shifted.
             return True
-        # If not possible:
-
+        # If not possible, first take the structure to the maximum height
+        # possible.
         # Get the height that the structure has collided with one of the
-        # actuators (the actuator can be any but the currentactuator, since
-        # this is the actuator that is pushing the structure), see Note 1.
-        elevate += structure_position.elevation()
+        # actuators (the actuator can be any but the current actuator, since
+        # this is the actuator that is pushing the structure).
+        over_height = structure_position.elevation()
+        # And elevate the structure this height to place the structure in its
+        # limit.
+        structure_position = self.elevate(elevate + over_height, margin=False)
+        if not structure_position:
+            raise RuntimeError
+        # In this moment, the structure is touching one of the actuators.
+        # Update the height we still have to elevte the structure.
+        elevate = -over_height
+        # Elevate again to get the collision errors with the actuators.
+        structure_position = self.elevate(elevate, margin=False)
+        if structure_position:
+            raise RuntimeError
 
         # Now, find the actuator that is actually colliding with the structure
         # (the one that is most colliding, if more than one).
