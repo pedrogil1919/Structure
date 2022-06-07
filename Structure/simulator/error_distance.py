@@ -278,6 +278,7 @@ class StructureError():
         """
         pos_height = 0.0
         neg_height = 0.0
+
         # Get the greatest distance from all the actuators.
         for a in self.actuators:
             if not a:
@@ -337,23 +338,44 @@ class StructureError():
             return self.pairs[pair_index].actuator[act_index]
         raise RuntimeError
 
+    def maximum_inclination(self):
+        if not self.incline:
+            return self.incline.inclination
+        return None
+
     def colliding_actuator(self, fixed):
-        """Return index of the actuator that is colliding with the structure
+        """Find the actuator that is colliding with the structure.
+
+        Return the index of the actuator that is the one that have collided
+        the most with the structure. Return None if there is no collision with
+        any actuator.
 
         """
         # The actuator can be colliding from the upper or the lower bound. So,
         # we have to record which actuator is colliding, and from which bound
         # the actuator has colllided.
-        actuator_index = None
+        max_index = None
         max_value = 0.0
+        min_index = None
+        min_value = 0.0
+
         for n in range(4):
             if not self.actuators[n]:
-                error = abs(self.actuators[n].incline[fixed])
+                error = self.actuators[n].incline[fixed]
                 if error > max_value:
                     max_value = error
-                    actuator_index = n
+                    max_index = n
+                if error < min_value:
+                    min_value = error
+                    min_index = n
 
-        return actuator_index
+        if max_index is not None and min_index is not None:
+            raise RuntimeError
+        if max_index is not None:
+            return max_index
+        if min_index is not None:
+            return min_index
+        return None
 
     def inclination(self, fixed=0):
         """
@@ -362,15 +384,15 @@ class StructureError():
 
         """
         # In clase there are more than one collision, we have to choose the
-        # greater of them. We use these two variables to get the one with the
+        # greater of them. We use these twro variables to get the one with the
         # maximum absolute value.
         pos_incline = 0.0
         neg_incline = 0.0
+
         if not self.incline:
-            # Check if the structure has reached the maximum inclination
-            if self.incline.inclination > 0:
+            if self.incline.inclination > pos_incline:
                 pos_incline = self.incline.inclination
-            else:
+            if self.incline.inclination < neg_incline:
                 neg_incline = self.incline.inclination
 
         # Check if there is a collision with any of the actuators. To
@@ -407,6 +429,9 @@ class StructureError():
                 if stb_incline < neg_incline:
                     neg_incline = stb_incline
 
+        return pos_incline \
+            if abs(pos_incline) > abs(neg_incline) \
+            else neg_incline
         # for pair in self.pairs:
         #     if pair.incline[]
         # And also check if after the motion due to the inclination, any pair
@@ -422,9 +447,6 @@ class StructureError():
         #     if self.pairs[1].incline[self.pairs[1].index] < neg_incline:
         #         neg_incline = self.pairs[1].incline[self.pairs[1].index]
 
-        return pos_incline \
-            if abs(pos_incline) > abs(neg_incline) \
-            else neg_incline
         # # If there are two errors in opposite directions, this is caused by
         # # a internal actuator colliding with an actuator at each side. In this
         # # return 0, since no one value is better than the other

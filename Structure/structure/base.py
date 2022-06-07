@@ -477,7 +477,7 @@ class Base:
 
         # Check inclination state:
         new_inclination = abs(current_inclination + height)
-        if new_inclination < self.MAX_INCLINE:
+        if new_inclination < self.MAX_INCLINE - MAX_GAP:
             self.state = StructureState.InclinationNormal
         elif new_inclination < self.MAX_INCLINE + MAX_GAP:
             self.state = StructureState.InclinationLimit
@@ -563,6 +563,18 @@ class Base:
             return structure_position
         raise RuntimeError("Error in shift actuator.")
 
+###############################################################################
+###############################################################################
+    def incline_and_avance(self, height):
+        """Incline structure, and advance if a collision happens.
+
+        This function is similar to incline, but if after the inclination any
+        wheel has collided with the stair, or a pair is in an unstable
+        position, advance the structure to place it in a valid position.
+
+        """
+        structure_position = self.incline()
+
     def make_room_wheel3(self, front_incline):
         """Generate aditional vertical space for actuator 3.
 
@@ -587,10 +599,16 @@ class Base:
             # If success, the actuator can alreay be shifted.
             return True
 
-        # If not, try make more space inclining and elevating from the rear in
-        # the opposite direction.
-        rear_incline = structure_position.inclination(3)
-        structure_position = self.incline(rear_incline, fixed=3, margin=False)
+        # Try to incline the required distance again.
+        structure_position = self.incline(front_incline, margin=False)
+        if not structure_position:
+            # If there is still a problem, this can be only by an actuator
+            # collision. Try make more space inclining from the rear in
+            # the opposite direction.
+            rear_incline = structure_position.inclination(3)
+            if front_incline > 0:
+            structure_position = self.incline(rear_incline,
+                                              fixed=3, margin=False)
         if not structure_position:
             # If not success, incline just the height that is already possible.
             rear_incline += structure_position.inclination(3)
@@ -606,6 +624,14 @@ class Base:
         front_incline += structure_position.inclination(0)
         if not self.incline(front_incline, fixed=0, margin=False):
             raise RuntimeError
+
+        if not structure_position.incline:
+            elevate = -structure_position.elevation()
+            structure_position = self.elevate(elevate, margin=False)
+            if not structure_position:
+                elevate += structure_position.elevation()
+                if not self.elevate(elevate, margin=False):
+                    raise RuntimeError
         return False
 
         """
@@ -680,6 +706,7 @@ class Base:
         # And get the inclination that must be done if we incline fixing the
         # most colliding actuator.
         incline = structure_position.inclination(actuator)
+
         # And try to incline.
         structure_position = self.incline(incline, fixed=fix_actuator,
                                           margin=False)
