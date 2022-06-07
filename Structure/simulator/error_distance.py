@@ -280,7 +280,8 @@ class StructureError():
         neg_height = 0.0
 
         # Get the greatest distance from all the actuators.
-        for a in self.actuators:
+        for n in range(4):
+            a = self.actuators[n]
             if not a:
                 if a.vertical > pos_height:
                     pos_height = a.vertical
@@ -343,39 +344,35 @@ class StructureError():
             return self.incline.inclination
         return None
 
-    def colliding_actuator(self, fixed):
+    def colliding_actuator(self, fixed=None):
         """Find the actuator that is colliding with the structure.
 
         Return the index of the actuator that is the one that have collided
         the most with the structure. Return None if there is no collision with
         any actuator.
 
+        Arguments:
+        fixed -- Index of the actuator we have fixed when performing the
+            inclination that caused the collision. This is needed in case there
+            is more than one actuator colliding.
+
         """
         # The actuator can be colliding from the upper or the lower bound. So,
         # we have to record which actuator is colliding, and from which bound
         # the actuator has colllided.
-        max_index = None
+        actuator_index = None
         max_value = 0.0
-        min_index = None
-        min_value = 0.0
-
         for n in range(4):
             if not self.actuators[n]:
-                error = self.actuators[n].incline[fixed]
+                if fixed is None:
+                    error = abs(self.actuators[n].vertical)
+                else:
+                    error = abs(self.actuators[n].incline[fixed])
                 if error > max_value:
                     max_value = error
-                    max_index = n
-                if error < min_value:
-                    min_value = error
-                    min_index = n
+                    actuator_index = n
 
-        if max_index is not None and min_index is not None:
-            raise RuntimeError
-        if max_index is not None:
-            return max_index
-        if min_index is not None:
-            return min_index
-        return None
+        return actuator_index
 
     def inclination(self, fixed=0):
         """

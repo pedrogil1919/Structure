@@ -575,11 +575,30 @@ class Base:
         """
         structure_position = self.incline()
 
-    def make_room_wheel3(self, front_incline):
+    def allowed_inclination(self, height):
+        """Check if the structure can be inclined the given height.
+
+        Return hte maximum allowed inclination.
+
+        """
+        # Get differences in height between rear and front actuators.
+        __, y0 = self.REAR.REAR.JOINT.position(0)
+        __, y3 = self.FRNT.FRNT.JOINT.position(0)
+        current_inclination = y3 - y0
+        next_inclination = current_inclination + height
+        if next_inclination > self.MAX_INCLINE:
+            return +self.MAX_INCLINE - current_inclination, \
+                next_inclination - self.MAX_INCLINE
+        if next_inclination < -self.MAX_INCLINE:
+            return -self.MAX_INCLINE - current_inclination, \
+                next_inclination + self.MAX_INCLINE
+        return height, 0.0
+
+    def make_room_wheel3(self, height):
         """Generate aditional vertical space for actuator 3.
 
         Arguments:
-        front_incline -- distance the actuator has collided with the structure,
+        height -- distance the actuator has collided with the structure,
             and so, is the space we need to make to allow the actuator to shift
             the required distance.
 
@@ -593,45 +612,46 @@ class Base:
               not possible.
 
         """
+        # Check if we reach the maximum inclination.
+        front_incline, elevate = self.allowed_inclination(height)
+
         # Try to incline the required distance.
         structure_position = self.incline(front_incline, margin=False)
         if structure_position:
             # If success, the actuator can alreay be shifted.
             return True
 
-        # Try to incline the required distance again.
-        structure_position = self.incline(front_incline, margin=False)
-        if not structure_position:
-            # If there is still a problem, this can be only by an actuator
-            # collision. Try make more space inclining from the rear in
-            # the opposite direction.
-            rear_incline = structure_position.inclination(3)
-            if front_incline > 0:
-            structure_position = self.incline(rear_incline,
-                                              fixed=3, margin=False)
-        if not structure_position:
-            # If not success, incline just the height that is already possible.
-            rear_incline += structure_position.inclination(3)
-            if not self.incline(rear_incline, fixed=3, margin=False):
-                raise RuntimeError
-
-        # Try to incline the structure again.
-        structure_position = self.incline(front_incline, margin=False)
+        # If not, try make more space inclining and elevating from the rear in
+        # the opposite direction.
+        rear_incline = structure_position.inclination(3)
+        structure_position = self.incline(rear_incline, fixed=3, margin=False)
         if structure_position:
-            # If success, the actuator can alreay be shifted.
+            # If success, now it is possible to complete the motion.
+            if not self.incline(front_incline, margin=False):
+                raise RuntimeError
             return True
-        # If not success, incline just the height that is already possible.
-        front_incline += structure_position.inclination(0)
-        if not self.incline(front_incline, fixed=0, margin=False):
-            raise RuntimeError
 
-        if not structure_position.incline:
-            elevate = -structure_position.elevation()
-            structure_position = self.elevate(elevate, margin=False)
-            if not structure_position:
-                elevate += structure_position.elevation()
-                if not self.elevate(elevate, margin=False):
-                    raise RuntimeError
+        # If we reach here, it is not possible to complete the whole motion,
+        # but we try to move the structure to its limit.
+        # Check the actuator that caused the collision.
+        col_actuator = structure_position.colliding_actuator(3)
+        # And incline from the rear, so that the structure must be in contact
+        # with this colliding actuator.
+        rear_incline += structure_position.inclination(3)
+        if not self.incline(rear_incline, fixed=3, margin=False):
+            raise RuntimeError
+        # Now, try to perform the whole initial inclination, that must cause
+        # a new collision (otherwise, the motion could be possible, but this
+        # is not the case). This motion is only intended to compute the
+        # maximum motion we can do before the collision.
+        structure_position = self.incline(front_incline,
+                                          fixed=col_actuator, margin=False)
+        if structure_position:
+            raise RuntimeError
+        # And repeat the same inclination, but only with the allowed height.
+        front_incline += structure_position.inclination(col_actuator)
+        if not self.incline(front_incline, fixed=col_actuator, margin=False):
+            raise RuntimeError
         return False
 
         """
