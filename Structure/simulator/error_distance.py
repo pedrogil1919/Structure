@@ -344,7 +344,7 @@ class StructureError():
             return self.incline.inclination
         return None
 
-    def colliding_actuator(self, fixed=None):
+    def colliding_actuator(self, fixed):
         """Find the actuator that is colliding with the structure.
 
         Return the index of the actuator that is the one that have collided
@@ -360,14 +360,11 @@ class StructureError():
         # The actuator can be colliding from the upper or the lower bound. So,
         # we have to record which actuator is colliding, and from which bound
         # the actuator has colllided.
-        actuator_index = None
-        max_value = 0.0
-        for n in range(4):
+        actuator_index = 0
+        max_value = abs(self.actuators[0].incline[fixed])
+        for n in range(1, 4):
             if not self.actuators[n]:
-                if fixed is None:
-                    error = abs(self.actuators[n].vertical)
-                else:
-                    error = abs(self.actuators[n].incline[fixed])
+                error = abs(self.actuators[n].incline[fixed])
                 if error > max_value:
                     max_value = error
                     actuator_index = n

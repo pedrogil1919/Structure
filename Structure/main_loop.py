@@ -43,19 +43,22 @@ debug = {'graphics': graphics, 'simulator': sm}
 # debug = None
 structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
 
-instruction = {
-    'wheel': 3, 'height': -120, 'advance': 300}
-sm.simulate_instruction(structure, instruction)
-instruction = {'advance': 150}
-sm.simulate_instruction(structure, instruction)
-instruction = {'incline': -120, 'elevate_rear': True}
-sm.simulate_instruction(structure, instruction)
-instruction = {
-    'wheel': 1, 'height': -50}
-sm.simulate_instruction(structure, instruction)
-instruction = {
-    'wheel': 2, 'height': -150}
-sm.simulate_instruction(structure, instruction)
+# instruction = {
+#     'wheel': 3, 'height': -120, 'advance': 300}
+# sm.simulate_instruction(structure, instruction)
+# instruction = {'advance': 100}
+# sm.simulate_instruction(structure, instruction)
+# instruction = {'incline': -90, 'fixed': 3}
+# sm.simulate_instruction(structure, instruction)
+# instruction = {'wheel': 2, 'height': -50}
+# sm.simulate_instruction(structure, instruction)
+# instruction = {
+#     'wheel': 1, 'height': -50}
+# sm.simulate_instruction(structure, instruction)
+# instruction = {
+#     'wheel': 2, 'height': -150}
+# sm.simulate_instruction(structure, instruction)
+
 # instruction = {
 #     'wheel': 2, 'height': -10}
 # sm.simulate_instruction(structure, instruction)
