@@ -22,6 +22,7 @@ from structure.pair import ActuatorPair
 from simulator.error_distance import InclinationError, StructureError
 from simulator.distance_errors import MaxInclinationError
 from physics.wheel_state import MAX_GAP
+from pickle import TRUE
 
 
 # State of the structure acording to its maximum inclination.
@@ -595,6 +596,136 @@ class Base:
         return height, 0.0
 
     def make_room_wheel3(self, height):
+
+        # Comprobamos si nos piden inclinar más del límite.
+        # Si es así, la operación de inclinar se descompone en primero inclinar
+        # hasta el límite, y luego elevar lo que falte.
+        front_incline, front_elevate = self.allowed_inclination(height)
+
+        # Inclinamos la altura solicita.
+        state1 = self.incline(front_incline, margin=False)
+        if state1:
+            # Si conseguimos inclinar, comprobamos si también tenemos que
+            # elevar.
+            state2 = self.elevate(front_elevate, margin=False)
+            if not state2:
+                front_elevate += state2.elevation()
+                if not self.elevate(front_elevate, margin=False):
+                    raise RuntimeError
+                return False
+            # En cualquier otro caso, hemos conseguido el espacio requerido.
+            return True
+
+        # Si no podemos conseguir la inclinación, probamos a inclinar por
+        # detrás la proporción de colisión con el actuador.
+        rear_height = state1.inclination(3)
+        rear_incline, rear_elevate = self.allowed_inclination(rear_height)
+        # Inclinamos por detrás.
+        state3 = self.incline(rear_incline, fixed=3, margin=False)
+        if state3:
+            # Si hemos podido, elevamos por delante la altura inicial.
+            state4 = self.incline(front_incline, margin=False)
+            if not state4:
+                # Si no podemos, elevamos lo que se pueda.
+                front_incline += state4.inclination(0)
+                if not self.incline(front_incline, margin=False):
+                    raise RuntimeError
+            # Conseguimos inclinar lo suficiente. Comprobamos si tenemos que
+            # elevar también.
+            total_elevate = rear_elevate + front_elevate
+            state5 = self.elevate(total_elevate, margin=False)
+            if not state5:
+                # Si no conseguimos elevar, es que hemos chocado con algún
+                # actuador. Elevamos lo que sea posible.
+                total_elevate += state5.elevation()
+                if not self.elevate(rear_elevate, margin=False):
+                    raise RuntimeError
+            return True
+        else:
+            # No hemos podido inclinar en sentido contraio porque hemos
+            # chocado con un actuador. Inclinamos lo qu se pueda.
+            rear_incline += state3.inclination(3)
+            if not self.incline(rear_incline, fixed=3, margin=False):
+                raise RuntimeError
+            state6 = self.incline(front_incline, margin=False)
+            if state6:
+                raise RuntimeError
+            front_incline += state6.inclination(0)
+            if not self.incline(front_incline, margin=False):
+                raise RuntimeError
+            return False
+
+        """
+        if elevation1 is not None:
+            # Superamos el límite de elevación.
+            state1 = self.incline(front_incline, margin=False)
+            if state1:
+                # Hemos conseguido inclinar el límite de elevación.
+                # Elevamos lo que falta.
+                state2 = self.elevate(elevation1, margin=False)
+                if state2:
+                    # Hemos conseguido toda la altura inclinando hasta
+                    # el máximo, y elevando lo que falta.
+                    return True
+                elevation2 = elevation1 + state2.elevation()
+                # No es posible elevar lo que falta, así que elevamos lo que
+                # podamos.
+                if not self.elevate(elevation2, margin=False):
+                    raise RuntimeError
+                return False
+            else:
+                # Al inclinar hemos chocado con el actuador 2 o 3. Lo que
+                # hacemos es inclinar por detrás.
+                state3 = self.incline(front_incline, fixed=3, margin=False)
+                if state3:
+                    # Hemos conseguido inclinar al revés. Tratamos de elevar
+                    # lo que nos falta.
+                    elevation3 = elevation1 + front_incline
+                    state4 = self.elevate(elevation3, margin=False)
+                    if state4:
+                        return True
+                    elevation4 = elevation3 + state4.elevation()
+                    if not self.elevate(elevation4, margin=False):
+                        raise RuntimeError
+                    return False
+
+        state5 = self.incline(front_incline, margin=False)
+
+        # If not, try to make more space inclining and elevating from the rear
+        # in the opposite direction.
+        rear_incline = state5.inclination(3)
+        state6 = self.incline(rear_incline, fixed=3, margin=False)
+        if state6:
+            # If success, now it is possible to complete the motion.
+            if not self.incline(front_incline, margin=False):
+                raise RuntimeError
+            return False
+
+        # If we reach here, it is not possible to complete the whole motion,
+        # but we try to move the structure to its limit.
+        # Check the actuator that caused the collision.
+        col_actuator = structure_position.colliding_actuator(3)
+        # And incline from the rear, so that the structure must be in contact
+        # with this colliding actuator.
+        rear_incline += structure_position.inclination(3)
+        if not self.incline(rear_incline, fixed=3, margin=False):
+            raise RuntimeError
+        # Now, try to perform the whole initial inclination, that must cause
+        # a new collision (otherwise, the motion could be possible, but this
+        # is not the case). This motion is only intended to compute the
+        # maximum motion we can do before the collision.
+        structure_position = self.incline(height,
+                                          fixed=col_actuator, margin=False)
+        if structure_position:
+            raise RuntimeError
+        # And repeat the same inclination, but only with the allowed height.
+        front_incline += structure_position.inclination(col_actuator)
+        if not self.incline(front_incline, fixed=col_actuator, margin=False):
+            raise RuntimeError
+        return False
+        """
+
+    def make_room_wheel3_borrar(self, height):
         """Generate aditional vertical space for actuator 3.
 
         Arguments:
@@ -612,24 +743,76 @@ class Base:
               not possible.
 
         """
-        # Check if we reach the maximum inclination.
-        front_incline, elevate = self.allowed_inclination(height)
-
         # Try to incline the required distance.
-        structure_position = self.incline(front_incline, margin=False)
+        structure_position = self.incline(height, margin=False)
         if structure_position:
             # If success, the actuator can alreay be shifted.
             return True
 
-        # If not, try make more space inclining and elevating from the rear in
-        # the opposite direction.
+        front_incline = height
+
+        # If not success, check if the problem is that the structure reached
+        # its maximum inclination.
+        inclination_error = structure_position.maximum_inclination()
+        if inclination_error is not None:
+            # Este es el máximo que podemos inclinar para no pasar el limite
+            # de inclinación de la estructurra.
+            front_incline = height + inclination_error
+            structure_position = self.incline(front_incline, margin=False)
+            if structure_position:
+                # Cuando al inclinar solo lo permitido, no choca con el
+                # actuador.
+                structure_position = self.elevate(-inclination_error,
+                                                  margin=False)
+                if structure_position:
+                    # Y además podemos elevar la estructura lo que nos falta.
+                    return True
+                # Y si no podemos elevar lo que nos falta, elevamos lo que
+                # podamos.
+                inclination_error -= structure_position.elevation()
+                if not self.elevate(-inclination_error, margin=False):
+                    raise RuntimeError
+                return False
+            else:
+                # Cuando al inclinar solo lo permitido choca con el actuador.
+                # Inclinamos por detrás. Al estar la inclinación limitada, no
+                # habrá problemas de máxima inclinación.
+                structure_position = self.incline(front_incline,
+                                                  fixed=3, margin=False)
+                if structure_position:
+                    # Si al inclinar por detrás no choca con nada, lo que falta
+                    # es elevar lo que podamos.
+                    max_elevation = height + front_incline
+                    structure_position = self.elevate(
+                        max_elevation, margin=False)
+                    if not structure_position:
+                        elevation = structure_position.elevation()
+                        if not self.elevate(elevation, margin=False):
+                            raise RuntimeError
+                        return False
+                    else:
+                        # Esto no creo que vaya a suceder nunca.
+                        return True
+                else:
+                    # Inclinamos por detrás lo que podamos.
+                    rear_incline = \
+                        front_incline + structure_position.inclination(3)
+                    if not self.incline(rear_incline, fixed=3, margin=False):
+                        raise RuntimeError
+                    # E inclinamos la estructura para que tengamos el error
+                    # correcto.
+                    structure_position = self.incline(height + rear_incline,
+                                                      margin=False)
+
+        # If not, try to make more space inclining and elevating from the rear
+        # in the opposite direction.
         rear_incline = structure_position.inclination(3)
         structure_position = self.incline(rear_incline, fixed=3, margin=False)
         if structure_position:
             # If success, now it is possible to complete the motion.
             if not self.incline(front_incline, margin=False):
                 raise RuntimeError
-            return True
+            return False
 
         # If we reach here, it is not possible to complete the whole motion,
         # but we try to move the structure to its limit.
@@ -644,7 +827,7 @@ class Base:
         # a new collision (otherwise, the motion could be possible, but this
         # is not the case). This motion is only intended to compute the
         # maximum motion we can do before the collision.
-        structure_position = self.incline(front_incline,
+        structure_position = self.incline(height,
                                           fixed=col_actuator, margin=False)
         if structure_position:
             raise RuntimeError
@@ -775,22 +958,25 @@ class Base:
 
         """
         # Try to shift the actuator and cheeck if the motion can be completed.
-        structure_position = self.shift_actuator(index, height)
-        if structure_position:
-            return structure_position
+        state = self.shift_actuator(index, height)
+        if state:
+            return state
 
-        distance = structure_position.push_actuator(index)
+        distance = state.push_actuator(index)
         if index == 3:
-            self.make_room_wheel3(distance)
+            res = self.make_room_wheel3(distance)
         elif index == 2:
-            self.make_room_wheelN(2, distance)
+            res = self.make_room_wheelN(2, distance)
         elif index == 1:
-            self.make_room_wheelN(1, distance)
+            res = self.make_room_wheelN(1, distance)
         elif index == 0:
-            self.make_room_wheelN(0, distance)
+            res = self.make_room_wheelN(0, distance)
 
-        structure_position = self.shift_actuator(index, height)
-        return structure_position
+        state = self.shift_actuator(index, height)
+        if res:
+            if not state:
+                raise RuntimeError
+        return state
 
     # =========================================================================
     # Control functions.
