@@ -48,24 +48,25 @@ class MakeRoomWheelTest(unittest.TestCase):
         structure = base.Base(size, wheels, stair)
         struct_test = deepcopy(structure)
         self.motion1t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion2t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion3t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion4t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion5t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion6t(struct_test)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
 
     def motion1t(self, structure):
         # No collision when pussing actuator 4.
@@ -173,21 +174,24 @@ class MakeRoomWheelTest(unittest.TestCase):
         structure = base.Base(size, wheels, stair)
         struct_test = deepcopy(structure)
         self.motion1w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion2w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion3w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion4w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion5w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion6w(struct_test)
+        # self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion7w(struct_test)
         self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
@@ -214,7 +218,7 @@ class MakeRoomWheelTest(unittest.TestCase):
 
     def motion3w(self, structure):
         # Collision with actuator 1, but when the collision raises, the
-        # structure  has not reached yet its maximum inclination. That is, the
+        # structure has not reached yet its maximum inclination. That is, the
         # actuator collision and the maximum inclination error raises at the
         # same time.
         res = structure.elevate(90)
@@ -274,3 +278,23 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertAlmostEqual(inclination, 54.6667, 4)
         elevation = res.elevation()
         self.assertAlmostEqual(elevation, 6.3333, 4)
+
+    def motion7w(self, structure):
+        # Similar to 5, but the collision are with actuators 1 and 2.
+        res = structure.elevate(100)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -80)
+        self.assertTrue(res)
+        res = structure.advance(140)
+        self.assertTrue(res)
+        res = structure.push_actuator(2, -80)
+        self.assertTrue(res)
+        res = structure.advance(100)
+        res = structure.push_actuator(0, -90)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -90)
+        self.assertFalse(res)
+        inclination = structure.get_inclination()
+        self.assertAlmostEqual(inclination, 34.1667, 4)
+        elevation = res.elevation()
+        self.assertAlmostEqual(elevation, 45.8333, 4)
