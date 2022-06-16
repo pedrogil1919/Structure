@@ -360,9 +360,9 @@ class StructureError():
         # The actuator can be colliding from the upper or the lower bound. So,
         # we have to record which actuator is colliding, and from which bound
         # the actuator has colllided.
-        actuator_index = 0
-        max_value = abs(self.actuators[0].incline[fixed])
-        for n in range(1, 4):
+        actuator_index = None
+        max_value = 0.0
+        for n in range(0, 4):
             if not self.actuators[n]:
                 error = abs(self.actuators[n].incline[fixed])
                 if error > max_value:

@@ -595,66 +595,6 @@ class Base:
                 next_inclination + self.MAX_INCLINE
         return height, 0.0
 
-    def make_room_wheel3(self, height):
-
-        # Comprobamos si nos piden inclinar más del límite.
-        # Si es así, la operación de inclinar se descompone en primero inclinar
-        # hasta el límite, y luego elevar lo que falte.
-        front_incline, front_elevate = self.allowed_inclination(height)
-
-        # Inclinamos la altura solicita.
-        state1 = self.incline(front_incline, margin=False)
-        if state1:
-            # Si conseguimos inclinar, comprobamos si también tenemos que
-            # elevar.
-            state2 = self.elevate(front_elevate, margin=False)
-            if not state2:
-                front_elevate += state2.elevation()
-                if not self.elevate(front_elevate, margin=False):
-                    raise RuntimeError
-                return False
-            # En cualquier otro caso, hemos conseguido el espacio requerido.
-            return True
-
-        # Si no podemos conseguir la inclinación, probamos a inclinar por
-        # detrás la proporción de colisión con el actuador.
-        rear_height = state1.inclination(3)
-        rear_incline, rear_elevate = self.allowed_inclination(rear_height)
-        # Inclinamos por detrás.
-        state3 = self.incline(rear_incline, fixed=3, margin=False)
-        if state3:
-            # Si hemos podido, elevamos por delante la altura inicial.
-            state4 = self.incline(front_incline, margin=False)
-            if not state4:
-                # Si no podemos, elevamos lo que se pueda.
-                front_incline += state4.inclination(0)
-                if not self.incline(front_incline, margin=False):
-                    raise RuntimeError
-            # Conseguimos inclinar lo suficiente. Comprobamos si tenemos que
-            # elevar también.
-            total_elevate = rear_elevate + front_elevate
-            state5 = self.elevate(total_elevate, margin=False)
-            if not state5:
-                # Si no conseguimos elevar, es que hemos chocado con algún
-                # actuador. Elevamos lo que sea posible.
-                total_elevate += state5.elevation()
-                if not self.elevate(rear_elevate, margin=False):
-                    raise RuntimeError
-            return True
-        else:
-            # No hemos podido inclinar en sentido contraio porque hemos
-            # chocado con un actuador. Inclinamos lo qu se pueda.
-            rear_incline += state3.inclination(3)
-            if not self.incline(rear_incline, fixed=3, margin=False):
-                raise RuntimeError
-            state6 = self.incline(front_incline, margin=False)
-            if state6:
-                raise RuntimeError
-            front_incline += state6.inclination(0)
-            if not self.incline(front_incline, margin=False):
-                raise RuntimeError
-            return False
-
         """
         if elevation1 is not None:
             # Superamos el límite de elevación.
@@ -934,6 +874,88 @@ class Base:
             raise RuntimeError
         return False
 
+    def make_room_wheel3(self, height):
+        """Generate aditional vertical space for actuator 3.
+
+        Arguments:
+        height -- distance the actuator has collided with the structure,
+            and so, is the space we need to make to allow the actuator to shift
+            the required distance.
+
+        In this case, the first option is incline the structure from the front
+        to gain enough space to shift the actuator. If not possible this can
+        be due to:
+            - the structure colliding with the internal actuators. In this case
+              we need to incline the structure from the rear in the opposite
+              direction.
+            - the structure has reached its limit. In this case, the motion is
+              not possible.
+
+        """
+        # Check if the required inclination is greater than the maximum
+        # structure inclination.
+        # In case it is true, divide the motion into a inclination (the maximum
+        # possible) plus an elevation for the rest of the height.
+        front_incline, front_elevate = self.allowed_inclination(height)
+
+        # Incline the required (or maximum) height.
+        state1 = self.incline(front_incline, margin=False)
+        if state1:
+            # Check whether we also need to elevate the structure.
+            state2 = self.elevate(front_elevate, margin=False)
+            if not state2:
+                # If we can not elevate the whole distance, elevate just the
+                # distance possible.
+                front_elevate += state2.elevation()
+                if not self.elevate(front_elevate, margin=False):
+                    raise RuntimeError
+                # In this case, no error is raised but the structure can not
+                # complete the whole motion, so that return false.
+                return False
+            # In this case, the whole distance has been completed, and so,
+            # return true.
+            return True
+
+        # If we can not incline the distance required, it is due to an
+        # actuator collision in the direction of motion.
+        # Get the structure until it collided with the actuator.
+        front_incline += state1.inclination(0)
+        if not self.incline(front_incline, margin=False):
+            raise RuntimeError
+        # Detect the colliding actuator.
+        col_actuator = state1.colliding_actuator(3)
+        # And compute the distance that the structure must incline fixing the
+        # colliding actuator to get the distance required.
+        rear_height = state1.inclination(3) - state1.inclination(0)
+        # Try if we can get the required distance inclining fixing the
+        # colliding actuator.
+        # NOTE: We can not capture the elevation height (in case we reach the
+        # maximum inclination), since the structure is already touching the
+        # colliding actuator, an no more height can be gain. In case we needed
+        # more distance, the complete motion can not be reached.
+        rear_incline, rear_elevate = self.allowed_inclination(rear_height)
+        state2 = self.incline(rear_incline, fixed=col_actuator, margin=False)
+        if state2:
+            # Check if we also need to elevate.
+            # NOTE: This function is not intended to elevate the structure,
+            # since the structure is already colliding with the actuator. This
+            # is only intended to check whether the whole distance has been
+            # completed or not.
+            total_elevate = rear_elevate + front_elevate
+            if self.elevate(total_elevate, margin=False):
+                return True
+            else:
+                return False
+        else:
+            # In this case, we have collided with another actuator in the
+            # opposite direction. Just get the distance we can incline and
+            # finish the motion.
+            rear_incline += state2.inclination(col_actuator)
+            if not self.incline(rear_incline,
+                                fixed=col_actuator, margin=False):
+                raise RuntimeError
+            return False
+
     def push_actuator(self, index, height, check=True, margin=True):
         """Shift an actuator, and push the structure in not enough room.
 
@@ -958,11 +980,16 @@ class Base:
 
         """
         # Try to shift the actuator and cheeck if the motion can be completed.
-        state = self.shift_actuator(index, height)
+        state = self.shift_actuator(index, height, margin=False)
         if state:
             return state
 
+        # If not possible, just shift the distance that is actually possible.
         distance = state.push_actuator(index)
+        height += distance
+        if not self.shift_actuator(index, height, margin=False):
+            raise RuntimeError
+
         if index == 3:
             res = self.make_room_wheel3(distance)
         elif index == 2:
@@ -972,9 +999,13 @@ class Base:
         elif index == 0:
             res = self.make_room_wheelN(0, distance)
 
-        state = self.shift_actuator(index, height)
+        state = self.shift_actuator(index, -distance, margin=False)
         if res:
             if not state:
+                raise RuntimeError
+        else:
+            distance -= state.push_actuator(index)
+            if not self.shift_actuator(index, -distance, margin=False):
                 raise RuntimeError
         return state
 
@@ -1087,42 +1118,42 @@ class Base:
         L9 = sqrt(d**2 + LH**2 - 2 * d * self.get_inclination() - n**2) - m
         return L9
 
-    def get_inclination_central_wheels(self, wheel1, wheel2):
-        """Return the inclination between wheel 1 and wheel 2.
-
-        This is a ad-hoc function for the control algorithm, to compute the
-        inclination of the structure when the collinding wheels are the
-        central ones. In this case, the functions from the pair module does
-        not work. The inclination is computed from the current inclination
-        plus the shift given as arguments.
-
-        Parameters:
-        wheel1 -- Additional shift of wheel 1.
-        wheel2 -- Additional shift of wheel 2.
-
-        This values are added to the current position of the actuator to
-        compute the required inclination.
-        """
-        # Get current posisions for the central joints.
-        __, __, x1, y1 = self.REAR.position(0)
-        x2, y2, __, __ = self.FRNT.position(0)
-        # Get increments in horizontal and vertical coordinates.
-        x = x2 - x1
-        y = y2 - y1
-        # And the increment in the actuators heights.
-        w = wheel2 - wheel1
-        # Compute the final inclination from the central actuators. This
-        # expression is get from the pithagoras theorem.
-        m = (y + w) / sqrt(x**2 - w**2 - 2 * w * y)
-        # And interpolate with respect to the whole structure. This one is get
-        # from basic trigonometry.
-        inclination = sqrt(self.WIDTH**2 / (1 + 1 / m**2))
-        # Last expresion ellimate the sign of the height. To get the sign
-        # again, we copy the sign of the slope m.
-        inclination = copysign(inclination, m)
-        # The final inclination is the new inclination minus the current one.
-        inclination -= self.get_inclination()
-        return inclination
+    # def get_inclination_central_wheels(self, wheel1, wheel2):
+    #     """Return the inclination between wheel 1 and wheel 2.
+    #
+    #     This is a ad-hoc function for the control algorithm, to compute the
+    #     inclination of the structure when the collinding wheels are the
+    #     central ones. In this case, the functions from the pair module does
+    #     not work. The inclination is computed from the current inclination
+    #     plus the shift given as arguments.
+    #
+    #     Parameters:
+    #     wheel1 -- Additional shift of wheel 1.
+    #     wheel2 -- Additional shift of wheel 2.
+    #
+    #     This values are added to the current position of the actuator to
+    #     compute the required inclination.
+    #     """
+    #     # Get current posisions for the central joints.
+    #     __, __, x1, y1 = self.REAR.position(0)
+    #     x2, y2, __, __ = self.FRNT.position(0)
+    #     # Get increments in horizontal and vertical coordinates.
+    #     x = x2 - x1
+    #     y = y2 - y1
+    #     # And the increment in the actuators heights.
+    #     w = wheel2 - wheel1
+    #     # Compute the final inclination from the central actuators. This
+    #     # expression is get from the pithagoras theorem.
+    #     m = (y + w) / sqrt(x**2 - w**2 - 2 * w * y)
+    #     # And interpolate with respect to the whole structure. This one is get
+    #     # from basic trigonometry.
+    #     inclination = sqrt(self.WIDTH**2 / (1 + 1 / m**2))
+    #     # Last expresion ellimate the sign of the height. To get the sign
+    #     # again, we copy the sign of the slope m.
+    #     inclination = copysign(inclination, m)
+    #     # The final inclination is the new inclination minus the current one.
+    #     inclination -= self.get_inclination()
+    #     return inclination
 
     def get_elevation(self):
         """Return the elevation of the structure."""
