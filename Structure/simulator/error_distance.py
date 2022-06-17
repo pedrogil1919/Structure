@@ -7,6 +7,7 @@ Definition of classes to return the list of distances errors when checking the
 position of the structure with respect to the stairs.
 '''
 from magic.compat import NONE
+from scipy.sparse import _index
 
 
 class ErrorDistance():
@@ -269,6 +270,43 @@ class StructureError():
                 # place a mark here just in case it happens.
                 raise RuntimeError
 
+    def wheel_collision(self, index):
+        """
+        Detect if a collision is due to a wheel colliding with the step.
+
+        Return True if the problem is due to a wheel collision.
+
+        """
+        actuator = self.actuators[index]
+        if not actuator:
+            # Check if the actuator has a collision.
+            if actuator.vertical <= 0:
+                # Only when vertical is positive, a wheel collision can
+                # happen.
+
+                return (actuator.wheel < actuator.vertical), actuator.wheel
+        return False, 0.0
+
+    def actuator(self, index):
+        """
+        This function return the distance an actuator has to shift to be placed
+        in a valid position.
+
+        """
+
+        a = self.actuators[index]
+        if not a:
+            if a.vertical > 0:
+                # If the error is positive, it means that the actuator has
+                # been shift upwards, and so, there should not be wheel error.
+                return a.vertical
+            else:
+                # Otherwise, the problem can be a wheel collision or an
+                # actuator collision. Choose the greater (nota that both
+                # values are negative).
+                return min(a.vertical, a.wheel)
+        raise RuntimeError
+
     def elevation(self):
         """
         This function returns the distance the structure has to elevate to
@@ -304,45 +342,68 @@ class StructureError():
         #     return neg_height
         # return 0.0
 
-    def shift_actuator(self, index):
-        """
-        This function returns the shift for an actuator to place it to a valid
-        position.
-
-        """
-        # Get the actuator from the actuators array.
-        actuator = self.actuators[index]
-        # Check if the actuator (or the wheel) is in a non-valid position.
-        if not actuator:
-            # In this case, the actuator is in a non valid position.
-            if actuator.wheel < 0:
-                # In this case, the wheel is in a non valid position (the
-                # actuator can be in a valid position or not) and so,
-                # return the greater of both distances. Note that the distances
-                # are measured in negative values, for that reason, we have
-                # to return the minimum of both (the greater in absolute
-                # value).
-                return min((actuator.wheel, actuator.vertical))
-            # If the wheel is in a valid position, return the error for the
-            # actuator.
-            return actuator.vertical
-
-        # If we reach this code, means that the actuator is in a correct
-        # position, and the problem can be the pair stability.
-        # Get the pair index, and the actuator index inside the pair from the
-        # actuator index.
-        pair_index = index // 2
-        act_index = index % 2
-        if not self.pairs[pair_index]:
-            # Return the distance the actuator need to be shifted to place the
-            # wheel back in the stair.
-            return self.pairs[pair_index].actuator[act_index]
-        raise RuntimeError
-
-    def maximum_inclination(self):
-        if not self.incline:
-            return self.incline.inclination
-        return None
+    # def shift_actuator(self, index):
+    #     """
+    #     This function returns the shift for an actuator to place it to a valid
+    #     position.
+    #
+    #     """
+    #     # Get the actuator from the actuators array.
+    #     actuator = self.actuators[index]
+    #     # Check if the actuator (or the wheel) is in a non-valid position.
+    #     if not actuator:
+    #         # In this case, the actuator is in a non valid position.
+    #         if actuator.wheel < 0:
+    #             # In this case, the wheel is in a non valid position (the
+    #             # actuator can be in a valid position or not) and so,
+    #             # return the greater of both distances. Note that the distances
+    #             # are measured in negative values, for that reason, we have
+    #             # to return the minimum of both (the greater in absolute
+    #             # value).
+    #             return min((actuator.wheel, actuator.vertical))
+    #         # If the wheel is in a valid position, return the error for the
+    #         # actuator.
+    #         return actuator.vertical
+    #
+    #     # If we reach this code, means that the actuator is in a correct
+    #     # position, and the problem can be the pair stability.
+    #     # Get the pair index, and the actuator index inside the pair from the
+    #     # actuator index.
+    #     pair_index = index // 2
+    #     act_index = index % 2
+    #     if not self.pairs[pair_index]:
+    #         # Return the distance the actuator need to be shifted to place the
+    #         # wheel back in the stair.
+    #         return self.pairs[pair_index].actuator[act_index]
+    #     raise RuntimeError
+    #
+    # def push_actuator(self, index):
+    #     """
+    #     This function return the height the structure must be pushed to allow
+    #     an actuator to complete a motion.
+    #
+    #     NOTE: This function is not the same than shift_actuator. This is
+    #     intended to compute the height the structure must be pushed, while the
+    #     other function is just to compute the height the actuator must be
+    #     shift to place it in a valid position.
+    #
+    #     """
+    #     # Get the actuator from the actuators array.
+    #     actuator = self.actuators[index]
+    #     # Check if the actuator is in a non-valid position.
+    #     if not actuator:
+    #         if actuator.vertical > 0:
+    #             # If the error is positive, means that the actuator has gone
+    #             # out from the upper bound. In this case, just return this
+    #             # value.
+    #             return actuator.vertical
+    #         # However, if the value is negative, the error can be due to the
+    #         # actuator going out from the lower bound, or the wheel colliding
+    #         # with the ground.
+    #         return min(actuator.vertical, actuator.wheel)
+    #         # height = actuator.vertical - actuator.wheel
+    #         # return height if height < 0 else 0.0
+    #     return 0.0
 
     def colliding_actuator(self, fixed):
         """Find the actuator that is colliding with the structure.
@@ -370,6 +431,11 @@ class StructureError():
                     actuator_index = n
 
         return actuator_index
+
+    # def maximum_inclination(self):
+    #     if not self.incline:
+    #         return self.incline.inclination
+    #     return None
 
     def inclination(self, fixed=0):
         """
@@ -453,30 +519,3 @@ class StructureError():
         # if neg_incline < 0:
         #     return neg_incline
         # return 0.0
-
-    def push_actuator(self, index):
-        """
-        This function return the height the structure must be pushed to allow
-        an actuator to complete a motion.
-
-        NOTE: This function is not the same than shift_actuator. This is
-        intended to compute the height the structure must be pushed, while the
-        other function is just to compute the height the actuator must be
-        shift to place it in a valid position.
-
-        """
-        # Get the actuator from the actuators array.
-        actuator = self.actuators[index]
-        # Check if the actuator is in a non-valid position.
-        if not actuator:
-            if actuator.vertical > 0:
-                # If the error is positive, means that the actuator has gone
-                # out from the upper bound. In this case, just return this
-                # value.
-                return actuator.vertical
-            # However, if the value is negative, the error can be due to the
-            # actuator going out from the lower bound, or the wheel colliding
-            # with the ground.
-            height = actuator.vertical - actuator.wheel
-            return height if height < 0 else 0.0
-        return 0.0
