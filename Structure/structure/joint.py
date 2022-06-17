@@ -64,14 +64,24 @@ class Joint:
     def inverse_prop_lift(self, height):
         """Compute an inverse height when inclining the structure.
 
-        The function computes the height the exterior actuators need to be
-        shifted when one of the inner actuator is shifted the current height
-        when inclining the structure. The values returned are:
-          - Height for the front actuator.
-          - Height for the rear actuator.
+        This function computes the total height we need to incline the
+        structure if we need the given height in each of the actuators, fixing
+        this actuator.
 
-        This function can only be called for the interior actuators. For the
-        exterior actuators this value will be 0 and infinity.
+        For example, if this is rear actuator, and we need 20 cm in height in
+        front actuator, we need to incline just 20 cm. But if we need 20 cm in
+        the second actuator, the inclination height must be proportional to the
+        ratio between the distance between this actuator (0) and actuator 1,
+        and the whole structure lenght, and this valus must be greater than
+        the original 20.
+
+        Obviously, the height for the same actuator that the one to which
+        this object corresponds is infinity (we can not get any height in the
+        same actuator that we are fixing.
+
+        Return an array of 4 elements, each element corresponds to one
+        actuator.
+
         """
         inclination_heights = []
         for position in self.structure_position.INTERNAL:
@@ -79,7 +89,13 @@ class Joint:
                 inclination_heights += \
                     [-height / (position - self.relative_position)]
             except ZeroDivisionError:
-                inclination_heights += [None]
+                # This is the case when the actuator we are fixing is this
+                # actuator. In this case, return infinity for the function that
+                # need this value.
+                value = float('inf')
+                if height < 0:
+                    value = -value
+                inclination_heights += [value]
         return inclination_heights
 
     def lift_from_horizontal_motion(self, distance):

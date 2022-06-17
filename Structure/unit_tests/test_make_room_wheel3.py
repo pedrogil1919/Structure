@@ -64,6 +64,9 @@ class MakeRoomWheelTest(unittest.TestCase):
         struct_test = deepcopy(structure)
         self.motion6t(struct_test)
         # self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion7t(struct_test)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)
@@ -149,6 +152,18 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertTrue(res)
         res = structure.push_actuator(3, -100)
 
+    def motion7t(self, structure):
+        # Collision just with actuator 3 because it is shift a distance
+        # greater than the structure height.
+        # NOTE: Although the motion is possible, if we try to shift an actuator
+        # a distance greater than the structure height in only one instruction,
+        # the funcion make_room_wheel3 can not do it right. See TODO inside
+        # this function.
+        res = structure.push_actuator(3, -120)
+        self.assertFalse(res)
+        elevation = res.elevation()
+        self.assertAlmostEqual(elevation, 20.0, 4)
+
     def testMakeRoomWheel3_with_inclination_limit(self):
         # Check operation fo function make_room_wheel3 on base, when there is
         # inclination limits (the structure inclination is very limited).
@@ -192,7 +207,7 @@ class MakeRoomWheelTest(unittest.TestCase):
         # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion7w(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)

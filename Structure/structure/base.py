@@ -785,6 +785,15 @@ class Base:
             raise RuntimeError
         # Detect the colliding actuator.
         col_actuator = state1.colliding_actuator(3)
+        # TODO: If the structure collides with the front actuator, this is due
+        # to a shift greater than the structure height. In this case, it is
+        # possible to make a greater distance, but we need to edit this if.
+        # See test_make_room_wheel3 -> motion7t to see an example of this.
+        # However, I think it is better to prevent the control module to
+        # perform a shift greater than the structure height. In any case, this
+        # function do its best and do not raise any exception.
+        # if col_actuator == 3:
+        #     pass
         # And compute the distance that the structure must incline fixing the
         # colliding actuator to get the distance required.
         rear_height = state1.inclination(3) - state1.inclination(0)
@@ -845,12 +854,29 @@ class Base:
         if state:
             return state
 
+        # Check if the problem is a wheel collision.
+        wheel, collision = state.wheel_collision(index)
+        if wheel:
+            # In this case, the problem is that the wheel has collided with
+            # the stair, and so, we only can take the wheel down to the
+            # stair and finish.
+            height += collision
+            if not self.shift_actuator(index, height, margin=False):
+                raise RuntimeError
+            return state
+
+        height += collision
+
+        state = self.shift_actuator(index, height, margin=False)
+        if state:
+            raise RuntimeError
         # If not possible, just shift the distance that is actually possible.
-        distance = state.push_actuator(index)
+        distance = state.elevation()
         height += distance
         if not self.shift_actuator(index, height, margin=False):
             raise RuntimeError
 
+        # And try to make more space by elevating / inclinating the structure.
         if index == 3:
             res = self.make_room_wheel3(distance)
         elif index == 2:
@@ -860,12 +886,25 @@ class Base:
         elif index == 0:
             res = self.make_room_wheelN(0, distance)
 
+        # Check again if the motion is possible.
+        distance += collision
         state = self.shift_actuator(index, -distance, margin=False)
         if res:
-            if not state:
-                raise RuntimeError
+            # In this case, the function has been able to make enough space
+            # for the actuator to move.
+            if collision == 0.0:
+                # And also, if the wheel has not collided, the whole motion
+                # must be possible.
+                if not state:
+                    raise RuntimeError
+            else:
+                # However, if the wheel also collides, the whole motion can
+                # not be performed.
+                if state:
+                    raise RuntimeError
+            return state
         else:
-            distance -= state.push_actuator(index)
+            distance -= state.elevation()
             if not self.shift_actuator(index, -distance, margin=False):
                 raise RuntimeError
         return state
