@@ -6,6 +6,7 @@ Created on 20 may. 2022
 Definition of classes to return the list of distances errors when checking the
 position of the structure with respect to the stairs.
 '''
+from physics.wheel_state import MAX_GAP
 
 
 class ErrorDistance():
@@ -282,7 +283,7 @@ class StructureError():
                 # Only when vertical is positive, a wheel collision can
                 # happen.
 
-                return (actuator.wheel < actuator.vertical), actuator.wheel
+                return (actuator.wheel < actuator.vertical + MAX_GAP), actuator.wheel
         return False, 0.0
 
     def actuator(self, index):

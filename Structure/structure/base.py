@@ -832,7 +832,7 @@ class Base:
             return False
 
     def push_actuator(self, index, height, check=True, margin=True):
-        """Shift an actuator, and push the structure in not enough room.
+        """Shift an actuator, and push the structure if not enough room.
 
         This function is similar to shift actuator, but if the whole motion is
         not possible, try to make more room by elevating - inclining the
@@ -843,7 +843,8 @@ class Base:
           not enough space, incline.
 
         Return:
-        - True if the shift can be completed.
+        - A simulator.StructureError object with the errors raised when
+            pushing the actuator.
         - A dictionary with the following keys:
             - If there is initially enough space, an empty dictionary.
             - If theres is not enough space:
@@ -855,34 +856,37 @@ class Base:
 
         """
         # Try to shift the actuator and cheeck if the motion can be completed.
-        state = self.shift_actuator(index, height, margin=False)
-        if state:
-            return state
+        state1 = self.shift_actuator(index, height, margin=False)
+        if state1:
+            return state1
 
         # Check if the problem is a wheel collision.
-        wheel, collision = state.wheel_collision(index)
+        wheel, collision = state1.wheel_collision(index)
         if wheel:
             # In this case, the problem is that the wheel has collided with
             # the stair, and so, we only can take the wheel down to the
-            # stair and finish.
+            # stair and finish (we do not need to make more room in the
+            # sctructure, since the wheel collides before the actuator).
             height += collision
             if not self.shift_actuator(index, height, margin=False):
                 raise RuntimeError
-            return state
+            # State1 keeps the total distance the actuator can not move, so
+            # return this value.
+            return state1
 
         # If the wheel has collided with the stair, the maximum distance we
         # can take the wheel down is equal to the initial height minus the
         # distance the wheel has collided.
         height += collision
-        # However, since there is also an actuator collision trying to take the
-        # actuator down will raise the same collision. We use this collision
-        # to compute the distance we have to make room with the following
-        # functions.
-        state = self.shift_actuator(index, height, margin=False)
-        if state:
+        # However, since there is also an actuator collision, trying to take
+        # the actuator down will raise the same collision. We use this
+        # collision to compute the distance we have to make room with the
+        # following functions.
+        state2 = self.shift_actuator(index, height, margin=False)
+        if state2:
             raise RuntimeError
         # If not possible, just shift the distance that is actually possible.
-        distance = state.elevation()
+        distance = state2.elevation()
         height += distance
         if not self.shift_actuator(index, height, margin=False):
             raise RuntimeError
@@ -897,35 +901,29 @@ class Base:
         elif index == 0:
             res = self.make_room_wheelN(0, distance)
 
-        # Check again if the motion is possible.
-        distance += collision
-        state = self.shift_actuator(index, -distance, margin=False)
-        if not state:
-            distance -= state.elevation()
-            if not self.shift_actuator(index, -distance, margin=False):
-                raise RuntimeError
-        # If there were a wheel collision, we know that
-        if wheel:
-            return state
         if res:
-            # In this case, the function has been able to make enough space
-            # for the actuator to move.
-            if collision == 0.0:
-                # And also, if the wheel has not collided, the whole motion
-                # must be possible.
-                if not state:
-                    raise RuntimeError
-            else:
-                # # However, if the wheel also collides, the whole motion can
-                # # not be performed.
-                # if state:
-                #     raise RuntimeError
-                return state
-        else:
-            distance -= state.elevation()
+            # If the previous function can make enough space, trying to shift
+            # the actuator should not cause any error.
+
             if not self.shift_actuator(index, -distance, margin=False):
                 raise RuntimeError
-        return state
+            # Finally, check if there were any wheel collision. In this case,
+            # the motion should raise a colllision, but we need it to return
+            # this collision to the calling function.
+            state4 = self.shift_actuator(index, -collision, margin=False)
+            return state4
+
+        # In case the structure can not make enough space for the shift, so,
+        # perform the motion just to generate the error object to return.
+        # Check again if the motion is possible.
+        height = -distance - collision
+        state4 = self.shift_actuator(index, height, margin=False)
+        if state4:
+            raise RuntimeError
+        height += state4.elevation()
+        if not self.shift_actuator(index, height, margin=False):
+            raise RuntimeError
+        return state4
 
     # =========================================================================
     # Control functions.
