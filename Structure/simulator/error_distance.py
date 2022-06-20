@@ -6,8 +6,6 @@ Created on 20 may. 2022
 Definition of classes to return the list of distances errors when checking the
 position of the structure with respect to the stairs.
 '''
-from magic.compat import NONE
-from scipy.sparse import _index
 
 
 class ErrorDistance():
