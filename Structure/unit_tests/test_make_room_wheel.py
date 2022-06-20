@@ -23,6 +23,70 @@ class MakeRoomWheelTest(unittest.TestCase):
         cv2.imshow("res", image)
         cv2.waitKey()
 
+    def testMakeRoomWheelN_no_inclination_limit(self):
+        # Check operation fo function make_room_wheelN on base, when there is
+        # not inclination limits (the structure can incline enough).
+        landing = 500.0
+        stair_list = [
+            {'N': 5, 'd': 1000.0, 'w': 250.0, 'h': 80.0}
+        ]
+        size = {
+            'a': 120.0,
+            'b': 150.0,
+            'c': 140.0,
+            'd': 100.0,
+            'h': 2.0,
+            'v': 2.0,
+            'g': 100.0,
+            'n': 800.0}
+        wheels = {
+            'r1': 25.0,
+            'r2': 25.0,
+            'r3': 25.0,
+            'r4': 25.0}
+        stair = stairs.Stair(stair_list, landing)
+        structure = base.Base(size, wheels, stair)
+        struct_test = deepcopy(structure)
+        self.motion1tN(struct_test)
+        self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion2tN(struct_test)
+        self.draw(struct_test, stair)
+        # struct_test = deepcopy(structure)
+        # self.motion3t(struct_test)
+        # # self.draw(struct_test, stair)
+        # struct_test = deepcopy(structure)
+        # self.motion4t(struct_test)
+        # # self.draw(struct_test, stair)
+        # struct_test = deepcopy(structure)
+        # self.motion5t(struct_test)
+        # # self.draw(struct_test, stair)
+        # struct_test = deepcopy(structure)
+        # self.motion6t(struct_test)
+        # # self.draw(struct_test, stair)
+        # struct_test = deepcopy(structure)
+        # self.motion7t(struct_test)
+        # self.draw(struct_test, stair)ff
+        # NOTE: To see a graphic representation of the structure end position
+        # include this sentence wherever you want to see the position.
+        # self.draw(struct_test, stair)
+
+    def motion1tN(self, structure):
+        # No collision when pussing actuator 2.
+        res = structure.push_actuator(0, -20)
+        self.assertTrue(res)
+        res = structure.push_actuator(2, -40)
+        self.assertTrue(res)
+        inclination = structure.get_inclination()
+        self.assertAlmostEqual(inclination, 0.0, 4)
+
+    def motion2tN(self, structure):
+        # Structure is push to the limit.
+        res = structure.push_actuator(0, -100)
+        self.assertTrue(res)
+        inclination = structure.get_inclination()
+        self.assertAlmostEqual(inclination, 0.0, 4)
+
     def testMakeRoomWheel3_no_inclination_limit(self):
         # Check operation fo function make_room_wheel3 on base, when there is
         # not inclination limits (the structure can incline enough).
@@ -76,7 +140,7 @@ class MakeRoomWheelTest(unittest.TestCase):
         res = structure.push_actuator(3, -60)
         self.assertTrue(res)
         inclination = structure.get_inclination()
-        self.assertAlmostEqual(inclination, 60, 4)
+        self.assertAlmostEqual(inclination, 60.0, 4)
 
     def motion2t(self, structure):
         # Collision with actuator 3 when pushing actuator 4.

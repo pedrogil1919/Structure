@@ -665,24 +665,28 @@ class Base:
         return False
         """
 
-    def make_room_wheelN(self, actuator, elevate):
+    def make_room_wheelN(self, actuator, height):
         """Generate aditional vertical space for actuator 0, 1 or 2.
 
         Arguments:
         actuator -- index of the actuator which is actually pushing the
             structure.
-        elevate -- distance the actuator has collided with the structure, and
-            so, is the space we need to make to allow the actuator to shift
+        height -- distance the actuator has collided with the structure, and
+            so, is the space we need to make, to allow the actuator to shift
             the required distance.
 
         In this case, the first option is elevate the structure to gain enough
         space to shift the actuator. If not possible this can be due to:
-            - the structure collides with the rear actuator. In this case, we
-              can use the function for actuator 3 to complete the motion.
+            - the structure collides with another actuator. In this case, we
+              can try to incline fixing the colliding actuator to gain more
+              space.
+            - The structure has reached its limit. In this case, the motion is
+              not possible.
+
         """
         # Try to elevate the required distance.
-        structure_position = self.elevate(elevate, margin=False)
-        if structure_position:
+        state1 = self.elevate(height, margin=False)
+        if state1:
             # If success, the actuator can alreay be shifted.
             return True
         # If not possible, first take the structure to the maximum height
@@ -690,50 +694,51 @@ class Base:
         # Get the height that the structure has collided with one of the
         # actuators (the actuator can be any but the current actuator, since
         # this is the actuator that is pushing the structure).
-        over_height = structure_position.elevation()
+        height += state1.elevation()
         # And elevate the structure this height to place the structure in its
         # limit.
-        structure_position = self.elevate(elevate + over_height, margin=False)
-        if not structure_position:
-            raise RuntimeError
-        # In this moment, the structure is touching one of the actuators.
-        # Update the height we still have to elevte the structure.
-        elevate = -over_height
-        # Elevate again to get the collision errors with the actuators.
-        structure_position = self.elevate(elevate, margin=False)
-        if structure_position:
-            raise RuntimeError
-
-        # Now, find the actuator that is actually colliding with the structure
-        # (the one that is most colliding, if more than one).
-        fix_actuator = structure_position.colliding_actuator(actuator)
-        # And get the inclination that must be done if we incline fixing the
-        # most colliding actuator.
-        incline = structure_position.inclination(actuator)
-
-        # And try to incline.
-        structure_position = self.incline(incline, fixed=fix_actuator,
-                                          margin=False)
-        if not structure_position:
-            # If not success, incline just the height that is already possible.
-            incline += structure_position.inclination(fix_actuator)
-            if not self.incline(incline, fixed=fix_actuator, margin=False):
-                raise RuntimeError
-
-        # (Note 1) Note that when inclining fixing one of the wheels, we are
-        # actualy elevating the structure at the position of the current
-        # actuator. For this reason, the height to elevate is less that the one
-        # given in the argument.
-
-        # Try to elevate the structure again.
-        structure_position = self.elevate(elevate, margin=False)
-        if structure_position:
-            # If success, the actuator can alreay be shifted.
-            return True
-        elevate += structure_position.elevation()
-        if not self.elevate(elevate, margin=False):
+        if not self.elevate(height, margin=False):
             raise RuntimeError
         return False
+
+        # # In this moment, the structure is touching one of the actuators.
+        # # Update the height we still have to elevte the structure.
+        # elevate = -over_height
+        # # Elevate again to get the collision errors with the actuators.
+        # structure_position = self.elevate(elevate, margin=False)
+        # if structure_position:
+        #     raise RuntimeError
+        #
+        # # Now, find the actuator that is actually colliding with the structure
+        # # (the one that is most colliding, if more than one).
+        # fix_actuator = structure_position.colliding_actuator(actuator)
+        # # And get the inclination that must be done if we incline fixing the
+        # # most colliding actuator.
+        # incline = structure_position.inclination(actuator)
+        #
+        # # And try to incline.
+        # structure_position = self.incline(incline, fixed=fix_actuator,
+        #                                   margin=False)
+        # if not structure_position:
+        #     # If not success, incline just the height that is already possible.
+        #     incline += structure_position.inclination(fix_actuator)
+        #     if not self.incline(incline, fixed=fix_actuator, margin=False):
+        #         raise RuntimeError
+        #
+        # # (Note 1) Note that when inclining fixing one of the wheels, we are
+        # # actualy elevating the structure at the position of the current
+        # # actuator. For this reason, the height to elevate is less that the one
+        # # given in the argument.
+        #
+        # # Try to elevate the structure again.
+        # structure_position = self.elevate(elevate, margin=False)
+        # if structure_position:
+        #     # If success, the actuator can alreay be shifted.
+        #     return True
+        # elevate += structure_position.elevation()
+        # if not self.elevate(elevate, margin=False):
+        #     raise RuntimeError
+        # return False
 
     def make_room_wheel3(self, height):
         """Generate aditional vertical space for actuator 3.
@@ -865,8 +870,14 @@ class Base:
                 raise RuntimeError
             return state
 
+        # If the wheel has collided with the stair, the maximum distance we
+        # can take the wheel down is equal to the initial height minus the
+        # distance the wheel has collided.
         height += collision
-
+        # However, since there is also an actuator collision trying to take the
+        # actuator down will raise the same collision. We use this collision
+        # to compute the distance we have to make room with the following
+        # functions.
         state = self.shift_actuator(index, height, margin=False)
         if state:
             raise RuntimeError
@@ -889,6 +900,13 @@ class Base:
         # Check again if the motion is possible.
         distance += collision
         state = self.shift_actuator(index, -distance, margin=False)
+        if not state:
+            distance -= state.elevation()
+            if not self.shift_actuator(index, -distance, margin=False):
+                raise RuntimeError
+        # If there were a wheel collision, we know that
+        if wheel:
+            return state
         if res:
             # In this case, the function has been able to make enough space
             # for the actuator to move.
@@ -898,11 +916,11 @@ class Base:
                 if not state:
                     raise RuntimeError
             else:
-                # However, if the wheel also collides, the whole motion can
-                # not be performed.
-                if state:
-                    raise RuntimeError
-            return state
+                # # However, if the wheel also collides, the whole motion can
+                # # not be performed.
+                # if state:
+                #     raise RuntimeError
+                return state
         else:
             distance -= state.elevation()
             if not self.shift_actuator(index, -distance, margin=False):
