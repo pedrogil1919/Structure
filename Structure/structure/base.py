@@ -20,9 +20,7 @@ import cv2
 from structure.actuator import WheelActuator
 from structure.pair import ActuatorPair
 from simulator.error_distance import InclinationError, StructureError
-from simulator.distance_errors import MaxInclinationError
 from physics.wheel_state import MAX_GAP
-from pickle import TRUE
 
 
 # State of the structure acording to its maximum inclination.
@@ -46,7 +44,8 @@ class Pose():
 
     """
 
-    def __init__(self, horizontal, vertical, inclination, width, internal):
+    def __init__(self, horizontal, vertical, inclination,
+                 width=0.0, internal=0.0):
         """Initial position:
 
         Arguments:
@@ -441,11 +440,11 @@ class Base:
             # it overpass the maximum inclination, this error is raised before,
             # and so, it must be detected here.
             if current_inclination + height > 0:
-                return MaxInclinationError(+self.MAX_INCLINE -
-                                           current_inclination - height)
+                raise InclinationError(+self.MAX_INCLINE -
+                                       current_inclination - height)
             else:
-                return MaxInclinationError(-self.MAX_INCLINE -
-                                           current_inclination - height)
+                raise InclinationError(-self.MAX_INCLINE -
+                                       current_inclination - height)
 
         if wheel is None:
             wheel = 4 * [None]
@@ -566,15 +565,37 @@ class Base:
 
 ###############################################################################
 ###############################################################################
-    def incline_and_avance(self, height):
+    def incline_and_advance(self, height, wheel=None,
+                            fixed=0, check=True, margin=True):
         """Incline structure, and advance if a collision happens.
 
         This function is similar to incline, but if after the inclination any
         wheel has collided with the stair, or a pair is in an unstable
         position, advance the structure to place it in a valid position.
 
+        return the structure state.
+
         """
-        structure_position = self.incline()
+        # Incline the structure.
+        state1 = self.incline(height, wheel, fixed, check, margin)
+        if state1:
+            # Check if there is a error when inclining.
+            return state1
+
+        # Check if there is a horizontal collision when inclining.
+        advance = state1.horizontal()
+        state2 = self.advance(advance)
+        if not state2:
+            # This happens when one wheel is close to one edge, and the other
+            # is close to a step, so that when inclining in one direction one
+            # of the wheel collides, and when trying to correct this collision,
+            # the other wheel collides in the opposite direction.
+            advance += state2.horizontal()
+            state3 = self.incline(height, wheel, fixed, check, margin)
+            return state3
+
+        state3 = self.incline(height, wheel, fixed, check, margin)
+        return state3
 
     def allowed_inclination(self, height):
         """Check if the structure can be inclined the given height.
@@ -595,76 +616,6 @@ class Base:
                 next_inclination + self.MAX_INCLINE
         return height, 0.0
 
-        """
-        if elevation1 is not None:
-            # Superamos el límite de elevación.
-            state1 = self.incline(front_incline, margin=False)
-            if state1:
-                # Hemos conseguido inclinar el límite de elevación.
-                # Elevamos lo que falta.
-                state2 = self.elevate(elevation1, margin=False)
-                if state2:
-                    # Hemos conseguido toda la altura inclinando hasta
-                    # el máximo, y elevando lo que falta.
-                    return True
-                elevation2 = elevation1 + state2.elevation()
-                # No es posible elevar lo que falta, así que elevamos lo que
-                # podamos.
-                if not self.elevate(elevation2, margin=False):
-                    raise RuntimeError
-                return False
-            else:
-                # Al inclinar hemos chocado con el actuador 2 o 3. Lo que
-                # hacemos es inclinar por detrás.
-                state3 = self.incline(front_incline, fixed=3, margin=False)
-                if state3:
-                    # Hemos conseguido inclinar al revés. Tratamos de elevar
-                    # lo que nos falta.
-                    elevation3 = elevation1 + front_incline
-                    state4 = self.elevate(elevation3, margin=False)
-                    if state4:
-                        return True
-                    elevation4 = elevation3 + state4.elevation()
-                    if not self.elevate(elevation4, margin=False):
-                        raise RuntimeError
-                    return False
-
-        state5 = self.incline(front_incline, margin=False)
-
-        # If not, try to make more space inclining and elevating from the rear
-        # in the opposite direction.
-        rear_incline = state5.inclination(3)
-        state6 = self.incline(rear_incline, fixed=3, margin=False)
-        if state6:
-            # If success, now it is possible to complete the motion.
-            if not self.incline(front_incline, margin=False):
-                raise RuntimeError
-            return False
-
-        # If we reach here, it is not possible to complete the whole motion,
-        # but we try to move the structure to its limit.
-        # Check the actuator that caused the collision.
-        col_actuator = structure_position.colliding_actuator(3)
-        # And incline from the rear, so that the structure must be in contact
-        # with this colliding actuator.
-        rear_incline += structure_position.inclination(3)
-        if not self.incline(rear_incline, fixed=3, margin=False):
-            raise RuntimeError
-        # Now, try to perform the whole initial inclination, that must cause
-        # a new collision (otherwise, the motion could be possible, but this
-        # is not the case). This motion is only intended to compute the
-        # maximum motion we can do before the collision.
-        structure_position = self.incline(height,
-                                          fixed=col_actuator, margin=False)
-        if structure_position:
-            raise RuntimeError
-        # And repeat the same inclination, but only with the allowed height.
-        front_incline += structure_position.inclination(col_actuator)
-        if not self.incline(front_incline, fixed=col_actuator, margin=False):
-            raise RuntimeError
-        return False
-        """
-
     def make_room_wheelN(self, actuator, height):
         """Generate aditional vertical space for actuator 0, 1 or 2.
 
@@ -683,6 +634,8 @@ class Base:
             - The structure has reached its limit. In this case, the motion is
               not possible.
 
+        Returns the structure state, the advance, inclination and elevation
+        given to the structure.
         """
         # Try to elevate the required distance.
         state1 = self.elevate(height, margin=False)
@@ -702,21 +655,31 @@ class Base:
 
         # Check the actuator that has actually collided with the structure.
         # NOTE: Although more than one actuator can have collided, we choose
-        # the one that hava collided the most taking into account that we need
+        # the one that have collided the most, taking into account that we need
         # to push the actuator given. This is considered in both following
         # functions.
         col_actuator = state1.colliding_actuator(actuator)
         col_incline = state1.inclination(actuator)
+        # Check if the required inclination is greater than the maximum
+        # allowed.
+        col_incline, front_elevate = self.allowed_inclination(col_incline)
+
         # Try to incline fixing the actuator that has actually collided the
         # most.
-        state2 = self.incline(col_incline, fixed=col_actuator, margin=False)
+        state2 = self.incline_and_advance(col_incline,
+                                          fixed=col_actuator,
+                                          margin=False)
         if state2:
+            if front_elevate != 0:
+                return False
             ini_actuator = state1.colliding_actuator()
             return (col_actuator == ini_actuator)
         # In this case, the structure has collided with another actuator in
         # the opposite direction.
         col_incline += state2.inclination(col_actuator)
-        if not self.incline(col_incline, fixed=col_actuator, margin=False):
+        state3 = self.incline_and_advance(col_incline,
+                                          fixed=col_actuator, margin=False)
+        if not state3:
             raise RuntimeError
         return False
 
@@ -745,7 +708,7 @@ class Base:
         front_incline, front_elevate = self.allowed_inclination(height)
 
         # Incline the required (or maximum) height.
-        state1 = self.incline(front_incline, margin=False)
+        state1 = self.incline_and_advance(front_incline, margin=False)
         if state1:
             # Check whether we also need to elevate the structure.
             state2 = self.elevate(front_elevate, margin=False)
@@ -766,7 +729,7 @@ class Base:
         # actuator collision in the direction of motion.
         # Get the structure until it collided with the actuator.
         front_incline += state1.inclination(0)
-        if not self.incline(front_incline, margin=False):
+        if not self.incline_and_advance(front_incline, margin=False):
             raise RuntimeError
         # Detect the colliding actuator.
         col_actuator = state1.colliding_actuator(3)
@@ -789,7 +752,8 @@ class Base:
         # colliding actuator, an no more height can be gain. In case we needed
         # more distance, the complete motion can not be reached.
         rear_incline, rear_elevate = self.allowed_inclination(rear_height)
-        state2 = self.incline(rear_incline, fixed=col_actuator, margin=False)
+        state2 = self.incline_and_advance(rear_incline,
+                                          fixed=col_actuator, margin=False)
         if state2:
             # Check if we also need to elevate.
             # NOTE: This function is not intended to elevate the structure,
@@ -812,7 +776,8 @@ class Base:
         # opposite direction. Just get the distance we can incline and
         # finish the motion.
         rear_incline += state2.inclination(col_actuator)
-        if not self.incline(rear_incline, fixed=col_actuator, margin=False):
+        if not self.incline_and_advance(rear_incline,
+                                        fixed=col_actuator, margin=False):
             raise RuntimeError
         return False
 

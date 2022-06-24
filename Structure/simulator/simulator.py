@@ -577,11 +577,12 @@ class Simulator():
         else:
             fixed = instruction.get('fixed', 0)
             # Incline structure
-            res = structure.incline(height, None, fixed, margin=False)
+            res = structure.incline_and_avance(
+                height, None, fixed, margin=False)
             if not res:
                 incline = res.inclination(fixed)
-                if not structure.incline(height + incline,
-                                         None, fixed, margin=False):
+                if not structure.incline_and_avance(height + incline,
+                                                    None, fixed, margin=False):
                     raise RuntimeError
                 print("Can not incline structure:")
         #######################################################################

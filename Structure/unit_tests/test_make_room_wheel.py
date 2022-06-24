@@ -23,6 +23,47 @@ class MakeRoomWheelTest(unittest.TestCase):
         cv2.imshow("res", image)
         cv2.waitKey()
 
+    def testMakeRoomWheelN_with_inclination_limit(self):
+        # Check operation fo function make_room_wheelN on base, when there is
+        # not inclination limits (the structure can incline enough).
+        landing = 500.0
+        stair_list = [
+            {'N': 5, 'd': 1000.0, 'w': 250.0, 'h': -80.0}
+        ]
+        size = {
+            'a': 120.0,
+            'b': 150.0,
+            'c': 140.0,
+            'd': 100.0,
+            'h': 2.0,
+            'v': 2.0,
+            'g': 100.0,
+            'n': 60.0}
+        wheels = {
+            'r1': 25.0,
+            'r2': 25.0,
+            'r3': 25.0,
+            'r4': 25.0}
+        stair = stairs.Stair(stair_list, landing)
+        structure = base.Base(size, wheels, stair)
+        struct_test = deepcopy(structure)
+        self.motion1wN(struct_test)
+        # self.draw(struct_test, stair)
+        # NOTE: To see a graphic representation of the structure end position
+        # include this sentence wherever you want to see the position.
+        # self.draw(struct_test, stair)
+
+    def motion1wN(self, structure):
+        # Actuator 0 is pushing and the structure collides with actuator 1, so
+        # the structure must icline to make room for actuator 0, but the
+        # required inclination if greater than the maximum.
+        res = structure.push_actuator(0, -90)
+        self.assertTrue(res)
+        res = structure.push_actuator(0, -30)
+        self.assertFalse(res)
+        inclination = structure.get_inclination()
+        self.assertAlmostEqual(inclination, -60.0, 4)
+
     def testMakeRoomWheelN_no_inclination_limit(self):
         # Check operation fo function make_room_wheelN on base, when there is
         # not inclination limits (the structure can incline enough).
@@ -75,7 +116,7 @@ class MakeRoomWheelTest(unittest.TestCase):
         # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion10tN(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)
@@ -98,7 +139,7 @@ class MakeRoomWheelTest(unittest.TestCase):
 
     def motion3tN(self, structure):
         # Actuator 0 is pushing and the structure collides with actuator 1, so
-        # the structure mush incline to make room for actuator 0.
+        # the structure must incline to make room for actuator 0.
         res = structure.push_actuator(0, -90)
         self.assertTrue(res)
         res = structure.push_actuator(0, -30)
