@@ -702,15 +702,20 @@ class Base:
 
         # Check the actuator that has actually collided with the structure.
         # NOTE: Although more than one actuator can have collided, we choose
-        # the one that hava collided the most taking into account that we need
+        # the one that have collided the most, taking into account that we need
         # to push the actuator given. This is considered in both following
         # functions.
         col_actuator = state1.colliding_actuator(actuator)
         col_incline = state1.inclination(actuator)
+        # Check if the required inclination is greater than the maximum allowed.
+        col_incline, front_elevate = self.allowed_inclination(col_incline)
+
         # Try to incline fixing the actuator that has actually collided the
         # most.
         state2 = self.incline(col_incline, fixed=col_actuator, margin=False)
         if state2:
+            if front_elevate != 0:
+                return False
             ini_actuator = state1.colliding_actuator()
             return (col_actuator == ini_actuator)
         # In this case, the structure has collided with another actuator in
