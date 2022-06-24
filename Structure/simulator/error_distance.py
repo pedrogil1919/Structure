@@ -282,8 +282,14 @@ class StructureError():
             if actuator.vertical <= 0:
                 # Only when vertical is positive, a wheel collision can
                 # happen.
-
-                return (actuator.wheel < actuator.vertical + MAX_GAP), actuator.wheel
+                # A collision is True only when the wheel collision is greater
+                # than the actuator collision (in absolute value, since both
+                # are negative).
+                # To prevent errors, when both values are similar, we have to
+                # return true. This is get by adding MAX_GAP to the actuator
+                # collision.
+                collision = actuator.wheel < actuator.vertical + MAX_GAP
+                return collision, actuator.wheel
         return False, 0.0
 
     def actuator(self, index):
@@ -404,7 +410,7 @@ class StructureError():
     #         # return height if height < 0 else 0.0
     #     return 0.0
 
-    def colliding_actuator(self, fixed):
+    def colliding_actuator(self, fixed=-1):
         """Find the actuator that is colliding with the structure.
 
         Return the index of the actuator that is the one that have collided
@@ -414,7 +420,8 @@ class StructureError():
         Arguments:
         fixed -- Index of the actuator we have fixed when performing the
             inclination that caused the collision. This is needed in case there
-            is more than one actuator colliding.
+            is more than one actuator colliding. Set to -1 if the collision
+            happens when elevating.
 
         """
         # The actuator can be colliding from the upper or the lower bound. So,
@@ -423,20 +430,20 @@ class StructureError():
         actuator_index = None
         max_value = 0.0
         for n in range(0, 4):
+            if n == fixed:
+                continue
             if not self.actuators[n]:
-                error = abs(self.actuators[n].incline[fixed])
+                if 0 <= fixed <= 3:
+                    error = abs(self.actuators[n].incline[fixed])
+                else:
+                    error = abs(self.actuators[n].vertical)
                 if error > max_value:
                     max_value = error
                     actuator_index = n
 
         return actuator_index
 
-    # def maximum_inclination(self):
-    #     if not self.incline:
-    #         return self.incline.inclination
-    #     return None
-
-    def inclination(self, fixed=0):
+    def inclination(self, fixed=-1):
         """
         This function returns the height the structure has to incline to
         place the structure in a valid position.
@@ -461,7 +468,10 @@ class StructureError():
             if n == fixed:
                 continue
             if not self.actuators[n]:
-                error = self.actuators[n].incline[fixed]
+                if 0 <= fixed <= 3:
+                    error = self.actuators[n].incline[fixed]
+                else:
+                    error = self.actuators[n].vertical
                 if error > pos_incline:
                     pos_incline = error
                 if error < neg_incline:

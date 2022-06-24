@@ -699,46 +699,26 @@ class Base:
         # limit.
         if not self.elevate(height, margin=False):
             raise RuntimeError
-        return False
 
-        # # In this moment, the structure is touching one of the actuators.
-        # # Update the height we still have to elevte the structure.
-        # elevate = -over_height
-        # # Elevate again to get the collision errors with the actuators.
-        # structure_position = self.elevate(elevate, margin=False)
-        # if structure_position:
-        #     raise RuntimeError
-        #
-        # # Now, find the actuator that is actually colliding with the structure
-        # # (the one that is most colliding, if more than one).
-        # fix_actuator = structure_position.colliding_actuator(actuator)
-        # # And get the inclination that must be done if we incline fixing the
-        # # most colliding actuator.
-        # incline = structure_position.inclination(actuator)
-        #
-        # # And try to incline.
-        # structure_position = self.incline(incline, fixed=fix_actuator,
-        #                                   margin=False)
-        # if not structure_position:
-        #     # If not success, incline just the height that is already possible.
-        #     incline += structure_position.inclination(fix_actuator)
-        #     if not self.incline(incline, fixed=fix_actuator, margin=False):
-        #         raise RuntimeError
-        #
-        # # (Note 1) Note that when inclining fixing one of the wheels, we are
-        # # actualy elevating the structure at the position of the current
-        # # actuator. For this reason, the height to elevate is less that the one
-        # # given in the argument.
-        #
-        # # Try to elevate the structure again.
-        # structure_position = self.elevate(elevate, margin=False)
-        # if structure_position:
-        #     # If success, the actuator can alreay be shifted.
-        #     return True
-        # elevate += structure_position.elevation()
-        # if not self.elevate(elevate, margin=False):
-        #     raise RuntimeError
-        # return False
+        # Check the actuator that has actually collided with the structure.
+        # NOTE: Although more than one actuator can have collided, we choose
+        # the one that hava collided the most taking into account that we need
+        # to push the actuator given. This is considered in both following
+        # functions.
+        col_actuator = state1.colliding_actuator(actuator)
+        col_incline = state1.inclination(actuator)
+        # Try to incline fixing the actuator that has actually collided the
+        # most.
+        state2 = self.incline(col_incline, fixed=col_actuator, margin=False)
+        if state2:
+            ini_actuator = state1.colliding_actuator()
+            return (col_actuator == ini_actuator)
+        # In this case, the structure has collided with another actuator in
+        # the opposite direction.
+        col_incline += state2.inclination(col_actuator)
+        if not self.incline(col_incline, fixed=col_actuator, margin=False):
+            raise RuntimeError
+        return False
 
     def make_room_wheel3(self, height):
         """Generate aditional vertical space for actuator 3.
@@ -818,18 +798,23 @@ class Base:
             # completed or not.
             total_elevate = rear_elevate + front_elevate
             if self.elevate(total_elevate, margin=False):
-                return True
+                # When the structure is close to the limit of the central
+                # actuators, it is possible that the structure collides with
+                # actuator 1 when inclining from the rear, but collides with
+                # actuator 2 when inclining from the front. In this case, the
+                # function would return True, but the whole motion has not been
+                # done, and so, we have to return False.
+                ini_actuator = state1.colliding_actuator(0)
+                return (col_actuator == ini_actuator)
             else:
                 return False
-        else:
-            # In this case, we have collided with another actuator in the
-            # opposite direction. Just get the distance we can incline and
-            # finish the motion.
-            rear_incline += state2.inclination(col_actuator)
-            if not self.incline(rear_incline,
-                                fixed=col_actuator, margin=False):
-                raise RuntimeError
-            return False
+        # In this case, we have collided with another actuator in the
+        # opposite direction. Just get the distance we can incline and
+        # finish the motion.
+        rear_incline += state2.inclination(col_actuator)
+        if not self.incline(rear_incline, fixed=col_actuator, margin=False):
+            raise RuntimeError
+        return False
 
     def push_actuator(self, index, height, check=True, margin=True):
         """Shift an actuator, and push the structure if not enough room.
@@ -861,23 +846,26 @@ class Base:
             return state1
 
         # Check if the problem is a wheel collision.
+        # NOTE: wheel is True only when the collision of the wheel is greater
+        # than the collision of the actuator, even if the wheel has had a
+        # collision.
         wheel, collision = state1.wheel_collision(index)
+        # If the wheel has collided with the stair, the maximum distance we
+        # can take the wheel down is equal to the initial height minus the
+        # distance the wheel has collided. In case there is no collision, this
+        # instruction do nothing.
+        height += collision
         if wheel:
             # In this case, the problem is that the wheel has collided with
             # the stair, and so, we only can take the wheel down to the
             # stair and finish (we do not need to make more room in the
             # sctructure, since the wheel collides before the actuator).
-            height += collision
             if not self.shift_actuator(index, height, margin=False):
                 raise RuntimeError
             # State1 keeps the total distance the actuator can not move, so
             # return this value.
             return state1
 
-        # If the wheel has collided with the stair, the maximum distance we
-        # can take the wheel down is equal to the initial height minus the
-        # distance the wheel has collided.
-        height += collision
         # However, since there is also an actuator collision, trying to take
         # the actuator down will raise the same collision. We use this
         # collision to compute the distance we have to make room with the
