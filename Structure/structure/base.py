@@ -9,7 +9,7 @@ Definition of all the elements which composes the structure:
 - Current elevation with respect to the ground.
 """
 
-from math import asin, acos, sqrt, copysign
+from math import asin, sqrt
 from enum import Enum
 
 # NOTE: Sometimes opencv changes the data type for drawing function. So it is
@@ -51,7 +51,7 @@ class Pose():
         Arguments:
         horizontal -- Horizontal position
         vertical -- Vertical position
-        inclination -- Inclination as the difference between front and rear part
+        inclination -- Inclinat. as the difference between front and rear part
         width -- Width of the structure.
         internal -- Relative horizontal position of the internal actuators.
 
@@ -185,11 +185,6 @@ class Base:
         internal = (0.0, a / w, (a + b) / w, 1.0)
         self.position = Pose(0.0, d + g, 0.0, w, internal)
 
-        # self.elevation = d + g
-        # # Current horizontal position.
-        # self.position = 0.0
-        # # Angle of the structure (driven by L9 actuator, see paper).
-        # self.angle = 0.0
         # Create array of actuators.
         # NOTE: The total length of an actuator is equal to the height of the
         # structure (d), plus the gap between the floor and the lower base of
@@ -996,49 +991,13 @@ class Base:
     # @staticmethod
     def get_actuator_L9(self):
         """Translate the structure inclination to actuator L9 position"""
-        d = 98.00
-        LH = 398.00
-        m = 30.58
-        n = 36.14
-        L9 = sqrt(d**2 + LH**2 - 2 * d * self.get_inclination() - n**2) - m
-        return L9
-
-    # def get_inclination_central_wheels(self, wheel1, wheel2):
-    #     """Return the inclination between wheel 1 and wheel 2.
-    #
-    #     This is a ad-hoc function for the control algorithm, to compute the
-    #     inclination of the structure when the collinding wheels are the
-    #     central ones. In this case, the functions from the pair module does
-    #     not work. The inclination is computed from the current inclination
-    #     plus the shift given as arguments.
-    #
-    #     Parameters:
-    #     wheel1 -- Additional shift of wheel 1.
-    #     wheel2 -- Additional shift of wheel 2.
-    #
-    #     This values are added to the current position of the actuator to
-    #     compute the required inclination.
-    #     """
-    #     # Get current posisions for the central joints.
-    #     __, __, x1, y1 = self.REAR.position(0)
-    #     x2, y2, __, __ = self.FRNT.position(0)
-    #     # Get increments in horizontal and vertical coordinates.
-    #     x = x2 - x1
-    #     y = y2 - y1
-    #     # And the increment in the actuators heights.
-    #     w = wheel2 - wheel1
-    #     # Compute the final inclination from the central actuators. This
-    #     # expression is get from the pithagoras theorem.
-    #     m = (y + w) / sqrt(x**2 - w**2 - 2 * w * y)
-    #     # And interpolate with respect to the whole structure. This one is get
-    #     # from basic trigonometry.
-    #     inclination = sqrt(self.WIDTH**2 / (1 + 1 / m**2))
-    #     # Last expresion ellimate the sign of the height. To get the sign
-    #     # again, we copy the sign of the slope m.
-    #     inclination = copysign(inclination, m)
-    #     # The final inclination is the new inclination minus the current one.
-    #     inclination -= self.get_inclination()
-    #     return inclination
+        return self.get_inclination()
+        # d = 98.00
+        # LH = 398.00
+        # m = 30.58
+        # n = 36.14
+        # L9 = sqrt(d**2 + LH**2 - 2 * d * self.get_inclination() - n**2) - m
+        # return L9
 
     def get_elevation(self):
         """Return the elevation of the structure."""
@@ -1046,11 +1005,12 @@ class Base:
         # rear joint.
         return self.REAR.REAR.d
 
-    # def get_speed(self):
-    #     """Return the speed of the strucure."""
-    #     # TODO: Update function with the dynamics of the structure.
-    #     return self.current_pos - self.prev_pos
-    #
+    def get_speed(self):
+        """Return the speed of the strucure."""
+        # TODO: Update function with the dynamics of the structure.
+        # current_position = Pose(self.)
+        return self.current_pos - self.prev_pos
+
     # def get_acceleration(self):
     #     """Return the acceleration of the strucure."""
     #     # TODO: Update function with the dynamics of the structure.
@@ -1060,6 +1020,7 @@ class Base:
         """Return the current positions of the actuators.
 
         This function is designed for representation purposes.
+
         """
         pos = [
             self.get_actuator_position(0),
@@ -1072,6 +1033,16 @@ class Base:
             # self.get_speed()
         ]
         return pos
+
+    def wheel_positions(self):
+        """Return the horizontal position of the center of the wheels.
+
+        This function is designed for representation purposes.
+
+        """
+        x1, __, x2, __ = self.REAR.position(0)
+        x3, __, x4, __ = self.FRNT.position(0)
+        return (x1, x2, x3, x4)
     # =========================================================================
     # Drawing functions.
     # =========================================================================

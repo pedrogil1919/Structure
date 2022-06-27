@@ -17,7 +17,7 @@ from graphics.plots import Plots
 
 class Graphics:
 
-    def __init__(self, image_data, video_data, csv_data, axis=None):
+    def __init__(self, img_data, video_data, csv_data, sample_data, axis=None):
         """Constructor:
 
         Arguments:
@@ -45,16 +45,19 @@ class Graphics:
                 m, cm, mm, ...
 
         """
+        self.sample_time = sample_data['sample_time']
+        self.time_units = sample_data['time_units']
+        self.prv_pos = None
         # Flag to switch between manual mode operation, or automatic.
         self.manual_mode = False
         # Create image.
-        size = image_data['size']
+        size = img_data['size']
         self.image = numpy.full((size[0], size[1], 3), 0xFF, numpy.uint8)
         # OpenCV antialiased line parameter (see OpenCV line() function)
         self.shift = 3      # Number of fractional bits.
-        self.scale = image_data['scale']
+        self.scale = img_data['scale']
         # Save image parameters.
-        self.origin = image_data['shift']
+        self.origin = img_data['shift']
         # Display image on screen after each iteration.
         self.display = video_data['display']
         if self.display:
@@ -108,7 +111,7 @@ class Graphics:
                     "ac_L2": (slice(1 * h, 2 * h, 1), slice(1 * w, 2 * w, 1)),
                     "ac_L3": (slice(2 * h, 3 * h, 1), slice(1 * w, 2 * w, 1)),
                     "ac_L4": (slice(3 * h, 4 * h, 1), slice(1 * w, 2 * w, 1)),
-                    "veloc": (slice(2 * h, 3 * h, 1), slice(1 * 0, 1 * w, 1)),
+                    "vel_0": (slice(2 * h, 3 * h, 1), slice(1 * 0, 1 * w, 1)),
                     "incli": (slice(3 * h, 4 * h, 1), slice(1 * 0, 1 * w, 1))
                 }
                 self.plots = Plots((w, h), video_data["buffer_size"],
@@ -133,7 +136,8 @@ class Graphics:
                 open(os.path.join(csv_dir, csv_data['actuator3']), "w"),
                 open(os.path.join(csv_dir, csv_data['actuator4']), "w"),
                 open(os.path.join(csv_dir, csv_data['actuator9']), "w"),
-                open(os.path.join(csv_dir, csv_data['speed']), "w"))
+                open(os.path.join(csv_dir, csv_data['speed_0']), "w"),
+                open(os.path.join(csv_dir, csv_data['speed_1']), "w"))
         else:
             self.save_csv = False
 
@@ -146,7 +150,7 @@ class Graphics:
             # Raise an error to warm the calliing function.
             raise ValueError
 
-    def draw(self, stairs, structure, simulator, pause=False):
+    def draw(self, stairs, structure, counter, pause=False):
         """Generate an image of the actual elements.
 
         If the object was configured with display set to True, the program can
@@ -161,6 +165,7 @@ class Graphics:
         pause -- If True, and display is True, the program pause until the user
             press a Key. If False, an internal variable check whether to pause
             or not.
+
         """
         # Clear the image to white.
         self.image[:] = 0xFF
@@ -187,7 +192,9 @@ class Graphics:
         # structure.draw_wheel_trajectory(
         #     self.origin, self.image, aa_scale, self.shift, 3)
         # Draw OSD information.
-        cv2.putText(self.image, simulator.print_time(),
+        current_time = counter * self.sample_time
+        print_time = "%8.2f %s" % (current_time, self.time_units)
+        cv2.putText(self.image, print_time,
                     (20, self.image.shape[0] - 30), 1, 5, 0x00, 4)
         c = 0
         if self.display:
@@ -242,32 +249,39 @@ class Graphics:
 
         # Get current position of the actuators.
         values = structure.actuator_positions()
-        values.append(simulator.get_current_speed())
-        cur_time = simulator.time
+        hor_pos = structure.wheel_positions()
+        if self.prv_pos is None:
+            self.prv_pos = hor_pos
+
+        speed0 = (hor_pos[0] - self.prv_pos[0]) / self.sample_time
+        speed1 = (hor_pos[1] - self.prv_pos[1]) / self.sample_time
+        self.prv_pos = hor_pos
+
+        values.append(speed0)
+        values.append(speed1)
         if self.save_csv:
             for f, v in zip(self.csv_files, values):
-                f.write("%0.10f, %.10f\n" % (cur_time, v))
+                f.write("%0.10f, %.10f\n" % (current_time, v))
 
         if self.save_video:
             # Save image in the image sequence directory.
             # Generate image name.
-            aux_name = "image%05i.png" % simulator.counter
+            aux_name = "image%05i.png" % counter
             image_name = os.path.join(self.video_dir, aux_name)
             cv2.imwrite(image_name, self.image)
             if self.save_composition:
                 # Generate the rest of the graphics.
                 figs = self.plots.save_data(
-                    values, simulator.counter, simulator.sample_time)
+                    values[0:6], counter, self.sample_time)
                 self.composite_image[self.RoI['video']] = self.image
                 self.composite_image[self.RoI['ac_L1']] = figs[0]
                 self.composite_image[self.RoI['ac_L2']] = figs[1]
                 self.composite_image[self.RoI['ac_L3']] = figs[2]
                 self.composite_image[self.RoI['ac_L4']] = figs[3]
-                self.composite_image[self.RoI['veloc']] = figs[4]
+                self.composite_image[self.RoI['vel_0']] = figs[4]
                 self.composite_image[self.RoI['incli']] = figs[5]
                 composite_name = os.path.join(self.dir_comp, aux_name)
                 cv2.imwrite(composite_name, self.composite_image)
-        # self.counter += 1
         return True, c
 
 ###############################################################################

@@ -8,6 +8,13 @@ Step by step simulator of structure motion.
 
 # from math import floor
 from simulator.profiles import SpeedProfile, AccelerationProfile
+from enum import Enum
+
+
+class SimulatorState(Enum):
+    SimulatorOK = 1
+    SimulatorError = 2
+    SimulatorNoIter = 3
 
 
 class DynamicValueError(ValueError):
@@ -46,7 +53,6 @@ class Simulator():
         self.speed_incline_dw = dynamics_data['incline_dw']
         # Sample time, for representation purposes.
         self.sample_time = sample_data['sample_time']
-        self.time_units = sample_data['time_units']
 
         # Wheel dynamics:
         # Current speed of the structure, in horizontal direction, taking into
@@ -87,8 +93,8 @@ class Simulator():
     def get_time(self):
         return self.counter * self.sample_time
 
-    def print_time(self):
-        return "%8.2f %s" % (self.get_time(), self.time_units)
+    # def print_time(self):
+    #     return "%8.2f %s" % (self.get_time(), self.time_units)
 
     def compute_actuator_time(self, instruction):
         """Compute time required by the actuators to complete the instruction.
@@ -207,6 +213,7 @@ class Simulator():
         equal to the stop distance (see profiles.distance_to_stop). No need to
         check more instruction. The calling function must ensure that this
         condition is hold.
+
         """
         # Set the current speed of the structure to the speed proposed to
         # begin the set, since the objective of this loop is checking
@@ -373,7 +380,7 @@ class Simulator():
         """Simulate one instruction step by step.
 
         NOTE: This function is actually a generator, to be included in a for
-        loop, wo that in each iteration, the generator returns True, except
+        loop, so that in each iteration, the generator returns True, except
         when a simulation error happens, as well as update the structure
         position, so that it can be draw inside the for loop.
 
@@ -387,8 +394,9 @@ class Simulator():
         the simulation of this instruction).
 
         """
+        # I do not know what is this for.
         if structure is None:
-            return False
+            yield SimulatorState.SimulatorError
         # Get the time needed to complete the instruction.
         # TODO: This value must be computed with the function "comptue_time".
         # If not done, suppose there is an empty instruction, or at least an
@@ -396,7 +404,7 @@ class Simulator():
         try:
             total_time = instruction['time']
         except KeyError:
-            return True
+            yield Simulator.SimulatorError
 
         # Update the time end for the previous instruction.
         self.last_time = self.next_time
@@ -419,7 +427,7 @@ class Simulator():
         # other way, so it does not matter that the structure position is not
         # updated here.
         if total_iter <= 0:
-            return True
+            yield SimulatorState.SimulatorNoIter
         # Fraction of a sample time not used when completing the last iteration
         # of the previous instruction. This must be used only for the first
         # iteration of the instruction. At the end of this loop this variable
@@ -445,17 +453,6 @@ class Simulator():
         __, speed, position = self.profile.plot_dynamics(
             current_speed, dynamics['accelerations'],
             dynamics['intervals'], self.sample_time, time_offset)
-        # try:
-        #     # Check if the dynamics has been computed for this instruction.
-        #     dynamics = instruction['dynamics']
-        #     __, speed, position = self.profile.plot_dynamics(
-        #         self.current_speed, dynamics['accelerations'],
-        #         dynamics['intervals'], self.sample_time, time_offset)
-        # except KeyError:
-        #     # If not, we are considering infinite acceleration.
-        #     __, speed, position = self.profile.plot_dynamics(
-        #         instruction['end_speed'], (0,), (total_time,),
-        #         self.sample_time,  time_offset)
         motion = position[1:] - position[0:-1]
         # NOTE: If we implement a for loop, at the end of each instruction the
         # generator is called twice, causing the simulator to perform one
@@ -520,7 +517,7 @@ class Simulator():
             # Check for the end of the instruction.
             if total_iter <= 0:
                 break
-            yield True
+            yield SimulatorState.SimulatorOK
             # Remember that the sample time is set to the time offset for the
             # first iteration of the instruction. For the rest of the
             # iterations, the sample time must be the system sample time.

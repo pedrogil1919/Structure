@@ -10,7 +10,7 @@ import sys
 import readXML
 from physics import stairs
 from structure import base
-from simulator.simulator import Simulator
+from simulator.simulator import Simulator, SimulatorState
 from graphics.graphics import Graphics
 from simulator import control
 
@@ -30,6 +30,7 @@ __, structure_size, wheels_radius = readXML.read_structure(settings_name)
 # Read simulator data.
 dynamics_data, sample_data = readXML.read_dynamics(settings_name)
 sm = Simulator(dynamics_data, sample_data)
+res = SimulatorState.SimulatorOK
 
 # Read graphical variables.
 image_data, video_data, csv_data = readXML.read_graphics(settings_name)
@@ -37,7 +38,7 @@ axis = {
     "height": structure_size["d"] + video_data['margin'],
     "max_speed": 1.2 * dynamics_data["speed"],
     "max_incline": structure_size['n'] + video_data['margin']}
-graphics = Graphics(image_data, video_data, csv_data, axis)
+graphics = Graphics(image_data, video_data, csv_data, sample_data, axis)
 
 debug = {'graphics': graphics, 'simulator': sm}
 # debug = None
@@ -65,7 +66,7 @@ structure = base.Base(structure_size, wheels_radius, stairs)  # , debug=debug)
 
 
 # Draw initial state of the structure.
-continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
+continue_loop, key_pressed = graphics.draw(stairs, structure, sm.counter)
 # Continue_loop is a flag to help finish the program. It gets False value when
 # the user press the Esc key (see graphics module).
 # Main loop
@@ -113,7 +114,7 @@ while continue_loop:
         instruction_number += 1
         print(instruction_number, instruction)
         for res in sm.simulate_step(structure, instruction):
-            if not res:
+            if res == SimulatorState.SimulatorError:
                 # The simulation has failed: Set to manual mode, to let the
                 # user check the situation.
                 graphics.set_manual_mode()
@@ -122,7 +123,10 @@ while continue_loop:
                 # continue_loop = False
                 break
             # The simulation has succeeded, so, continue loop.
-            continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
+            elif res == SimulatorState.SimulatorNoIter:
+                break
+            continue_loop, key_pressed = \
+                graphics.draw(stairs, structure, sm.counter)
             if not continue_loop or graphics.manual_mode:
                 # The user has pressed the Esc key to finish the program.
                 # Entering manual mode. Finish the inner while loop and
@@ -135,7 +139,9 @@ while continue_loop:
                 # structure is substituted, it is substituted by the same.
                 str_aux = structure
                 break
-    continue_loop, key_pressed = graphics.draw(stairs, structure, sm)
+    if res == SimulatorState.SimulatorOK:
+        continue_loop, key_pressed = graphics.draw(
+            stairs, structure, sm.counter)
     # Substitute the simulated structure by the one returned by the control
     # module when computing the instruction in automatic mode. In manual mode,
     # both are just the same object.

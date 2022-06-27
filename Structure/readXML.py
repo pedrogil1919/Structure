@@ -188,7 +188,8 @@ def read_graphics(xml_file):
         csv_data['actuator3'] = csv_element.attrib['actuator3']
         csv_data['actuator4'] = csv_element.attrib['actuator4']
         csv_data['actuator9'] = csv_element.attrib['actuator9']
-        csv_data['speed'] = csv_element.attrib['speed']
+        csv_data['speed_0'] = csv_element.attrib['speed_0']
+        csv_data['speed_1'] = csv_element.attrib['speed_1']
     except (AttributeError, KeyError):
         csv_data = {'csv_dir': None}
     # try:

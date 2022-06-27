@@ -52,6 +52,16 @@ class ControlError(ValueError):
     pass
 
 
+class FinalInstruction(Exception):
+    """Exception to set the final instruction.
+
+    Final instruction can be due to reaching the end of the stair, or because
+    the control module can not find an instruction to continue.
+
+    """
+    pass
+
+
 def null_instruction(instruction):
     """Check if the instruction does nothing."""
     if abs(instruction.get("advance", 0)) > MAX_GAP:
@@ -216,7 +226,7 @@ def next_instruction(structure):
     # we do not control this error, the program get hung because the strcture
     # does not move but the program does not finishes.
     if null_instruction(instruction):
-        raise ControlError
+        return None, st_aux
 
     return instruction, st_aux
 
