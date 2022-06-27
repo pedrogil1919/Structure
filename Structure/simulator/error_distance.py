@@ -427,7 +427,7 @@ class StructureError():
         # The actuator can be colliding from the upper or the lower bound. So,
         # we have to record which actuator is colliding, and from which bound
         # the actuator has colllided.
-        actuator_index = None
+        actuator_index = fixed
         max_value = 0.0
         for n in range(0, 4):
             if n == fixed:

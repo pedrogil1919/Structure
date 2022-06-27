@@ -326,6 +326,9 @@ class MakeRoomWheelTest(unittest.TestCase):
         struct_test = deepcopy(structure)
         self.motion8t(struct_test)
         # self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion9t(struct_test)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)
@@ -428,6 +431,15 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertAlmostEqual(elevation, 100.0, 4)
 
     def motion8t(self, structure):
+        # The difference with the previous test is that, in this case, the
+        # structure inclination only collides with actuator 3. This is another
+        # problem for the function.
+        res = structure.push_actuator(3, -120)
+        self.assertFalse(res)
+        elevation = res.elevation()
+        self.assertAlmostEqual(elevation, 20.0, 4)
+
+    def motion9t(self, structure):
         # In this case, there is a collision with actuator 1 while the initial
         # inclination, but after the second inclination the collision is with
         # the second. In this case, the motion would be possible, but trying

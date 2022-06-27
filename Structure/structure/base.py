@@ -92,6 +92,13 @@ class Pose():
     def add_inclination(self, value):
         self.__inclination += value
 
+    def __sub__(self, prev):
+
+        h = self.horizontal - prev.horizontal
+        i = self.inclination - prev.inclination
+        v = self.vertical - prev.vertical
+        return Pose(h, v, i)
+
     horizontal = property(get_horizontal, None, None, None)
     vertical = property(get_vertical, None, None, None)
     inclination = property(get_inclination, None, None, None)
@@ -740,8 +747,8 @@ class Base:
         # However, I think it is better to prevent the control module to
         # perform a shift greater than the structure height. In any case, this
         # function do its best and do not raise any exception.
-        # if col_actuator == 3:
-        #     pass
+        if col_actuator == 3:
+            return False
         # And compute the distance that the structure must incline fixing the
         # colliding actuator to get the distance required.
         rear_height = state1.inclination(3) - state1.inclination(0)
@@ -806,7 +813,7 @@ class Base:
 
         """
         # Try to shift the actuator and cheeck if the motion can be completed.
-        state1 = self.shift_actuator(index, height, margin=False)
+        state1 = self.shift_actuator(index, height, check, margin)
         if state1:
             return state1
 
@@ -825,7 +832,7 @@ class Base:
             # the stair, and so, we only can take the wheel down to the
             # stair and finish (we do not need to make more room in the
             # sctructure, since the wheel collides before the actuator).
-            if not self.shift_actuator(index, height, margin=False):
+            if not self.shift_actuator(index, height, check, margin):
                 raise RuntimeError
             # State1 keeps the total distance the actuator can not move, so
             # return this value.
@@ -835,13 +842,13 @@ class Base:
         # the actuator down will raise the same collision. We use this
         # collision to compute the distance we have to make room with the
         # following functions.
-        state2 = self.shift_actuator(index, height, margin=False)
+        state2 = self.shift_actuator(index, height, check, margin)
         if state2:
             raise RuntimeError
         # If not possible, just shift the distance that is actually possible.
         distance = state2.elevation()
         height += distance
-        if not self.shift_actuator(index, height, margin=False):
+        if not self.shift_actuator(index, height, check, margin):
             raise RuntimeError
 
         # And try to make more space by elevating / inclinating the structure.
@@ -858,25 +865,34 @@ class Base:
             # If the previous function can make enough space, trying to shift
             # the actuator should not cause any error.
 
-            if not self.shift_actuator(index, -distance, margin=False):
+            if not self.shift_actuator(index, -distance, check, margin):
                 raise RuntimeError
             # Finally, check if there were any wheel collision. In this case,
             # the motion should raise a colllision, but we need it to return
             # this collision to the calling function.
-            state4 = self.shift_actuator(index, -collision, margin=False)
+            state4 = self.shift_actuator(index, -collision, check, margin)
             return state4
 
         # In case the structure can not make enough space for the shift, so,
         # perform the motion just to generate the error object to return.
         # Check again if the motion is possible.
         height = -distance - collision
-        state4 = self.shift_actuator(index, height, margin=False)
+        state4 = self.shift_actuator(index, height, check, margin)
         if state4:
             raise RuntimeError
         height += state4.elevation()
-        if not self.shift_actuator(index, height, margin=False):
+        if not self.shift_actuator(index, height, check, margin):
             raise RuntimeError
         return state4
+
+    def get_motion(self, prev_structure):
+        """Computes the motion between current structure and previous one.
+
+        Return the horizontal motion, elevation and inclination between this
+        structure and the structure given as an argument.
+
+        """
+        return self.position - prev_structure.position
 
     # =========================================================================
     # Control functions.
