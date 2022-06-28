@@ -73,9 +73,9 @@ def null_instruction(instruction):
     main = instruction.get("main", {})
     if abs(main.get("height", 0)) > MAX_GAP:
         return False
-    second = instruction.get("second", {})
-    if abs(second.get("height", 0)) > MAX_GAP:
-        return False
+    # second = instruction.get("second", {})
+    # if abs(second.get("height", 0)) > MAX_GAP:
+    #     return False
     return True
 
 
@@ -177,7 +177,7 @@ def next_instruction(structure):
             "wheel": wheel,
             "height": ver}
         if not state:
-            actuator["height"] += state.elevation()
+            actuator["height"] -= state.elevation()
         # And the next instruction for the wheel in the other pair.
         # NOTE: The height to shift the second actuator must be proportional
         # to the horizontal distance this wheel must move compared with the
@@ -198,14 +198,6 @@ def next_instruction(structure):
             "wheel": w_aux,
             "height": -v_total}
 
-    # Complete the horizontal motion.
-    # NOTE that, when pushing the actuator, the structure can be moved if there
-    # were some collision when inclining.
-    res_adv = st_aux.advance(hor)
-    if not res_adv:
-        hor += res_adv.horizontal()
-        if not st_aux.advance(hor):
-            raise RuntimeError
     # Get the motion done by the structure to shift the actuator.
     motion = st_aux.get_motion(structure)
 
