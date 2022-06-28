@@ -151,6 +151,8 @@ class Base:
         # user, which should be computed from the range of the L9 actuator.
         self.MAX_INCLINE = self.max_inclination(size, wheels)
 
+        # use this instruction to draw the current state of the structure.
+        # self.DEBUG['graphics'].draw(self.STAIRS, self, 0)
         if debug is not None:
             self.DEBUG = debug
         self.STAIRS = stairs
@@ -267,33 +269,12 @@ class Base:
         After any structure motion, the position of the structure MUST be
         checked, since the functions performing the motion do not do any check.
         For this reason, this function must be called after any motion.
-        The function returns two dictionaries with the following keys:
-          - Dictionary 1 (for wheel collisions or actuators reaching the
-            further than either limit):
-              - res: If True, the position is valid in terms of wheel or
-                actuator
-              - collisions. In this case, only this key exists in the
-                dictionary. In case of False, include these other keys:
-              - ver: Vertical distance for the error. That is, if we call
-                again the same function adding the error returned in this key
-                to the original distance, the function will succeed.
-              - hor: Similar to vertical, but for horizontal distances.
-              - act: When both the wheel collides vertically and the actuator
-                reaches its lower bound, the key 'ver' includes the largest of
-                both distances. However, for some motions only the actuator
-                error is needed. This value in returned in this key.
-          - Dictionary 2 (for wheel pairs geting to an unstable position).
-              - res: If True, the position is valid in terms of wheel stability
-                (at least one of the wheels of the pair is in a stable
-                position).
-                In this case, only this key exists in the dictionary. In case
-                of False, include these other keys:
-              - dis: horizontal distance needed to advance the structure so
-                that the one of the wheel pair is place back to a stable
-                position.
+        The function returns a StructureError object (see definition of this
+        class).
 
         Arguments:
         margin -- See WheelActuator.check_actuator function.
+
         """
         # Check if any wheel has collided with the stairs.
         re_re, re_fr, re_pair = self.REAR.check_collision(margin)

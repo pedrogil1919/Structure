@@ -10,10 +10,14 @@ Step by step simulator of structure motion.
 from simulator.profiles import SpeedProfile, AccelerationProfile
 from enum import Enum
 
+# Returning value after a step simulation.
+
 
 class SimulatorState(Enum):
     SimulatorOK = 1
+    # An error was raised when simulating.
     SimulatorError = 2
+    # instruction time is smaller than sample time (no simulation performed).
     SimulatorNoIter = 3
 
 
@@ -427,7 +431,10 @@ class Simulator():
         # other way, so it does not matter that the structure position is not
         # updated here.
         if total_iter <= 0:
+            # If the instruction time is so small that we can not simulate any
+            # sample, we have to warm the calling function aboutn that.
             yield SimulatorState.SimulatorNoIter
+
         # Fraction of a sample time not used when completing the last iteration
         # of the previous instruction. This must be used only for the first
         # iteration of the instruction. At the end of this loop this variable
