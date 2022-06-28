@@ -153,6 +153,16 @@ def next_instruction(structure):
     # Create a deep copy of the structure, to simulate all the motions computed
     # without modifying the actual structure.
     st_aux = copy.deepcopy(structure)
+
+    # Perform the horizontal motion.
+    # NOTE that, when pushing the actuator, the structure can be moved more if
+    # there were some collision when inclining.
+    res_adv = st_aux.advance(hor)
+    if not res_adv:
+        hor += res_adv.horizontal()
+        if not st_aux.advance(hor):
+            raise RuntimeError
+
     # The variable end tells if we are in the last instruction of the motion.
     if end:
         # Computing the las instruction before finishing the program.
