@@ -151,7 +151,7 @@ class Wheel:
         elif self.state == WheelState.Over or self.state == WheelState.Outer:
             return HorVerError(horizontal, -hr - self.RADIUS)
         elif self.state == WheelState.Air or self.state == WheelState.Contact:
-            return HorVerError(None, -hc - self.RADIUS)
+            return HorVerError(horizontal, -hc - self.RADIUS)
 
         return HorVerError(None, None)
 
