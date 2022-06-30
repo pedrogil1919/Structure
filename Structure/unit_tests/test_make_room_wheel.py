@@ -329,6 +329,12 @@ class MakeRoomWheelTest(unittest.TestCase):
         struct_test = deepcopy(structure)
         self.motion9t(struct_test)
         # self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion10t(struct_test)
+        # self.draw(struct_test, stair)
+        struct_test = deepcopy(structure)
+        self.motion11t(struct_test)
+        self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)
@@ -467,6 +473,38 @@ class MakeRoomWheelTest(unittest.TestCase):
         # the motion is not possible if we do the usual motion.
         res = structure.push_actuator(3, -10)
         self.assertFalse(res)
+
+    def motion10t(self, structure):
+        # Similar to previous test, but the collision when the initial
+        # inclination is with both actuators (1 and 2) with the same distance.
+        # This test have caused the funcion error_distance.colliding_actuator
+        # to add the argument check, just to favor to choose actuator 2
+        # instead of actuator 1 when trying to check if here we have the same
+        # problem as above.
+        res = structure.elevate(100.0)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -80)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -40)
+        self.assertTrue(res)
+
+    def motion11t(self, structure):
+        # Similar to previous test, but the collision when the initial
+        # inclination is with both actuators (1 and 2) with the same distance.
+        # This test have caused the funcion error_distance.colliding_actuator
+        # to add the argument check, just to favor to choose actuator 2
+        # instead of actuator 1 when trying to check if here we have the same
+        # problem as above.
+        res = structure.elevate(100.0)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -80)
+        self.assertTrue(res)
+        res = structure.push_actuator(0, -5.0)
+        self.assertTrue(res)
+        res = structure.incline(-0.1, fixed=1)
+        self.assertTrue(res)
+        # res = structure.push_actuator(3, -40)
+        # self.assertTrue(res)
 
     ###########################################################################
     ###########################################################################

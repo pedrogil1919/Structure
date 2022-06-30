@@ -335,7 +335,7 @@ class StructureError():
             if abs(pos_height) > abs(neg_height) \
             else neg_height
 
-    def colliding_actuator(self, fixed=-1):
+    def colliding_actuator(self, fixed=-1, check=-1):
         """Find the actuator that is colliding with the structure.
 
         Return the index of the actuator that is the one that have collided
@@ -347,6 +347,9 @@ class StructureError():
             inclination that caused the collision. This is needed in case there
             is more than one actuator colliding. Set to -1 if the collision
             happens when elevating.
+        check -- In case two or more actuators have collided the same, prefer
+            the actuator with this index instead of the rest of the actuators.
+            See 
 
         """
         # The actuator can be colliding from the upper or the lower bound. So,
@@ -362,6 +365,8 @@ class StructureError():
                     error = abs(self.actuators[n].incline[fixed])
                 else:
                     error = abs(self.actuators[n].vertical)
+                if n == check:
+                    error += MAX_GAP
                 if error > max_value:
                     max_value = error
                     actuator_index = n

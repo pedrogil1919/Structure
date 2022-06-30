@@ -751,7 +751,7 @@ class Base:
                 # actuator 2 when inclining from the front. In this case, the
                 # function would return True, but the whole motion has not been
                 # done, and so, we have to return False.
-                ini_actuator = state1.colliding_actuator(0)
+                ini_actuator = state1.colliding_actuator(0, col_actuator)
                 return (col_actuator == ini_actuator)
             else:
                 return False

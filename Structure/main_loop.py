@@ -42,7 +42,7 @@ graphics = Graphics(image_data, video_data, csv_data, sample_data, axis)
 
 debug = {'graphics': graphics, 'simulator': sm}
 # debug = None
-structure = base.Base(structure_size, wheels_radius, stairs)  # , debug=debug)
+structure = base.Base(structure_size, wheels_radius, stairs, debug=debug)
 
 # instruction = {
 #     'wheel': 3, 'height': -120, 'advance': 300}
