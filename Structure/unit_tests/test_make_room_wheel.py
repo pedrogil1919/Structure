@@ -334,7 +334,7 @@ class MakeRoomWheelTest(unittest.TestCase):
         # self.draw(struct_test, stair)
         struct_test = deepcopy(structure)
         self.motion11t(struct_test)
-        self.draw(struct_test, stair)
+        # self.draw(struct_test, stair)
         # NOTE: To see a graphic representation of the structure end position
         # include this sentence wherever you want to see the position.
         # self.draw(struct_test, stair)
@@ -450,11 +450,11 @@ class MakeRoomWheelTest(unittest.TestCase):
         # inclination, but after the second inclination the collision is with
         # the second. In this case, the motion would be possible, but trying
         # to do the motion would cause a collision while simulating step by
-        # step, since the structure in close to the edge of both actuators.
+        # step, since the structure is close to the edge of both actuators.
         # So, the best solution is just do the same kind of motion, althoug we
         # do not complete the whole actuator shift. The next iteration the
         # motion can be completed. This is not a problem, since this case is
-        # to rare to happen.
+        # too rare to happen.
         res = structure.elevate(80)
         self.assertTrue(res)
         res = structure.push_actuator(3, -80)
@@ -477,10 +477,11 @@ class MakeRoomWheelTest(unittest.TestCase):
     def motion10t(self, structure):
         # Similar to previous test, but the collision when the initial
         # inclination is with both actuators (1 and 2) with the same distance.
-        # This test have caused the funcion error_distance.colliding_actuator
-        # to add the argument check, just to favor to choose actuator 2
-        # instead of actuator 1 when trying to check if here we have the same
-        # problem as above.
+        # In this case, the function colliding_actuator return 1 as the
+        # initial actuator, and return 2 for the fixed actuator. This has
+        # motivated the NOTE inside base.push_actuator at the end of the
+        # function, near the code:
+        # "if state4:"
         res = structure.elevate(100.0)
         self.assertTrue(res)
         res = structure.push_actuator(3, -80)
@@ -501,10 +502,10 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertTrue(res)
         res = structure.push_actuator(0, -5.0)
         self.assertTrue(res)
-        res = structure.incline(-0.1, fixed=1)
+        res = structure.incline(0.2, fixed=1)
         self.assertTrue(res)
-        # res = structure.push_actuator(3, -40)
-        # self.assertTrue(res)
+        res = structure.push_actuator(3, -40)
+        self.assertTrue(res)
 
     ###########################################################################
     ###########################################################################
@@ -659,3 +660,59 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertAlmostEqual(inclination, 34.1667, 4)
         elevation = res.elevation()
         self.assertAlmostEqual(elevation, 45.8333, 4)
+
+    def test_structure_motion(self):
+        """This test is for testing structure motion errors that happens when
+        designing the test in this class.
+
+        """
+        landing = 500.0
+        stair_list = [
+            {'N': 5, 'd': 1000.0, 'w': 250.0, 'h': 80.0}
+        ]
+        size = {
+            'a': 120.0,
+            'b': 150.0,
+            'c': 140.0,
+            'd': 100.0,
+            'h': 2.0,
+            'v': 2.0,
+            'g': 100.0,
+            'n': 60.0}
+        wheels = {
+            'r1': 25.0,
+            'r2': 25.0,
+            'r3': 25.0,
+            'r4': 25.0}
+        stair = stairs.Stair(stair_list, landing)
+        structure = base.Base(size, wheels, stair)
+        struct_test = deepcopy(structure)
+        self.structure_motion1(struct_test)
+
+    def structure_motion1(self, structure):
+        # When the structure is close to the bounds of the actuators, we can
+        # have problems when checking structure position. In this case, the
+        # actuator 2 is out of its upper bound, but is inside the actuator
+        # margin. So, when trying to incline in the last instruction, since
+        # this inclination is not possible, the structure does not return to
+        # its initial position, but it tryes to incline back to place the
+        # actuator 2 again in a valid (not margin) position. And doing that,
+        # the structure collides with the front actuator. However, setting the
+        # actuator margin to a value greater than the MAX_GAP value, prevent
+        # the function to raise an exception.
+        # If we try to set the actuator.MARGIN value to a value equal or less
+        # than MAX_GAP, the exceptión is raised (in fact, the value of MARGIN
+        #  should be as greater to MAX_GAP as a proportional value obtained
+        # from the actuator position, but now is set to its double, which I
+        # think is a valid value.
+        res = structure.elevate(100.0)
+        self.assertTrue(res)
+        res = structure.push_actuator(3, -80)
+        self.assertTrue(res)
+        res = structure.push_actuator(0, -5.0)
+        self.assertTrue(res)
+        # If we set MARGIN = MAX_GAP an exception is raised, since there is a
+        # collision to the front actuator when trying to correct the structure
+        # position.
+        res = structure.incline(0.1, fixed=1)
+        self.assertTrue(res)
