@@ -712,7 +712,7 @@ class Base:
         # actuator collision in the direction of motion.
         # Get the structure until it collided with the actuator.
         front_incline += state1.inclination(0)
-        if not self.incline_and_advance(front_incline, margin=False):
+        if not self.incline_and_advance(front_incline):
             raise RuntimeError
         # Detect the colliding actuator.
         col_actuator = state1.colliding_actuator(3)
@@ -751,7 +751,7 @@ class Base:
                 # actuator 2 when inclining from the front. In this case, the
                 # function would return True, but the whole motion has not been
                 # done, and so, we have to return False.
-                ini_actuator = state1.colliding_actuator(0, col_actuator)
+                ini_actuator = state1.colliding_actuator(0)
                 return (col_actuator == ini_actuator)
             else:
                 return False
@@ -855,7 +855,16 @@ class Base:
         height = -distance - collision
         state4 = self.shift_actuator(index, height, check, margin)
         if state4:
-            raise RuntimeError
+            # NOTE: IN some occasions, when inclining the structure and it
+            # collides with two actuators for the same amount, the function can
+            # return a False value when it should be True, because of rounding
+            # errors. See function make_room_wheel3, near the instruction:
+            # "return (col_actuator == ini_actuator)"
+            # The last instruction should be True, but it returns False. For
+            # this reason, although state4 should be False, in this case is
+            # True, and so, we do not raise a RuntimeError Exception.
+            # See test motion11t.
+            return state4
         height += state4.elevation()
         if not self.shift_actuator(index, height, check, margin):
             raise RuntimeError

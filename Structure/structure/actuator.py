@@ -62,7 +62,7 @@ class WheelActuator:
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
         # Allowed margin out of the actuator bounds.
-        self.MARGIN = MAX_GAP
+        self.MARGIN = 2 * MAX_GAP
         # Create a joint to join it to the main base.
         self.JOINT = Joint(structure_position, position)
         # and create the ending wheel.
@@ -107,7 +107,7 @@ class WheelActuator:
             self.state = ActuatorState.ExitUpperBound
         elif self.d > self.LENGTH + MAX_GAP:
             # The actuator is inside the allowed margin.
-            self.state = ActuatorState.ExitUpperBound
+            self.state = ActuatorState.MarginUpperBound
         elif self.d > self.LENGTH - MAX_GAP:
             self.state = ActuatorState.UpperBound
         else:
@@ -168,6 +168,7 @@ class WheelActuator:
             error, this value is the same than the previous value. This is
             needed for incline function, because this function need to
             differenciate between wheel and actuator error.
+
         """
         # Check if the wheel is in a valid position.
         position = self.JOINT.position(self.HEIGHT + self.d)
