@@ -62,7 +62,7 @@ class WheelActuator:
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
         # Allowed margin out of the actuator bounds.
-        self.MARGIN = 2 * MAX_GAP
+        self.MARGIN = MAX_GAP
         # Create a joint to join it to the main base.
         self.JOINT = Joint(structure_position, position)
         # and create the ending wheel.
