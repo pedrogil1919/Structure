@@ -263,7 +263,7 @@ class Base:
     # distance will be the required distance plus the distance returned by the
     # function.
 
-    def check_position(self, margin=False):
+    def check_position(self):
         """General function to check the validity of the current position.
 
         After any structure motion, the position of the structure MUST be
@@ -272,13 +272,10 @@ class Base:
         The function returns a StructureError object (see definition of this
         class).
 
-        Arguments:
-        margin -- See WheelActuator.check_actuator function.
-
         """
         # Check if any wheel has collided with the stairs.
-        re_re, re_fr, re_pair = self.REAR.check_collision(margin)
-        fr_re, fr_fr, fr_pair = self.FRNT.check_collision(margin)
+        re_re, re_fr, re_pair = self.REAR.check_collision()
+        fr_re, fr_fr, fr_pair = self.FRNT.check_collision()
 
         # Check for possible collisions due to inclinations.
 
@@ -340,7 +337,7 @@ class Base:
         # not be any error. If this error happens, it is a run time error.
         raise RuntimeError("Error in advance structure")
 
-    def elevate(self, height, wheel=None, check=True, margin=True):
+    def elevate(self, height, wheel=None, check=True):
         """Elevate (or take down) the whole structure.
 
         Arguments:
@@ -370,7 +367,7 @@ class Base:
             return
 
         # Check if any of the actuators has reached one of its bounds.
-        structure_position = self.check_position(margin)
+        structure_position = self.check_position()
         if structure_position:
             # Everything is OK.
             return structure_position
@@ -384,12 +381,12 @@ class Base:
         # Check that everything is OK again.
         # NOTE: In this case, never a stability error can happen, and so, we
         # need not collect the stability error.
-        if self.check_position(margin):
+        if self.check_position():
             return structure_position
 
         raise RuntimeError("Error in elevate")
 
-    def incline(self, height, wheel=None, fixed=0, check=True, margin=True):
+    def incline(self, height, wheel=None, fixed=0, check=True):
         """Incline the base of the structure.
 
         Arguments:
@@ -491,7 +488,7 @@ class Base:
         # Check the validity of the motion.
         # TODO: When fixing front or elevating the rear wheel, it is possible
         # that this function work wrongly. Check it.
-        structure_position = self.check_position(margin)
+        structure_position = self.check_position()
 
         if structure_position:
             return structure_position
@@ -500,12 +497,12 @@ class Base:
         wheel_aux = [-w if (w is not None) else w for w in wheel]
         self.incline(-height, wheel_aux, fixed, False)
         # Check that everything is OK again.
-        if self.check_position(margin):
+        if self.check_position():
             return structure_position
 
         raise RuntimeError("Error in incline function")
 
-    def shift_actuator(self, index, height, check=True, margin=True):
+    def shift_actuator(self, index, height, check=True):
         """Shift one actuator independently.
 
         Arguments:
@@ -530,7 +527,7 @@ class Base:
             return
 
         # Check if the actuator has reached one of its bounds.
-        structure_position = self.check_position(margin)
+        structure_position = self.check_position()
 
         # The variable col is for possible collisions with the steps, or an
         # actuator reaching one of its bounds.
@@ -542,14 +539,13 @@ class Base:
         # Leave the actuator in its original position.
         self.shift_actuator(index, -height, False)
         # Check that everything is OK again.
-        if self.check_position(margin):
+        if self.check_position():
             return structure_position
         raise RuntimeError("Error in shift actuator.")
 
 ###############################################################################
 ###############################################################################
-    def incline_and_advance(self, height, wheel=None,
-                            fixed=0, check=True, margin=True):
+    def incline_and_advance(self, height, wheel=None, fixed=0, check=True):
         """Incline structure, and advance if a collision happens.
 
         This function is similar to incline, but if after the inclination any
@@ -560,7 +556,7 @@ class Base:
 
         """
         # Incline the structure.
-        state1 = self.incline(height, wheel, fixed, check, margin)
+        state1 = self.incline(height, wheel, fixed, check)
         if state1:
             # Check if there is a error when inclining.
             return state1
@@ -574,10 +570,10 @@ class Base:
             # of the wheel collides, and when trying to correct this collision,
             # the other wheel collides in the opposite direction.
             advance += state2.horizontal()
-            state3 = self.incline(height, wheel, fixed, check, margin)
+            state3 = self.incline(height, wheel, fixed, check)
             return state3
 
-        state3 = self.incline(height, wheel, fixed, check, margin)
+        state3 = self.incline(height, wheel, fixed, check)
         return state3
 
     def allowed_inclination(self, height):
@@ -621,7 +617,7 @@ class Base:
         given to the structure.
         """
         # Try to elevate the required distance.
-        state1 = self.elevate(height, margin=False)
+        state1 = self.elevate(height)
         if state1:
             # If success, the actuator can alreay be shifted.
             return True
@@ -633,7 +629,7 @@ class Base:
         height += state1.elevation()
         # And elevate the structure this height to place the structure in its
         # limit.
-        if not self.elevate(height, margin=False):
+        if not self.elevate(height):
             raise RuntimeError
 
         # Check the actuator that has actually collided with the structure.
@@ -649,9 +645,8 @@ class Base:
 
         # Try to incline fixing the actuator that has actually collided the
         # most.
-        state2 = self.incline_and_advance(col_incline,
-                                          fixed=col_actuator,
-                                          margin=False)
+        state2 = self.incline_and_advance(col_incline, fixed=col_actuator)
+
         if state2:
             if front_elevate != 0:
                 return False
@@ -661,7 +656,7 @@ class Base:
         # the opposite direction.
         col_incline += state2.inclination(col_actuator)
         state3 = self.incline_and_advance(col_incline,
-                                          fixed=col_actuator, margin=False)
+                                          fixed=col_actuator)
         if not state3:
             raise RuntimeError
         return False
@@ -691,15 +686,15 @@ class Base:
         front_incline, front_elevate = self.allowed_inclination(height)
 
         # Incline the required (or maximum) height.
-        state1 = self.incline_and_advance(front_incline, margin=False)
+        state1 = self.incline_and_advance(front_incline)
         if state1:
             # Check whether we also need to elevate the structure.
-            state2 = self.elevate(front_elevate, margin=False)
+            state2 = self.elevate(front_elevate)
             if not state2:
                 # If we can not elevate the whole distance, elevate just the
                 # distance possible.
                 front_elevate += state2.elevation()
-                if not self.elevate(front_elevate, margin=False):
+                if not self.elevate(front_elevate):
                     raise RuntimeError
                 # In this case, no error is raised but the structure can not
                 # complete the whole motion, so that return false.
@@ -735,8 +730,7 @@ class Base:
         # colliding actuator, an no more height can be gain. In case we needed
         # more distance, the complete motion can not be reached.
         rear_incline, rear_elevate = self.allowed_inclination(rear_height)
-        state2 = self.incline_and_advance(rear_incline,
-                                          fixed=col_actuator, margin=False)
+        state2 = self.incline_and_advance(rear_incline, fixed=col_actuator)
         if state2:
             # Check if we also need to elevate.
             # NOTE: This function is not intended to elevate the structure,
@@ -744,7 +738,7 @@ class Base:
             # is only intended to check whether the whole distance has been
             # completed or not.
             total_elevate = rear_elevate + front_elevate
-            if self.elevate(total_elevate, margin=False):
+            if self.elevate(total_elevate):
                 # When the structure is close to the limit of the central
                 # actuators, it is possible that the structure collides with
                 # actuator 1 when inclining from the rear, but collides with
@@ -759,12 +753,11 @@ class Base:
         # opposite direction. Just get the distance we can incline and
         # finish the motion.
         rear_incline += state2.inclination(col_actuator)
-        if not self.incline_and_advance(rear_incline,
-                                        fixed=col_actuator, margin=False):
+        if not self.incline_and_advance(rear_incline, fixed=col_actuator):
             raise RuntimeError
         return False
 
-    def push_actuator(self, index, height, check=True, margin=True):
+    def push_actuator(self, index, height, check=True):
         """Shift an actuator, and push the structure if not enough room.
 
         This function is similar to shift actuator, but if the whole motion is
@@ -789,7 +782,7 @@ class Base:
 
         """
         # Try to shift the actuator and cheeck if the motion can be completed.
-        state1 = self.shift_actuator(index, height, check, margin)
+        state1 = self.shift_actuator(index, height, check)
         if state1:
             return state1
 
@@ -808,7 +801,7 @@ class Base:
             # the stair, and so, we only can take the wheel down to the
             # stair and finish (we do not need to make more room in the
             # sctructure, since the wheel collides before the actuator).
-            if not self.shift_actuator(index, height, check, margin):
+            if not self.shift_actuator(index, height, check):
                 raise RuntimeError
             # State1 keeps the total distance the actuator can not move, so
             # return this value.
@@ -818,13 +811,13 @@ class Base:
         # the actuator down will raise the same collision. We use this
         # collision to compute the distance we have to make room with the
         # following functions.
-        state2 = self.shift_actuator(index, height, check, margin)
+        state2 = self.shift_actuator(index, height, check)
         if state2:
             raise RuntimeError
         # If not possible, just shift the distance that is actually possible.
         distance = state2.elevation()
         height += distance
-        if not self.shift_actuator(index, height, check, margin):
+        if not self.shift_actuator(index, height, check):
             raise RuntimeError
 
         # And try to make more space by elevating / inclinating the structure.
@@ -841,19 +834,19 @@ class Base:
             # If the previous function can make enough space, trying to shift
             # the actuator should not cause any error.
 
-            if not self.shift_actuator(index, -distance, check, margin):
+            if not self.shift_actuator(index, -distance, check):
                 raise RuntimeError
             # Finally, check if there were any wheel collision. In this case,
             # the motion should raise a colllision, but we need it to return
             # this collision to the calling function.
-            state4 = self.shift_actuator(index, -collision, check, margin)
+            state4 = self.shift_actuator(index, -collision, check)
             return state4
 
         # In case the structure can not make enough space for the shift, so,
         # perform the motion just to generate the error object to return.
         # Check again if the motion is possible.
         height = -distance - collision
-        state4 = self.shift_actuator(index, height, check, margin)
+        state4 = self.shift_actuator(index, height, check)
         if state4:
             # NOTE: IN some occasions, when inclining the structure and it
             # collides with two actuators for the same amount, the function can
@@ -866,7 +859,7 @@ class Base:
             # See test motion11t.
             return state4
         height += state4.elevation()
-        if not self.shift_actuator(index, height, check, margin):
+        if not self.shift_actuator(index, height, check):
             raise RuntimeError
         return state4
 

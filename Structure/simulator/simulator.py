@@ -517,7 +517,7 @@ class Simulator():
             structure.incline(step_incline, actuator_incline, check=False)
             structure.elevate(step_elevate, actuator_elevate, check=False)
             # Is here when we must check the validity of the position.
-            structure_position = structure.check_position(False)
+            structure_position = structure.check_position()
             if not structure_position:
                 raise RuntimeError("Can not move structure.")
             total_iter -= 1
@@ -567,10 +567,10 @@ class Simulator():
             pass
         else:
             # Elevate structure
-            res = structure.elevate(height, margin=False)
+            res = structure.elevate(height)
             if not res:
                 elevation = res.elevation()
-                if not structure.elevate(height + elevation, margin=False):
+                if not structure.elevate(height + elevation):
                     raise RuntimeError
                 elevate_post = True
         #######################################################################
@@ -581,12 +581,11 @@ class Simulator():
         else:
             fixed = instruction.get('fixed', 0)
             # Incline structure
-            res = structure.incline_and_avance(
-                height, None, fixed, margin=False)
+            res = structure.incline_and_advance(height, None, fixed)
             if not res:
                 incline = res.inclination(fixed)
-                if not structure.incline_and_avance(height + incline,
-                                                    None, fixed, margin=False):
+                if not structure.incline_and_advance(height + incline,
+                                                     None, fixed):
                     raise RuntimeError
                 print("Can not incline structure:")
         #######################################################################
@@ -597,10 +596,9 @@ class Simulator():
                 pass
             else:
                 # Elevate structure
-                res = structure.elevate(height, margin=False)
+                res = structure.elevate(height)
                 if not res:
-                    if not structure.elevate(
-                            height + res.elevation(), margin=False):
+                    if not structure.elevate(height + res.elevation()):
                         raise RuntimeError
                 print("Can not elevate structure:")
         #######################################################################
@@ -612,7 +610,7 @@ class Simulator():
             pass
         else:
             # Shift actuator.
-            res = structure.push_actuator(wheel, height, margin=False)
+            res = structure.push_actuator(wheel, height)
             if not res:
                 # If the wheel collides with the step, or with one of its ends,
                 # modify the height to move so that the actuator is in contact

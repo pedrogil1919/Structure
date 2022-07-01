@@ -504,8 +504,8 @@ class MakeRoomWheelTest(unittest.TestCase):
         self.assertTrue(res)
         res = structure.incline(0.1, fixed=1)
         self.assertTrue(res)
-        # res = structure.push_actuator(3, -40)
-        # self.assertTrue(res)
+        res = structure.push_actuator(3, -40)
+        self.assertTrue(res)
 
     ###########################################################################
     ###########################################################################

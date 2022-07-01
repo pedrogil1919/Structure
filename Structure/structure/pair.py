@@ -74,11 +74,8 @@ class ActuatorPair:
         else:
             self.FRNT.shift_actuator_proportional(height)
 
-    def check_collision(self, margin):
+    def check_collision(self):
         """Check if any of the wheels (or both) are in a forbidden position.
-
-        Arguments:
-        margin -- See WheelActuator.check_actuator function.
 
         Return:
           - ActuatorError object for the external actuator.
@@ -86,8 +83,8 @@ class ActuatorPair:
           - PairError object.
         """
         # Check for possible wheel collisions.
-        re_col = self.REAR.check_actuator(margin)
-        fr_col = self.FRNT.check_actuator(margin)
+        re_col = self.REAR.check_actuator()
+        fr_col = self.FRNT.check_actuator()
 
         # Check if the pair of wheels are in a stable position.
         # NOTE: This checking must be done here, to have the info available

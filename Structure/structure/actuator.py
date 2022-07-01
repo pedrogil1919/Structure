@@ -20,12 +20,10 @@ from physics.wheel_state import MAX_GAP
 class ActuatorState(Enum):
     """Possible states for an actuator."""
     ExitUpperBound = 1
-    MarginUpperBound = 2
-    UpperBound = 3
-    Center = 4
-    LowerBound = 5
-    MarginLowerBound = 6
-    ExitLowerBound = 7
+    UpperBound = 2
+    Center = 3
+    LowerBound = 4
+    ExitLowerBound = 5
 
 
 class WheelActuator:
@@ -53,6 +51,7 @@ class WheelActuator:
         stairs -- Physics structure to check collisions between a wheel and a
           step.
         margin -- Horizontal and vertical margins (see paper).
+
         """
         # Current position and state of the linear actuator.
         self.d = 0.0
@@ -61,8 +60,6 @@ class WheelActuator:
         self.LENGTH = length
         # Total length (from upper joint to the floor).
         self.HEIGHT = height
-        # Allowed margin out of the actuator bounds.
-        self.MARGIN = MAX_GAP
         # Create a joint to join it to the main base.
         self.JOINT = Joint(structure_position, position)
         # and create the ending wheel.
@@ -94,21 +91,19 @@ class WheelActuator:
         # The calling function MUST check the position, using check_actuator
         # function.
         self.d += distance
-        if self.d < -self.MARGIN:
+        if self.d < -MAX_GAP:
             # The actuator get out of the lower bound (not valid).
             self.state = ActuatorState.ExitLowerBound
-        elif self.d < -MAX_GAP:
-            # The actuator is inside the allowed margin.
-            self.state = ActuatorState.MarginLowerBound
         elif self.d < MAX_GAP:
+            # The actuator is in its lower bound (a MAX_GAP margin is allowed
+            # for the actuator to be in the bound).
             self.state = ActuatorState.LowerBound
-        elif self.d > self.LENGTH + self.MARGIN:
+        elif self.d > self.LENGTH + MAX_GAP:
             # The actuator reached the upper bound (not valid).
             self.state = ActuatorState.ExitUpperBound
-        elif self.d > self.LENGTH + MAX_GAP:
-            # The actuator is inside the allowed margin.
-            self.state = ActuatorState.MarginUpperBound
         elif self.d > self.LENGTH - MAX_GAP:
+            # The actuator is in its upper bound
+            # (MAX_GAP: see LowerBound case).
             self.state = ActuatorState.UpperBound
         else:
             self.state = ActuatorState.Center
@@ -144,17 +139,11 @@ class WheelActuator:
         # And return the required distance.
         return self.WHEEL.distance_to_stable(position)
 
-    def check_actuator(self, margin):
+    def check_actuator(self):
         """Check if the actuator is in a valid position.
 
         This function check both, if the actuator is inside is range of
         actuation, and if the ending wheel is in a valid position.
-
-        Arguments:
-        margin -- The actuator includes a small margin in both sides. If this
-            parameter is True, when checking the position of the structure,
-            it is allowed for the actuator to invade this margin without
-            raising an error.
 
         Return:
           - True if everything is in a valid position. False otherwise.
@@ -180,13 +169,11 @@ class WheelActuator:
         # Check if the actuator has reached one of its bounds.
         a_err = 0.0
 
-        if self.state == ActuatorState.ExitLowerBound or \
-                (not margin and self.state == ActuatorState.MarginLowerBound):
+        if self.state == ActuatorState.ExitLowerBound:
             # The actuator has gone out of its lower bound.
             correct = False
             a_err = -self.d
-        elif self.state == ActuatorState.ExitUpperBound or \
-                (not margin and self.state == ActuatorState.MarginUpperBound):
+        elif self.state == ActuatorState.ExitUpperBound:
             # The actuator has gone out if its upper bound. In this case, we
             # have to check also if the wheel is in a valid position with
             # respect to the stair, and get the maximum of both.
@@ -237,8 +224,6 @@ class WheelActuator:
     LIMIT_COLOR = {
         ActuatorState.UpperBound: (0xFF, 0x00, 0x00),
         ActuatorState.LowerBound: (0xFF, 0x00, 0x00),
-        ActuatorState.MarginUpperBound: (0x00, 0x00, 0xFF),
-        ActuatorState.MarginLowerBound: (0x00, 0x00, 0xFF),
         ActuatorState.ExitUpperBound: (0x00, 0x00, 0x00),
         ActuatorState.ExitLowerBound: (0x00, 0x00, 0x00)
     }
