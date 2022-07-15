@@ -817,7 +817,14 @@ class Base:
         # If not possible, just shift the distance that is actually possible.
         distance = state2.elevation()
         height += distance
-        if not self.shift_actuator(index, height, check):
+        state3 = self.shift_actuator(index, height, check)
+        if not state3:
+            # If not possible, check if it is due to a pair unstability, that
+            # is, trying to elevate a wheel while the other wheel in the pair
+            # is still in the air.
+            if not state3.vertical_stability():
+                # In this case, return without doing nothing.
+                return state3
             raise RuntimeError
 
         # And try to make more space by elevating / inclinating the structure.

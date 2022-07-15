@@ -5,6 +5,7 @@ Created on 20 may. 2022
 
 Definition of classes to return the list of distances errors when checking the
 position of the structure with respect to the stairs.
+
 '''
 from physics.wheel_state import MAX_GAP
 
@@ -165,7 +166,7 @@ class PairError(ErrorDistance):
         else:
             # Both wheels are unstable, which is rare, but if happens, set
             # the horizontal distance to the minimum of both.
-            if front.horizontal < rear.horizontal:
+            if abs(front.horizontal) < abs(rear.horizontal):
                 self.horizontal = front.horizontal
                 self.vertical = front.vertical
                 self.index = 1
@@ -334,6 +335,17 @@ class StructureError():
         return pos_height \
             if abs(pos_height) > abs(neg_height) \
             else neg_height
+
+    def vertical_stability(self):
+        """
+        Check if any of the pairs is in an unstable position due to a
+        vertical motion of an actuator.
+
+        """
+        for pair in self.pairs:
+            if not pair:
+                return False
+        return True
 
     def colliding_actuator(self, fixed=-1):
         """Find the actuator that is colliding with the structure.
