@@ -75,6 +75,8 @@ instruction_number = 0
 while continue_loop:
     if graphics.manual_mode:
         # In manual mode, wait for the user to press a instruction.
+        continue_loop, key_pressed = graphics.draw(
+            stairs, structure, sm.counter)
         instruction = control.manual_control(key_pressed, sm)
         str_aux = structure
         sm.simulate_instruction(structure, instruction)
@@ -123,8 +125,8 @@ while continue_loop:
                 # continue_loop = False
                 break
             # The simulation has succeeded, so, continue loop.
-            elif res == SimulatorState.SimulatorNoIter:
-                break
+            # elif res == SimulatorState.SimulatorNoIter:
+            #     break
             continue_loop, key_pressed = \
                 graphics.draw(stairs, structure, sm.counter)
             if not continue_loop or graphics.manual_mode:
@@ -139,9 +141,9 @@ while continue_loop:
                 # structure is substituted, it is substituted by the same.
                 str_aux = structure
                 break
-    if res == SimulatorState.SimulatorOK:
-        continue_loop, key_pressed = graphics.draw(
-            stairs, structure, sm.counter)
+    # if res == SimulatorState.SimulatorOK:
+    #     continue_loop, key_pressed = graphics.draw(
+    #         stairs, structure, sm.counter)
     # Substitute the simulated structure by the one returned by the control
     # module when computing the instruction in automatic mode. In manual mode,
     # both are just the same object.

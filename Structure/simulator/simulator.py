@@ -17,7 +17,7 @@ class SimulatorState(Enum):
     SimulatorOK = 1
     # An error was raised when simulating.
     SimulatorError = 2
-    # instruction time is smaller than sample time (no simulation performed).
+    # The last iteration of the loop.
     SimulatorNoIter = 3
 
 
@@ -433,7 +433,8 @@ class Simulator():
         if total_iter <= 0:
             # If the instruction time is so small that we can not simulate any
             # sample, we have to warm the calling function aboutn that.
-            yield SimulatorState.SimulatorNoIter
+            return
+            # yield SimulatorState.SimulatorNoIter
 
         # Fraction of a sample time not used when completing the last iteration
         # of the previous instruction. This must be used only for the first
@@ -520,10 +521,10 @@ class Simulator():
             structure_position = structure.check_position()
             if not structure_position:
                 raise RuntimeError("Can not move structure.")
-            total_iter -= 1
-            # Check for the end of the instruction.
-            if total_iter <= 0:
-                break
+            # total_iter -= 1
+            # # Check for the end of the instruction.
+            # if total_iter <= 0:
+            #     break
             yield SimulatorState.SimulatorOK
             # Remember that the sample time is set to the time offset for the
             # first iteration of the instruction. For the rest of the
