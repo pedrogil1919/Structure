@@ -137,7 +137,9 @@ class Graphics:
                 open(os.path.join(csv_dir, csv_data['actuator4']), "w"),
                 open(os.path.join(csv_dir, csv_data['actuator9']), "w"),
                 open(os.path.join(csv_dir, csv_data['speed_0']), "w"),
-                open(os.path.join(csv_dir, csv_data['speed_1']), "w"))
+                open(os.path.join(csv_dir, csv_data['speed_1']), "w"),
+                open(os.path.join(csv_dir, csv_data['speed_2']), "w"),
+                open(os.path.join(csv_dir, csv_data['speed_3']), "w"))
         else:
             self.save_csv = False
 
@@ -253,12 +255,17 @@ class Graphics:
         if self.prv_pos is None:
             self.prv_pos = hor_pos
 
+        # Get wheel speed.
         speed0 = (hor_pos[0] - self.prv_pos[0]) / self.sample_time
         speed1 = (hor_pos[1] - self.prv_pos[1]) / self.sample_time
+        speed2 = (hor_pos[2] - self.prv_pos[2]) / self.sample_time
+        speed3 = (hor_pos[3] - self.prv_pos[3]) / self.sample_time
         self.prv_pos = hor_pos
 
         values.append(speed0)
         values.append(speed1)
+        values.append(speed2)
+        values.append(speed3)
         if self.save_csv:
             for f, v in zip(self.csv_files, values):
                 f.write("%0.10f, %.10f\n" % (current_time, v))
