@@ -251,16 +251,16 @@ class Graphics:
 
         # Get current position of the actuators.
         values = structure.actuator_positions()
-        hor_pos = structure.wheel_positions()
+        wheel_pos = structure.wheel_positions()
         if self.prv_pos is None:
-            self.prv_pos = hor_pos
+            self.prv_pos = wheel_pos
 
         # Get wheel speed.
-        speed0 = (hor_pos[0] - self.prv_pos[0]) / self.sample_time
-        speed1 = (hor_pos[1] - self.prv_pos[1]) / self.sample_time
-        speed2 = (hor_pos[2] - self.prv_pos[2]) / self.sample_time
-        speed3 = (hor_pos[3] - self.prv_pos[3]) / self.sample_time
-        self.prv_pos = hor_pos
+        speed0 = (wheel_pos[0][0] - self.prv_pos[0][0]) / self.sample_time
+        speed1 = (wheel_pos[1][0] - self.prv_pos[1][0]) / self.sample_time
+        speed2 = (wheel_pos[2][0] - self.prv_pos[2][0]) / self.sample_time
+        speed3 = (wheel_pos[3][0] - self.prv_pos[3][0]) / self.sample_time
+        self.prv_pos = wheel_pos
 
         values.append(speed0)
         values.append(speed1)

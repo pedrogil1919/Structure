@@ -1030,9 +1030,9 @@ class Base:
         This function is designed for representation purposes.
 
         """
-        x1, __, x2, __ = self.REAR.position(0)
-        x3, __, x4, __ = self.FRNT.position(0)
-        return (x1, x2, x3, x4)
+        x1, y1, x2, y2 = self.REAR.position(0)
+        x3, y3, x4, y4 = self.FRNT.position(0)
+        return (x1, y1), (x2, y2), (x3, y3), (x4, y4)
     # =========================================================================
     # Drawing functions.
     # =========================================================================
