@@ -92,6 +92,16 @@ while continue_loop:
                 # because we are not displaying images), finish the loop.
                 continue_loop = False
             continue
+        stop_lentgh = sm.stop_distance(instruction)
+        next_instructions = control.compute_distance(str_aux, stop_lentgh)
+        # Compute and initial estimation of the time requirede to
+        # complete the instruction, and if dynamics is implemented,
+        # compute the instructions that the structure has to suposedly
+        # complete until the structure stop. This is only to check
+        # for collisions when computing the actual profile for the
+        # horizontal motion (if needed).
+        # Compute the actual time required to complete the instruction.
+        sm.compute_time(instruction, next_instructions)
         # Simulate instruction:
         instruction_number += 1
         print(instruction_number, instruction)
