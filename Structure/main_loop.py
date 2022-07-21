@@ -131,13 +131,18 @@ while continue_loop:
                 # structure is substituted, it is substituted by the same.
                 str_aux = structure
                 break
-    # if res == SimulatorState.SimulatorOK:
-    #     continue_loop, key_pressed = graphics.draw(
-    #         stairs, structure, sm.counter)
+        if instruction.get("end", False):
+            try:
+                graphics.set_manual_mode()
+            except ValueError:
+                # If the graphics can not be set in manual mode (normally
+                # because we are not displaying images), finish the loop.
+                continue_loop = False
     # Substitute the simulated structure by the one returned by the control
     # module when computing the instruction in automatic mode. In manual mode,
     # both are just the same object.
     structure = str_aux
+
 
 print("End of program.")
 #
