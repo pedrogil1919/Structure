@@ -217,6 +217,9 @@ def next_instruction(structure):
         "advance": motion.get_horizontal(),
         "incline": motion.get_inclination(),
         "elevate": motion.get_vertical()}
+    if end:
+        # Tell the simulator that this is the last instruction.
+        instruction['end'] = True
 
     # Get the shift of each actuator. This value is needed in case we have to
     # return the actual shift of the actuator, not the shift after the
