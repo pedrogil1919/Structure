@@ -186,9 +186,26 @@ def next_instruction(structure):
         # Now, we check if we can shift the actuator the distance required.
         res_act = st_aux.shift_actuator(w_aux, -v_total)
         if not res_act:
-            v_total -= res_act.actuator(w_aux)
-            if not st_aux.shift_actuator(w_aux, -v_total):
-                raise RuntimeError
+            try:
+                # If not, shift the actuator the height that is actually
+                # possible.
+                # TODO: In a new version, we can elevate the structure just to
+                # allow the actuator to complete the required motion. This is
+                # complex, and may be does not save any time, but we can try.
+                v_total -= res_act.actuator(w_aux)
+                if not st_aux.shift_actuator(w_aux, -v_total):
+                    raise RuntimeError
+            except ValueError:
+                # This error happens when, in the beginning, call to function
+                # get_wheel_distances, both wheels of a pair are on the ground,
+                # but when doing the motion for the leading wheel, and this
+                # motion include a inclination, one of the wheels can be set
+                # on an unstable position, and so, when trying the move the
+                # other actuator, at this moment is not possible because if we
+                # shift the actuator, the pair would be set unstable. This
+                # error will not happen if the aux wheel is the wheel that get
+                # unstable when doing the motion for the leading wheel.
+                v_total = 0.0
         act_aux = {
             "wheel": w_aux,
             "height": -v_total}
