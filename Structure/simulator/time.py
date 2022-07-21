@@ -40,9 +40,9 @@ def compute_time(structure, simulator):
             # In case the list is empty, compute just the next instruction.
             instruction, str_aux = next_instruction(structure)
         if instruction is None:
-            # When the instruction is None, that means that we have complete
-            # the stair.
-            break
+            # This means that the control module can not find a valid
+            # instruction, and so, the stair can not be crossed.
+            raise ValueError("Stair can not be crossed")
         # To fix the end speed for the current instruction, we have to chek for
         # any possible crash in the following instructions. For that reason, we
         # need to compute first the stop distance.
@@ -56,6 +56,11 @@ def compute_time(structure, simulator):
         total_time += instruction['time']
         # And update the state of the structure with the current state.
         structure = str_aux
+        # Check if we have finished the stair.
+        if instruction.get("end", False):
+            # When the instruction includes the key "end", that means that we
+            # have complete the stair.
+            break
         # Return the total number of iterations needed.
     return total_time
 

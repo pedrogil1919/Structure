@@ -311,7 +311,10 @@ class StructureError():
                 # actuator collision. Choose the greater (nota that both
                 # values are negative).
                 return min(a.vertical, a.wheel)
-        raise RuntimeError
+        # This error is raised if the current actuator actually is not in an
+        # error (see control.next_instruction of an explanation of this
+        # exception.
+        raise ValueError
 
     def elevation(self):
         """

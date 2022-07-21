@@ -149,7 +149,7 @@ class Graphics:
         if not self.display:
             # If we are not displaying images, the system can not be set to
             # manual mode, since the user can not interact with the system.
-            # Raise an error to warm the calliing function.
+            # Raise an error to warm the calling function.
             raise ValueError
 
     def draw(self, stairs, structure, counter, pause=False):
