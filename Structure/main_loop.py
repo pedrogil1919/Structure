@@ -82,35 +82,15 @@ while continue_loop:
         sm.simulate_instruction(structure, instruction)
     else:
         # Compute instruction:
-        try:
-            # Compute the next instruction.
-            instruction, str_aux = control.next_instruction(structure)
-            if instruction is None:
-                try:
-                    graphics.set_manual_mode()
-                except ValueError:
-                    continue_loop = False
-                continue
-            stop_lentgh = sm.stop_distance(instruction)
-            next_instructions = control.compute_distance(str_aux, stop_lentgh)
-            # Compute and initial estimation of the time requirede to
-            # complete the instruction, and if dynamics is implemented,
-            # compute the instructions that the structure has to suposedly
-            # complete until the structure stop. This is only to check
-            # for collisions when computing the actual profile for the
-            # horizontal motion (if needed).
-            # Compute the actual time required to complete the instruction.
-            sm.compute_time(instruction, next_instructions)
-        except control.ControlError:
-            # A Control Error is raised when the control does not find any
-            # instruction (probably because the wheelchair can not find any
-            # instruction to continue). In this case, give the control to the
-            # user to finish the program (or to check the situation).
-            graphics.set_manual_mode()
-            # NOTE: At this point, we need to finish the iteration and start a
-            # new iteration. This way, we avoid the program to set the
-            # structure to the next state, that is what the code do in the last
-            # instruction of the loop.
+        # Compute the next instruction.
+        instruction, str_aux = control.next_instruction(structure)
+        if instruction is None:
+            try:
+                graphics.set_manual_mode()
+            except ValueError:
+                # If the graphics can not be set in manual mode (normally
+                # because we are not displaying images), finish the loop.
+                continue_loop = False
             continue
         # Simulate instruction:
         instruction_number += 1

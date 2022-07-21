@@ -47,11 +47,6 @@ import copy
 from physics.wheel_state import MAX_GAP
 
 
-class ControlError(ValueError):
-    """Error to raise when the control can not find a valid instruction"""
-    pass
-
-
 class FinalInstruction(Exception):
     """Exception to set the final instruction.
 
@@ -165,7 +160,7 @@ def next_instruction(structure):
 
     # The variable end tells if we are in the last instruction of the motion.
     if end:
-        # Computing the las instruction before finishing the program.
+        # Computing the last instruction before finishing the program.
         actuator, act_aux = last_instruction(st_aux)
         wheel = actuator.get("wheel", None)
         w_aux = act_aux.get("wheel", None)
@@ -193,7 +188,7 @@ def next_instruction(structure):
         if not res_act:
             v_total -= res_act.actuator(w_aux)
             if not st_aux.shift_actuator(w_aux, -v_total):
-                raise ControlError
+                raise RuntimeError
         act_aux = {
             "wheel": w_aux,
             "height": -v_total}
