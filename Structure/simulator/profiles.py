@@ -217,6 +217,40 @@ class AccelerationProfile(SpeedProfile):
 
     def end_speed_range(self, v_ini, d_tot):
         """Computes range of end speeds.
+    
+        For a initial speed and a total distance to travel, there is a range of
+        speeds at which the motion can be finished. This range is function of
+        the maximum acceleration and decceleration values.
+    
+        The function returns a tupla with this range (v_end_min, v_end_max).
+    
+        """
+        # Compute minimum speed:
+        # If negative distance, only the negative solution of the root is
+        # the valid one, as long as we start with a positive or zero speed
+        # (the positive means negative time). For negative initial speed, both
+        # solutions are valid, but nos useful for the project.
+        if d_tot < 0:
+            v_end_min = -sqrt(v_ini**2 - 2 * d_tot * self.decceleration)
+            # And there is no speed range, the maximum and the minimum is
+            # the same
+            v_end_max = v_end_min
+        else:
+            # Check if the motion can use the maximum decceleration.
+            if v_ini**2 < 2 * d_tot * self.decceleration:
+                v_end_min = 0.0
+            else:
+                v_end_min = sqrt(v_ini**2 - 2 * d_tot * self.decceleration)
+            # Compute maximum speed:
+            v_end_max = sqrt(v_ini**2 + 2 * d_tot * self.acceleration)
+        # Check if the motion reaches the maximum speed:
+        if v_end_max > self.speed:
+            v_end_max = self.speed
+        return (v_end_min, v_end_max)
+
+
+    def end_speed_range_not_negative_distance(self, v_ini, d_tot):
+        """Computes range of end speeds.
 
         For a initial speed and a total distance to travel, there is a range of
         speeds at which the motion can be finished. This range is function of
@@ -392,6 +426,12 @@ class AccelerationProfile(SpeedProfile):
         Returns the minimum and maximum times.
 
         """
+        if d_tot < 0:
+            # In case of negative distance, we can reuse the actual function
+            # just changing the sign of all the three values.
+            v_ini = -v_ini
+            v_end = -v_end
+            d_tot = -d_tot
         # Check if the distance to travel is large enough to accomplish with
         # the required end velocity.
         if d_tot < self.min_distance(v_ini, v_end) - ROUND_ERROR:
@@ -438,7 +478,12 @@ class AccelerationProfile(SpeedProfile):
             raise ValueError("Speeds must be greater than 0")
         if v_ini > self.speed or v_end > self.speed:
             raise ValueError("Speeds must be smaller than maximum speed")
-        an, tn, vn = self.profile_two_sections(v_ini, v_end, d_tot, t_tot)
+        if d_tot < 0:
+            # In case of negative distance, we can reuse the actual function
+            # just changing the sign of all the three values.
+            an, tn, vn = self.profile_two_sections(-v_ini, -v_end, -d_tot, t_tot)
+        else:
+            an, tn, vn = self.profile_two_sections(v_ini, v_end, d_tot, t_tot)
 
         # Check acceleration limits:
         # NOTE: If we call this function with a time within the range returned
@@ -452,6 +497,11 @@ class AccelerationProfile(SpeedProfile):
             else:
                 if -a > self.decceleration + ROUND_ERROR:
                     raise MaxAccelerationError
+
+        if d_tot < 0:
+            # In case of negative distance, see comment above.
+            an = [-a for a in an]
+            vn = [-v for v in vn]
 
         return an, tn, vn
 
