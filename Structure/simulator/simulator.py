@@ -243,6 +243,15 @@ class Simulator():
             next_time = self.compute_actuator_time(next_inst)
             # Get the distance to travel.
             next_distance = next_inst['advance']
+            
+            if next_distance < 0:
+                # In case the distance to run is negative, we have to stop
+                # before this instruction, and compute the initial speed so that
+                # we can stop just at the begining of the negative distance
+                # instruction.
+                __, return_speed = self.profile.init_speed_range(0.0, distance_run)
+                return return_speed
+
             # Get the minimum speed we can reach if we make an uniformly
             # deccelerated motion.
             end_speed, __ = self.profile.end_speed_range(
@@ -336,15 +345,24 @@ class Simulator():
         actuator_time = self.compute_actuator_time(instruction)
         # Get the horizontal distance to move from the instruction.
         distance = instruction['advance']
-        # Compute inital stimate of the end speed.
-        __, end_speed = self.profile.end_speed_range(
-            self.get_current_speed(), distance)
-        # Check collisions and correct end speed.
-        collision_speed = self.check_collision(next_instructions, end_speed)
-        # If we can not start the next instruction at the computed end speed
-        # above, reduce it to the maximum possible speed.
-        if collision_speed < end_speed:
-            end_speed = collision_speed
+        
+        if distance < 0:
+            # If current distance is negative, we do this profile at initial
+            # and end speed equal 0 (not optimal, but probably enough for all
+            # the few cases we can find). It would be not optimal in the case 
+            # where there were two consecutive negative distances, but this is
+            # not likely to happen.
+            end_speed = 0.0
+        else:
+            # Compute inital stimate of the end speed.
+            __, end_speed = self.profile.end_speed_range(
+                self.get_current_speed(), distance)
+            # Check collisions and correct end speed.
+            collision_speed = self.check_collision(next_instructions, end_speed)
+            # If we can not start the next instruction at the computed end speed
+            # above, reduce it to the maximum possible speed.
+            if collision_speed < end_speed:
+                end_speed = collision_speed
         # Once the end speed is known, we can compute the total time needed to
         # complete the horizontal motion.
         horizontal_time, __ = self.profile.profile_time_limits(
