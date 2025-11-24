@@ -54,7 +54,7 @@ class Plots():
             [0, axis["height"]],
             [0, axis["height"]],
             [-axis["max_incline"], axis["max_incline"]],
-            [0, axis["max_speed"]]]
+            [-0.2*axis["max_speed"], axis["max_speed"]]]
         self.texts = [
             "Actuator 1 (" + units + ")",
             "Actuator 2 (" + units + ")",
