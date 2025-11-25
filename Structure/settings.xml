@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<StairsClimbing units="mm">
+	<!--Structure dimensions (see paper) in units (cm, mm, inch, etc)-->
+	<!--
+	a, b, c: Horizontal distance between actuator (see paper)
+	d: Horizontal length of de four actuators
+	h, v: Horizontal and vertical margin (to prevent collisions).
+	g: Height between floor and lower case (only useful for representation).
+	n: Maximum inclination (given by L9, compute theoretically).
+	-->
+	<!--<size a="180" b="380" c="160" d="140.0" h="5.0" v="5.0" g="200.0" n="700.0"/>-->
+	<size a="134.1563143550559971" b="340.0000000000000000" c="134.1563143551058772" d="203.7850166967259042" h="5.0" v="5.0" g="200.0" n="700.0"/>
+	<!--<size a="197.8989400587873" b="447.68077776756763" c="203.91545317301936" d="140.2281522407407" h="5.0" v="5.0" g="200.0" n="700.0"/>-->
+	<!--Wheel radius, in the same units than structure dimensions
+	Radius can be given one for each wheel (r1, r2, r3 and r4) or one for
+	all (r).
+	<wheels r="8"/>
+	-->
+	<!--<wheels r1="50.0" r2="50.0" r3="50.0" r4="50.0"></wheels>-->
+	<wheels r1="60.00000000000000000" r2="43.53621745138804755" r3="56.22100754036360115" r4="30.00000000000000000"></wheels>
+	<!--<wheels r1="39.02230016563759" r2="32.439685901424326" r3="38.57275805771264" r4="29.487184861067192"></wheels>-->
+	
+	<!--Simulation velocity (in cm/sec):
+		- actuator: Maximim actuator shift speed
+		- elevate: Maximum structure elevate/incline speed
+		- speed: Maximum structure horizontal speed
+		- acceleration / decceleration: Maximum structure horizontal acc /dec).
+		NOTE: if not given, consider infinite acceleration and decceleration
+	-->
+	<!--####################################################################-->	
+	<!--
+	<dynamics actuator_up="2.0" actuator_dw="3.0" elevate_up="0.5" 
+		elevate_dw="1.0" incline_up="0.4" incline_dw="0.8" speed="3.0">
+	</dynamics>
+	-->
+	<dynamics actuator_up="20.0" actuator_dw="30.0" elevate_up="5.0" 
+		elevate_dw="10.0" incline_up="4.0" incline_dw="8.0" speed="30.0" 
+		decceleration="1.8" acceleration="0.8">
+	</dynamics>
+	<samples sample_time="0.5" time_units="seconds"></samples>
+	<!--####################################################################-->	
+	<!--Stairs definition. Can define as many as needed (all in the same
+	direction - up or down). If you need different step size, use one line to
+	define each step, but set "d"=0 for all the step but the last one.:
+		- landing: initial landing length
+		- dimensions: steps dimension:
+			- N: number of steps.
+			- w, h: Width and height
+			- d: posterior landing length, so last step width is w+d
+	-->
+	<stairs landing="1000.0">
+		<!--Stair definition. Simply copy one of the following blocks
+		or create one in your own.-->
+		<!--
+		<dimensions N="1" w="150.0" h="-110.0" d="0.0"/>
+		<dimensions N="1" w="160.0" h="-90.0" d="0.0"/>
+		<dimensions N="1" w="180.0" h="-60.0" d="0.0"/>
+		<dimensions N="1" w="200.0" h="-100.0" d="0.0"/>
+		<dimensions N="1" w="150.0" h="-60.0" d="300.0"/>
+		-->
+		<dimensions N="5" w="280.0" h="-175.0" d="1000.0"/>
+	</stairs>
+	<!--####################################################################-->
+	<graphics>
+	<!--Graphical resources configuration:
+		- resolution: image width and height (required)
+		- shift: Vertical shift with respect to the image center.
+		- scale: Scale, in units/pixels (where units: cm, mm, inch, etc).
+			If not given, scale is computed so that the whole stairs
+			length spread over the width of the image.
+		- interval: 1/framerate for display option (see graphics/video tag)
+			greater than 0, in miliseconds. Set to the minimum time
+			recomended by OpenCV if not given.
+		- pause: if display is True (the image sequence is displayed on
+			the screen) start simulation paused or continuous. On
+			runtime, this value can be toggled with the space key.
+			If paused, advance one frame by pressing the Enter key.
+		- directory: if given, directory where the video image sequence
+			will be stored.
+		- data: if given, spreadsheet file where the current position of the
+			elements will be saved.
+		- display: if directory is given, indicates if also display image
+			sequence on the screen. If directory is not given, (no 
+			video is recorded) display always is True. If display is
+			True, the program can be finished by pressing the Esc Key.
+			If False, program can not be finished manually.
+		- composition: Generate also the composited video, that is the
+			image of the structure plus the position of the actuators.
+	-->
+		<!--
+		standard resolutions (this dimensions are not compusory, only
+		informational in case you need stardard video resolutions, you can use
+		the image resolution you prefer):
+		Full HD: 		height="1080" width="1920"
+		Full HD / 2: 	height= "540" width= "960"
+		HD: 			height= "720" width="1280"		
+		-->
+		<resolution height="540" width="960"></resolution>
+		<!--Image scale and offset.
+		- shift: Vertical shift, in pixels, with respect to the center of the
+		    image. If possitive, the stair and the structure is drawn below the
+		    image center, and viceversa. If not given, set it on the image
+		    center.
+		- scale: If not given, the stair occupies the whole image.
+		--> 
+		<!--
+		<image shift="0" scale="2.0"/>
+		-->
+		<!--
+		- interval: Frame rate interval when computing online. If this interval
+		    is smaller than the time required to compute an iteration, the
+		    program does not ensure this frame rate.
+		- pause: If true, the program stops at start. Press Space to continue.
+		- data directory: Directory where the csv with the actual coordinates
+		    for the actuators and speed is stored (this is for the simulation
+		    with Inventor)
+		-->
+		<framerate interval="5" pause="True"/>
+<!-- 
+-->
+		<csv_data directory="/home/pedrogil/Videos/WheelChair/ejemplo/csv" 
+		actuator1="actuator1.csv" 
+		actuator2="actuator2.csv" 
+		actuator3="actuator3.csv" 
+		actuator4="actuator4.csv" 
+		actuator9="actuator9.csv" 
+		speed_0="speed0.csv" 
+		speed_1="speed1.csv" 
+		speed_2="speed2.csv" 
+		speed_3="speed3.csv"/>
+	<!--####################################################################-->
+	<!--Recording to a image sequence. If this tag does not exist, nothing is
+		recorded (seepd up comptutation).
+		- directory: root directory where the image sequences will be recorded.
+		- display: If false, no image is displayed. Note that in this case, the
+		    user can not interact with the program, and the only way to finish
+		    is program finish (opr program error).
+		- composition: Record also actuator position along the time. If not
+		    given, no composited image sequence is recorded.
+		    - directory: subdirectory where this image sequence is stored.
+		    - buffer_size: sample length for the time graphics (actuator
+		        positions, structure speed and inclination).
+		    - units: Vertical units (to display in the actuator plots).
+		    - margin: Margin for the subfigure matlab command.
+		    -->
+		<video directory="/home/pedrogil/Videos/WheelChair/ejemplo" display="True">
+			<!--<composition directory="comp" buffer_size="100" units="mm" margin="10"/>-->
+		</video>
+		<!--<video directory="/home/pedrogil/Videos/WheelChair/ejemplo" display="True"></video>-->
+	</graphics>
+</StairsClimbing>
+
