@@ -7,7 +7,7 @@ Module to define the ending wheel of each structure actuator. The module
 implements the physical interactions with the stairs: collisions and contacts.
 """
 
-from numpy import int as cv_datatype
+# from numpy import int as cv_datatype
 import numpy
 import cv2
 
@@ -357,9 +357,9 @@ class Wheel:
     LINE_WIDTH = 4
 
     def draw(self, origin, image, position, scale, shift):
-        cx = cv_datatype(scale * (origin[0] + position[0]))
-        cy = cv_datatype(scale * (origin[1] - position[1]))
-        cr = numpy.int(scale * self.RADIUS)
+        cx = int(scale * (origin[0] + position[0]))
+        cy = int(scale * (origin[1] - position[1]))
+        cr = int(scale * self.RADIUS)
         cv2.circle(image, (cx, cy), cr, self.WHEEL_COLOR[self.state],
                    -1, cv2.LINE_AA, shift)
         cv2.circle(image, (cx, cy), cr, self.LINE_COLOR, 2, cv2.LINE_AA, shift)

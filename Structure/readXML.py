@@ -9,8 +9,25 @@ Module to read system parameters from a XML file.
 
 # XML support
 from xml.etree import ElementTree
-from distutils.util import strtobool
+# from distutils.util import strtobool
 
+# utils.py
+def strtobool(val: str) -> bool:
+    """Convierte un string a booleano.
+    
+    Valores válidos (case-insensitive):
+    - True: 'y', 'yes', 't', 'true', 'on', '1'
+    - False: 'n', 'no', 'f', 'false', 'off', '0'
+    
+    Raises:
+        ValueError: Si el valor no es válido
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    if val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    raise ValueError(f"Valor booleano no válido: '{val}'")
 
 def read_structure(xml_file):
     """Read structure dimensions.

@@ -1,0 +1,11 @@
+[project]
+name = "structure"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.0",
+    "opencv-python>=4.13.0.92",
+    "setuptools>=82.0.1",
+]

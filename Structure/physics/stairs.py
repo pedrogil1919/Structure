@@ -8,7 +8,7 @@ interactions with respect to the wheels of the structure (collisions,
 unstabilities and wheel position).
 """
 
-from numpy import int as cv_datatype
+# from numpy import int as cv_datatype
 import cv2
 
 from physics.wheel_state import WheelState, MAX_GAP
@@ -319,11 +319,11 @@ class Stair:
 
     def draw(self, origin, image, scale, shift):
         """Draw the stair."""
-        cx1 = cv_datatype(scale * origin[0])
-        cy1 = cv_datatype(scale * origin[1])
+        cx1 = int(scale * origin[0])
+        cy1 = int(scale * origin[1])
         for p in self.STAIR:
-            cx2 = cv_datatype(scale * (origin[0] + p[0]))
-            cy2 = cv_datatype(scale * (origin[1] - p[1]))
+            cx2 = int(scale * (origin[0] + p[0]))
+            cy2 = int(scale * (origin[1] - p[1]))
             cv2.line(image, (cx1, cy1), (cx2, cy1), self.GROUND_COLOR,
                      self.LINE_SIZE, cv2.LINE_AA, shift)
             cv2.line(image, (cx2, cy1), (cx2, cy2), self.GROUND_COLOR,

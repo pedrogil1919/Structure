@@ -14,7 +14,7 @@ from enum import Enum
 
 # NOTE: Sometimes opencv changes the data type for drawing function. So it is
 # better to import the correct data type this way.
-from numpy import int as cv_datatype
+# from numpy import int as cv_datatype
 import cv2
 
 from structure.actuator import WheelActuator
@@ -1055,15 +1055,15 @@ class Base:
         else:
             color_base = self.BASE_COLOR_EXIT
 
-        cx1 = cv_datatype(scale * (origin[0] + x1))
-        cy1 = cv_datatype(scale * (origin[1] - y1))
-        cx2 = cv_datatype(scale * (origin[0] + x2))
-        cy2 = cv_datatype(scale * (origin[1] - y2))
+        cx1 = int(scale * (origin[0] + x1))
+        cy1 = int(scale * (origin[1] - y1))
+        cx2 = int(scale * (origin[0] + x2))
+        cy2 = int(scale * (origin[1] - y2))
         cv2.line(image, (cx1, cy1), (cx2, cy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
-        dy1 = cv_datatype(scale * (origin[1] - y1 + self.HEIGHT))
-        dy2 = cv_datatype(scale * (origin[1] - y2 + self.HEIGHT))
+        dy1 = int(scale * (origin[1] - y1 + self.HEIGHT))
+        dy2 = int(scale * (origin[1] - y2 + self.HEIGHT))
         cv2.line(image, (cx1, dy1), (cx2, dy2), color_base,
                  self.BASE_WIDTH, cv2.LINE_AA, shift)
 
@@ -1085,12 +1085,12 @@ class Base:
     def draw_chair(self, position, image, scale, shift):
         position[1] -= self.CHAIR_ELEVATION
         position[0] -= self.CHAIR_SHIFT
-        x1 = cv_datatype(scale * position[0] + self.CHAIR_BASE)
-        y1 = cv_datatype(scale * position[1])
-        x2 = cv_datatype(scale * position[0])
-        y2 = cv_datatype(scale * position[1])
-        x3 = cv_datatype(scale * position[0] - self.CHAIR_BACK)
-        y3 = cv_datatype(scale * position[1] - self.CHAIR_HEIGHT)
+        x1 = int(scale * position[0] + self.CHAIR_BASE)
+        y1 = int(scale * position[1])
+        x2 = int(scale * position[0])
+        y2 = int(scale * position[1])
+        x3 = int(scale * position[0] - self.CHAIR_BACK)
+        y3 = int(scale * position[1] - self.CHAIR_HEIGHT)
         cv2.line(image, (x1, y1), (x2, y2), self.CHAIR_COLOR,
                  self.CHAIR_WIDTH, cv2.LINE_AA, shift)
         cv2.line(image, (x2, y2), (x3, y3), self.CHAIR_COLOR,
